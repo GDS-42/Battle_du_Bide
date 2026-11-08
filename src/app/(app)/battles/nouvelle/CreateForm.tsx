@@ -72,7 +72,7 @@ export function CreateForm({ mondays, defaultName }: { mondays: string[]; defaul
         <Select name="privacy" label="Confidentialité" options={[['pudique', 'Pudique : on voit des %, jamais de kilos'], ['transparent', 'Transparent : les kilos sont visibles']]} defaultValue="pudique" />
         <Select name="tone" label="Ton du commentateur" options={[['bon', 'Bon enfant'], ['trash', 'Trash talk (entre potes)']]} defaultValue="bon" />
         <label className="flex items-center gap-3 text-[15px]">
-          <input type="checkbox" name="photoProof" className="size-5 accent-[#FFD23D]" /> Photo de la balance en option, avec le « mot du jour »
+          <input type="checkbox" name="photoProof" className="size-5 accent-[#FFD23D]" /> Photo de la balance en option, avec le « mot du jour » (visible en mode transparent)
         </label>
       </Section>
 

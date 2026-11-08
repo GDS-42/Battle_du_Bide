@@ -4,7 +4,7 @@ import { notFound, redirect } from 'next/navigation';
 import { appUrl, requireFighter } from '@/lib/auth';
 import {
   BOSS_FIGHTER, battleStatus, computeState, displayName, endDateOf, fighterFor, fightPending, loadBundle, previewFor, recentFeed,
-  roundOf, sideMembers, sideName
+  roundOf, sideMembers, sideName, superState
 } from '@/lib/battles';
 import { beltHeld, roundPairings } from '@/lib/engine/battle';
 import { BOSS_ID } from '@/lib/engine/rules';
@@ -47,13 +47,16 @@ export default async function RingPage({ params, searchParams }: { params: Promi
   const me = state.players[user.id];
   const preview = inBattle ? previewFor(bundle, user.id, today) : null;
   const yesterday = inBattle ? previewFor(bundle, user.id, addDays(today, -1)) : null;
-  const superArmed = bundle.supers.some((s) => s.userId === user.id && s.date === today);
-  const superReady = inBattle && fightAtToday && !superArmed && ((preview?.attack.weighed && (preview.gauge >= 7 || preview.attack.super > 0)) || (!preview?.attack.weighed && (yesterday?.gauge ?? 0) >= 6));
+  const { armed: superArmed, ready: superReady } = superState(bundle, user.id, at);
   const trendOf = (uid: string) => state.players[uid]?.trend ?? bundle.weighIns.filter((w) => w.userId === uid).at(-1)?.weight ?? null;
   const fighterOfSide = (sideId: string, flip: boolean, w: number) => {
     if (sideId === BOSS_ID) return [{ key: 'boss', cfg: { ...BOSS_FIGHTER, flip, w } }];
     return sideMembers(bundle, sideId).slice(0, 2).map((m, i) => ({ key: m.userId, cfg: fighterFor(m.user, trendOf(m.userId), { flip, w: i ? Math.round(w * 0.8) : w }) }));
   };
+  // Photo de balance (mode transparent) : la dernière déjà révélée
+  const photoOf = (uid: string) => !pudique && b.photoProof
+    ? bundle.weighIns.filter((w) => w.userId === uid && w.photoPath && (uid === user.id || w.date < today || !fightAtToday)).at(-1)?.id ?? null
+    : null;
   const feedRows = await recentFeed(id, 30);
   const { round: rNum, day: dNum } = roundOf(b, inBattle ? today : until ?? b.startDate);
   const inviteUrl = `${appUrl()}/b/${b.code}`;
@@ -176,7 +179,7 @@ export default async function RingPage({ params, searchParams }: { params: Promi
               {me && me.startWeight ? (
                 <div className="flex flex-col gap-1">
                   <div className="flex items-baseline justify-between"><span className="label">Ta tendance</span>
-                    <span className="text-sm"><b className="text-soleil">{me.lossPct >= 0 ? '−' : '+'}{fmt(Math.abs(me.lossPct), 2)} %</b>{!pudique || true ? <span className="text-lilas"> · {fmt(me.trend ?? 0, 1)} kg</span> : null}</span></div>
+                    <span className="text-sm"><b className="text-soleil">{me.lossPct >= 0 ? '−' : '+'}{fmt(Math.abs(me.lossPct), 2)} %</b>{me.trend ? <span className="text-lilas"> · {fmt(me.trend, 1)} kg{pudique ? ' (visible par toi seul)' : ''}</span> : null}</span></div>
                   <TrendChart series={me.series} startWeight={me.startWeight} pudique={false} label="Ta tendance sur la battle" />
                 </div>
               ) : null}
@@ -185,7 +188,7 @@ export default async function RingPage({ params, searchParams }: { params: Promi
 
           {/* Les combattants aujourd'hui */}
           <section className="flex flex-col gap-2">
-            <h2 className="label">{status === 'warmup' ? 'Sur le ring' : "Aujourd'hui"}</h2>
+            <h2 className="label">{status === 'warmup' ? 'Sur le ring' : status === 'finished' ? 'Les combattants' : "Aujourd'hui"}</h2>
             {bundle.members.map((m) => {
               const p = state.players[m.userId];
               const done = weighedToday(m.userId);
@@ -197,11 +200,12 @@ export default async function RingPage({ params, searchParams }: { params: Promi
                   <div className="min-w-0 flex-1">
                     <div className="truncate font-display text-[17px]">{displayName(m.user)}{m.user.nickname ? <span className="text-lilas"> « {m.user.nickname} »</span> : null}</div>
                     <div className="text-[13px] text-lilas">
-                      {p?.startWeight ? <>{p.lossPct >= 0 ? '−' : '+'}{fmt(Math.abs(p.lossPct), 2)} %{!pudique && p.trend ? ` · ${fmt(p.trend)} kg` : ''} · combo ×{p.combo}</> : 'pas encore de pesée'}
+                      {p?.startWeight ? <>{p.lossPct >= 0 ? '−' : '+'}{fmt(Math.abs(p.lossPct), 2)} %{!pudique && p.trend ? ` · ${fmt(p.trend)} kg` : ''}{status === 'finished' ? ` · meilleur combo ×${p.bestCombo}` : ` · combo ×${p.combo}`}</> : 'pas encore de pesée'}
                       {b.format === 'equipes' ? ` · ${b.teamNames?.[String(m.team ?? 1)] ?? `Équipe ${m.team}`}` : ''}
                     </div>
                   </div>
-                  {done ? <span className="flex items-center gap-1 text-sm font-bold text-soleil"><Icon name="check" size={18} />pesé</span>
+                  {photoOf(m.userId) ? <a href={`/api/photos/${photoOf(m.userId)}`} target="_blank" rel="noopener" className="grid size-11 shrink-0 place-items-center text-lilas" aria-label={`Photo de la balance de ${displayName(m.user)}`}><Icon name="camera" size={20} /></a> : null}
+                  {status === 'finished' ? null : done ? <span className="flex items-center gap-1 text-sm font-bold text-soleil"><Icon name="check" size={18} />pesé</span>
                     : m.userId !== user.id && inBattle && fightAtToday ? (
                       <form action={nudge}><input type="hidden" name="battleId" value={id} /><input type="hidden" name="to" value={m.userId} />
                         <button className="pill" aria-label={`Coup de coude à ${displayName(m.user)}`}>Coup de coude</button></form>
@@ -219,12 +223,12 @@ export default async function RingPage({ params, searchParams }: { params: Promi
               {b.format !== 'duel' ? (
                 <div className="card overflow-hidden">
                   <table className="w-full text-left text-sm">
-                    <thead className="bg-encre text-lilas"><tr><th className="px-3 py-2">#</th><th className="py-2">Camp</th><th className="py-2 text-center">V</th><th className="py-2 text-center">D</th><th className="py-2 pr-3 text-right">PV infligés</th></tr></thead>
+                    <thead className="bg-encre text-lilas"><tr><th className="px-3 py-2">#</th><th className="py-2">Camp</th><th className="py-2 text-center">V</th><th className="py-2 text-center">D</th><th className="py-2 text-center">N</th><th className="py-2 pr-3 text-right">PV infligés</th></tr></thead>
                     <tbody>
                       {state.standings.map((s, i) => (
                         <tr key={s.sideId} className={`border-t-2 border-nuit ${s.sideId === mySide?.id ? 'text-soleil' : ''}`}>
                           <td className="px-3 py-2 font-display">{i + 1}</td><td className="py-2 font-bold">{sideName(bundle, s.sideId)}</td>
-                          <td className="py-2 text-center">{s.wins}</td><td className="py-2 text-center">{s.losses}</td><td className="py-2 pr-3 text-right">{Math.round(s.damageDealt)}</td>
+                          <td className="py-2 text-center">{s.wins}</td><td className="py-2 text-center">{s.losses}</td><td className="py-2 text-center">{s.draws}</td><td className="py-2 pr-3 text-right">{Math.round(s.damageDealt)}</td>
                         </tr>
                       ))}
                     </tbody>

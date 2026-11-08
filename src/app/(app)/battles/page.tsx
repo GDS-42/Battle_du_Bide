@@ -4,8 +4,8 @@ import { and, eq } from 'drizzle-orm';
 import { requireFighter } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { weighIns } from '@/lib/db/schema';
-import { battleStatus, computeState, endDateOf, loadBundle, roundOf, sideName, userBattles } from '@/lib/battles';
-import { Empty, Icon, Ribbon, TopBar } from '@/components/ui';
+import { battleStatus, computeState, loadBundle, roundOf, sideName, userBattles } from '@/lib/battles';
+import { Icon, Ribbon, TopBar } from '@/components/ui';
 import { localDate, now, prettyDate } from '@/lib/time';
 
 export const metadata: Metadata = { title: 'Mes battles' };
@@ -74,8 +74,6 @@ export default async function BattlesPage() {
             ))}
           </section>
         ) : null)}
-        {list.length ? <Empty>Fin du programme. Le combat du soir est à {list.find((b) => battleStatus(b, at) === 'active')?.fightTime.replace(':', ' h ') ?? '21 h'}.</Empty> : null}
-        <span className="sr-only">Battles jusqu'au {list[0] ? endDateOf(list[0]) : ''}</span>
       </main>
     </>
   );

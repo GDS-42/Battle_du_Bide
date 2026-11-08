@@ -36,7 +36,10 @@ export function PushPrompt({ vapidKey }: { vapidKey: string | null }) {
   if (!show) return null;
   const dismiss = () => { try { localStorage.setItem('bdb-push-dismissed', '1'); } catch {} setShow(null); };
   return (
-    <div className="fixed inset-x-0 bottom-[72px] z-30 mx-auto max-w-[520px] px-3 pb-[env(safe-area-inset-bottom)]">
+    <>
+    {/* espace réservé : le contenu peut défiler au-dessus du bandeau */}
+    <div aria-hidden className="h-[96px]" />
+    <div role="region" aria-label="Notifications" className="fixed inset-x-0 bottom-[72px] z-30 mx-auto max-w-[520px] px-3 pb-[env(safe-area-inset-bottom)]">
       <div className="card flex items-center gap-3 p-3">
         <Icon name="bell" size={26} className="shrink-0 text-soleil" />
         <p className="flex-1 text-[13px] leading-snug">
@@ -50,5 +53,6 @@ export function PushPrompt({ vapidKey }: { vapidKey: string | null }) {
         <button className="pill min-h-10 px-3" onClick={dismiss} aria-label="Fermer">×</button>
       </div>
     </div>
+    </>
   );
 }

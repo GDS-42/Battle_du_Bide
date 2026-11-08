@@ -79,6 +79,29 @@ function sideLines(side: string, att: SideAttack, name: string, tone: Tone, seed
   return out;
 }
 
+/** Commentaire découpé : les coups de A, la réplique de B, puis le bilan. */
+export function commentaryParts(
+  p: PairingDay,
+  names: Record<string, string>,
+  tone: Tone,
+  seed: string,
+  superNames: Record<string, string | undefined> = {}
+): { a: string[]; b: string[]; end: string | null } {
+  if (p.idle) return { a: [], b: [], end: null };
+  const na = names[p.a] ?? '?', nb = names[p.b] ?? '?';
+  const a = sideLines(p.a, p.attacks.a, na, tone, seed + 'a', superNames[p.a]);
+  const b = sideLines(p.b, p.attacks.b, nb, tone, seed + 'b', superNames[p.b]);
+  const A = Math.max(0, Math.round(p.hpAfter.a)), B = Math.max(0, Math.round(p.hpAfter.b));
+  let end: string;
+  if (p.ko === 'both') end = line('koBoth', tone, seed + 'ko', {});
+  else if (p.ko) {
+    const loser = p.ko === 'a' ? na : nb, winner = p.ko === 'a' ? nb : na;
+    end = line('ko', tone, seed + 'ko', { W: winner, L: loser });
+  } else if (A === B) end = line('tie', tone, seed + 'st', { A: pv(A) });
+  else end = line('lead', tone, seed + 'st', { L: A > B ? na : nb, A: pv(Math.max(A, B)), B: pv(Math.min(A, B)) });
+  return { a, b, end };
+}
+
 export function commentary(
   p: PairingDay,
   names: Record<string, string>,
@@ -86,18 +109,6 @@ export function commentary(
   seed: string,
   superNames: Record<string, string | undefined> = {}
 ): string[] {
-  if (p.idle) return [];
-  const na = names[p.a] ?? '?', nb = names[p.b] ?? '?';
-  const out = [
-    ...sideLines(p.a, p.attacks.a, na, tone, seed + 'a', superNames[p.a]),
-    ...sideLines(p.b, p.attacks.b, nb, tone, seed + 'b', superNames[p.b])
-  ];
-  const A = Math.max(0, Math.round(p.hpAfter.a)), B = Math.max(0, Math.round(p.hpAfter.b));
-  if (p.ko === 'both') out.push(line('koBoth', tone, seed + 'ko', {}));
-  else if (p.ko) {
-    const loser = p.ko === 'a' ? na : nb, winner = p.ko === 'a' ? nb : na;
-    out.push(line('ko', tone, seed + 'ko', { W: winner, L: loser }));
-  } else if (A === B) out.push(line('tie', tone, seed + 'st', { A: pv(A) }));
-  else out.push(line('lead', tone, seed + 'st', { L: A > B ? na : nb, A: pv(Math.max(A, B)), B: pv(Math.min(A, B)) }));
-  return out;
+  const c = commentaryParts(p, names, tone, seed, superNames);
+  return c.end === null ? [] : [...c.a, ...c.b, c.end];
 }

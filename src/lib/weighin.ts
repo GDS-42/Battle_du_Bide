@@ -9,7 +9,7 @@ import { bmi, stageIndex } from './engine/silhouette';
 import { globalTrend } from './progress';
 import { localDate, now, zonedInstant } from './time';
 
-export const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(process.cwd(), 'uploads');
+export const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(/*turbopackIgnore: true*/ process.cwd(), 'uploads');
 const EDIT_MINUTES = 10;
 const STAGES = ['S1', 'S2', 'S3', 'S4', 'S5', 'S6'];
 
@@ -61,7 +61,7 @@ export async function recordWeighIn(user: User, input: { weight: number; comment
     await mkdir(UPLOAD_DIR, { recursive: true });
     const ext = input.photo.type.split('/')[1].replace('jpeg', 'jpg');
     const file = `${row.id}.${ext}`;
-    await writeFile(path.join(UPLOAD_DIR, file), Buffer.from(await input.photo.arrayBuffer()));
+    await writeFile(path.join(/*turbopackIgnore: true*/ UPLOAD_DIR, file), Buffer.from(await input.photo.arrayBuffer()));
     [row] = await db.update(weighIns).set({ photoPath: file, word: wordOfDay(date) }).where(eq(weighIns.id, row.id)).returning();
   }
 

@@ -7,7 +7,7 @@ import { requireFighter } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { battleMembers, battles, feed, nudges, reactions, supers } from '@/lib/db/schema';
 import {
-  battleStatus, battleToday, computeState, displayName, endDateOf, fightPending, isMember, loadBundle, newCode, previewFor
+  battleStatus, battleToday, computeState, displayName, endDateOf, fightPending, isMember, loadBundle, newCode, previewFor, superState
 } from '@/lib/battles';
 import { settleStakes } from '@/lib/engine/stakes';
 import { sendPush } from '@/lib/push';
@@ -109,17 +109,12 @@ async function memberContext(battleId: string) {
 export async function armSuper(form: FormData): Promise<void> {
   const id = String(form.get('battleId'));
   const { user, bundle } = await memberContext(id);
-  const at = now();
-  const today = battleToday(bundle.battle, at);
-  if (today >= bundle.battle.startDate && today <= endDateOf(bundle.battle) && fightPending(bundle.battle, today, at)) {
-    const prev = previewFor(bundle, user.id, addDays(today, -1));
-    const cur = previewFor(bundle, user.id, today);
-    const ready = (cur?.attack.weighed && (cur.gauge >= 7 || cur.attack.super > 0)) || (!cur?.attack.weighed && (prev?.gauge ?? 0) >= 6);
-    if (ready) {
-      const ins = await db.insert(supers).values({ battleId: id, userId: user.id, date: today }).onConflictDoNothing().returning();
-      if (ins.length) await db.insert(feed).values({ battleId: id, userId: user.id, kind: 'super', text: `${displayName(user)} arme son super pour ce soir…` });
-    }
+  const st = superState(bundle, user.id, now());
+  if (st.ready) {
+    const ins = await db.insert(supers).values({ battleId: id, userId: user.id, date: st.today }).onConflictDoNothing().returning();
+    if (ins.length) await db.insert(feed).values({ battleId: id, userId: user.id, kind: 'super', text: `${displayName(user)} arme son super pour ce soir…` });
   }
+  revalidatePath('/pesee/coup');
   revalidatePath(`/battles/${id}`);
 }
 

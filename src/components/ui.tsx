@@ -154,7 +154,7 @@ export function Burst({ text, sub, className = '', color = '#FFD23D' }: { text: 
         <polygon points={pts.join(' ')} style={{ fill: color, stroke: '#140A22', strokeWidth: 4, strokeLinejoin: 'round' }} />
       </svg>
       <div className="relative -rotate-6 text-center leading-none">
-        <div className="stroke-text font-sans text-[30px] font-black italic text-magenta">{text}</div>
+        <div className={`stroke-text whitespace-nowrap font-sans font-black italic text-magenta ${text.length > 7 ? 'text-[21px]' : text.length > 5 ? 'text-[25px]' : 'text-[30px]'}`}>{text}</div>
         {sub ? <div className="mt-1 font-display text-[15px] text-encre">{sub}</div> : null}
       </div>
     </div>

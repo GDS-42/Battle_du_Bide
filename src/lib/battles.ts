@@ -156,3 +156,16 @@ export function wordOfDay(date: string): string {
   for (const c of date) h = (h * 31 + c.charCodeAt(0)) >>> 0;
   return `${WORDS[h % WORDS.length]}-${(h % 90) + 10}`;
 }
+
+/** Le super peut-il être armé pour le combat de ce soir ? (jauge pleine, ou pleine dès la pesée du jour) */
+export function superState(bundle: Bundle, userId: string, at: Date): { inBattle: boolean; armed: boolean; ready: boolean; today: string } {
+  const b = bundle.battle;
+  const today = battleToday(b, at);
+  const inBattle = today >= b.startDate && today <= battleEndDate(b);
+  const armed = bundle.supers.some((s) => s.userId === userId && s.date === today);
+  if (!inBattle || !fightPending(b, today, at) || armed) return { inBattle, armed, ready: false, today };
+  const cur = previewFor(bundle, userId, today);
+  const prev = previewFor(bundle, userId, addDays(today, -1));
+  const ready = !!((cur?.attack.weighed && (cur.gauge >= 7 || cur.attack.super > 0)) || (!cur?.attack.weighed && (prev?.gauge ?? 0) >= 6));
+  return { inBattle, armed, ready, today };
+}
