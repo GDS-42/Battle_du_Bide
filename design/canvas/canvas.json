@@ -1,0 +1,26 @@
+{
+  "v": 3,
+  "createdOnFiles": { "v": 1, "at": "2026-11-08T17:00:00Z" },
+  "title": "Battle du Bide · Direction artistique",
+  "launch": { "view": "canvas" },
+  "pages": [],
+  "boards": {
+    "Main.dc.html": { "x": 0, "y": 0, "w": 1440, "h": 1160, "title": "Planche DA · Coucher de soleil sur le ring" },
+    "Invitation.dc.html": { "x": 1520, "y": 0, "w": 390, "h": 844, "title": "1 · Invitation", "is_interactive": true },
+    "Pesee.dc.html": { "x": 1990, "y": 0, "w": 390, "h": 844, "title": "2 · Pesée du matin", "is_interactive": true },
+    "Coup.dc.html": { "x": 2460, "y": 0, "w": 390, "h": 844, "title": "3 · Coup chargé", "is_interactive": true },
+    "Combat.dc.html": { "x": 2930, "y": 0, "w": 390, "h": 844, "title": "4 · Combat du soir" },
+    "Galerie.dc.html": { "x": 0, "y": 1580, "w": 1440, "h": 900, "title": "Choisis ton combattant · 12 personnages", "is_interactive": true },
+    "Createur.dc.html": { "x": 1520, "y": 1580, "w": 390, "h": 844, "title": "Retouche du combattant", "is_interactive": true },
+    "Fighter.dc.html": { "x": 1990, "y": 1580, "w": 240, "h": 320, "title": "Composant · combattant" },
+    "Corpulence.dc.html": { "x": 0, "y": 2900, "w": 1440, "h": 820, "title": "Le combattant · corpulence réelle", "is_interactive": true },
+    "Sons.dc.html": { "x": 1520, "y": 2900, "w": 1440, "h": 820, "title": "Sound design · planche son", "is_interactive": true }
+  },
+  "order": ["Main.dc.html", "Invitation.dc.html", "Pesee.dc.html", "Coup.dc.html", "Combat.dc.html", "Galerie.dc.html", "Createur.dc.html", "Fighter.dc.html", "Corpulence.dc.html", "Sons.dc.html"],
+  "notes": {
+    "t-da": { "x": 0, "y": -300, "text": "Coucher de soleil sur le ring · direction artistique et écrans clés", "kind": "title1", "maxW": 3320 },
+    "t-galerie": { "x": 0, "y": 1280, "text": "Les combattants · galerie de 12 personnages et retouches", "kind": "title1", "maxW": 2230 },
+    "t-combattant": { "x": 0, "y": 2600, "text": "La corpulence réelle et le son du ring", "kind": "title1", "maxW": 2960 }
+  },
+  "designSystems": []
+}

@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Pesée du matin</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&amp;family=Rubik:ital,wght@0,400;0,500;0,700;0,800;0,900;1,900&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#FFD23D}a:hover{color:#FFF4E3}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; background: #1C0E33; color: #FFF4E3; font-family: 'Rubik', sans-serif; display: flex; flex-direction: column">
+
+  <section style="position: relative; height: 220px; flex-shrink: 0; overflow: hidden; background: linear-gradient(180deg, #3A1A5E 0 16%, #6B1E6E 16% 32%, #B3206F 32% 48%, #E8287C 48% 64%, #F25C4A 64% 80%, #F7893B 80% 100%); border-bottom: 5px solid #140A22">
+    <div aria-hidden="true" style="position: absolute; inset: 0; background-image: radial-gradient(#140A22 1.2px, transparent 1.5px); background-size: 9px 9px; opacity: 0.13"></div>
+    <svg viewBox="0 0 720 200" width="430" height="120" aria-hidden="true" style="position: absolute; left: -20px; bottom: -8px; display: block">
+      <g style="fill: #5A2A7A; stroke: #140A22; stroke-width: 3px">
+        <rect x="0" y="80" width="70" height="120"></rect>
+        <rect x="64" y="44" width="58" height="156"></rect>
+        <polygon points="64,44 93,22 122,44"></polygon>
+        <rect x="118" y="96" width="52" height="104"></rect>
+        <rect x="166" y="30" width="64" height="170"></rect>
+        <rect x="228" y="72" width="50" height="128"></rect>
+        <rect x="276" y="18" width="40" height="182"></rect>
+        <rect x="314" y="60" width="76" height="140"></rect>
+        <rect x="388" y="90" width="56" height="110"></rect>
+        <rect x="442" y="40" width="70" height="160"></rect>
+        <rect x="510" y="84" width="60" height="116"></rect>
+        <rect x="568" y="50" width="64" height="150"></rect>
+        <rect x="630" y="98" width="90" height="102"></rect>
+      </g>
+      <g style="fill: #FFD23D">
+        <rect x="76" y="60" width="8" height="10"></rect><rect x="178" y="46" width="8" height="10"></rect><rect x="286" y="40" width="8" height="10"></rect>
+        <rect x="328" y="76" width="8" height="10"></rect><rect x="456" y="58" width="8" height="10"></rect><rect x="580" y="68" width="8" height="10"></rect>
+      </g>
+    </svg>
+    <div style="position: absolute; right: 10px; bottom: -6px">
+      <dc-import name="Fighter" cfg="{{me}}" hint-size="126px,168px"></dc-import>
+    </div>
+
+    <div style="position: absolute; left: 18px; top: 22px; transform: skewX(-12deg); background: #D22B3A; border: 3px solid #140A22; box-shadow: 4px 4px 0 #140A22; padding: 3px 12px">
+      <div style="transform: skewX(12deg); font-family: 'Lilita One', sans-serif; font-size: 16px; letter-spacing: 0.04em; color: #FFF4E3">MERCREDI · ROUND 3 · JOUR 3</div>
+    </div>
+    <h1 style="position: absolute; left: 20px; top: 70px; margin: 0; max-width: 220px; font-family: 'Lilita One', sans-serif; font-weight: 400; font-size: 34px; line-height: 1.05; color: #FFF4E3; text-shadow: 3px 3px 0 #140A22">Ton coup t'attend, Marc.</h1>
+  </section>
+
+  <div style="margin: 18px 16px 0; box-sizing: border-box; background: #2A1548; border: 3px solid #140A22; border-radius: 18px; box-shadow: 0 6px 0 #140A22; padding: 18px 16px 16px; display: flex; flex-direction: column; align-items: center">
+    <span style="font-size: 13px; font-weight: 700; letter-spacing: 0.16em; color: #CDB8F0">TA PESÉE DU MATIN</span>
+
+    <div style="margin-top: 6px; display: flex; align-items: center; justify-content: space-between; width: 100%">
+      <button type="button" aria-label="Retirer 100 grammes" onClick="{{minus}}" style="width: 56px; height: 56px; flex-shrink: 0; border-radius: 50%; border: 3px solid #140A22; background: #FFD23D; box-shadow: 0 5px 0 #140A22; color: #140A22; font-family: 'Lilita One', sans-serif; font-size: 32px; line-height: 1; cursor: pointer; padding: 0">−</button>
+      <div style="display: flex; align-items: baseline; gap: 6px">
+        <div style="display: grid; transform: skewX(-8deg)">
+          <div aria-hidden="true" style="grid-area: 1 / 1; font-family: 'Rubik', sans-serif; font-weight: 900; font-size: 92px; line-height: 1; color: #140A22; -webkit-text-stroke: 3px #140A22; text-shadow: 2px 2px 0 #140A22, 4px 4px 0 #140A22, 6px 6px 0 #140A22">{{weight}}</div>
+          <div style="grid-area: 1 / 1; font-family: 'Rubik', sans-serif; font-weight: 900; font-size: 92px; line-height: 1; background: linear-gradient(180deg, #FFF0A0 0 22%, #FFD23D 22% 58%, #F7893B 58% 100%); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-stroke: 3px #140A22">{{weight}}</div>
+        </div>
+        <span style="font-family: 'Lilita One', sans-serif; font-size: 28px; color: #FFF4E3">kg</span>
+      </div>
+      <button type="button" aria-label="Ajouter 100 grammes" onClick="{{plus}}" style="width: 56px; height: 56px; flex-shrink: 0; border-radius: 50%; border: 3px solid #140A22; background: #FFD23D; box-shadow: 0 5px 0 #140A22; color: #140A22; font-family: 'Lilita One', sans-serif; font-size: 32px; line-height: 1; cursor: pointer; padding: 0">+</button>
+    </div>
+
+    <div aria-hidden="true" style="position: relative; margin-top: 16px; width: 330px; height: 64px; overflow: hidden; border-top: 2px solid #5A2A7A">
+      <sc-for list="{{ticks}}" as="t" hint-placeholder-count="15">
+        <div style="position: absolute; top: 0; left: {{t.x}}px; width: 3px; height: {{t.h}}px; background: {{t.c}}; border-radius: 0 0 2px 2px"></div>
+        <div style="position: absolute; top: 34px; left: {{t.lx}}px; width: 44px; text-align: center; font-size: 13px; font-weight: 700; color: #CDB8F0; opacity: {{t.lo}}">{{t.label}}</div>
+      </sc-for>
+      <div style="position: absolute; top: 0; left: 156px; width: 0; height: 0; border-left: 9px solid transparent; border-right: 9px solid transparent; border-top: 14px solid #FFD23D"></div>
+    </div>
+    <span style="margin-top: 4px; font-size: 14px; color: #CDB8F0">Hier : <b style="color: #FFF4E3">94,8 kg</b> · glisse ou ajuste au gramme près</span>
+  </div>
+
+  <div style="margin: 18px 16px 0; box-sizing: border-box; border: 2px solid #5A2A7A; border-radius: 14px; padding: 12px 14px; display: flex; align-items: center; gap: 12px">
+    <div aria-hidden="true" style="width: 42px; height: 42px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: #2BB5FF; border: 3px solid #140A22; color: #140A22; display: flex; align-items: center; justify-content: center; font-family: 'Lilita One', sans-serif; font-size: 20px">J</div>
+    <div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1">
+      <span style="font-size: 15px; font-weight: 700">Julie s'est déjà pesée</span>
+      <span style="font-size: 13px; color: #CDB8F0">Son résultat reste secret jusqu'à 21:00</span>
+    </div>
+    <svg viewBox="0 0 24 24" width="24" height="24" role="img" aria-label="Verrouillé" style="flex-shrink: 0; fill: none; stroke: #FFD23D; stroke-width: 2.2px; stroke-linecap: round; stroke-linejoin: round"><path d="M6 11h12v10H6z"></path><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg>
+  </div>
+
+  <div style="margin: auto 16px 0; padding-bottom: 26px; display: flex; flex-direction: column; align-items: center; gap: 14px">
+    <a href="Coup.dc.html" style="box-sizing: border-box; width: 100%; min-height: 62px; display: flex; align-items: center; justify-content: center; font-family: 'Lilita One', sans-serif; font-size: 26px; color: #140A22; text-decoration: none; background: #FFD23D; border: 3px solid #140A22; border-radius: 16px; box-shadow: 0 7px 0 #140A22">VALIDER MA PESÉE</a>
+    <span style="font-size: 13px; color: #CDB8F0; text-align: center">Seule la première pesée du jour compte. Correction possible pendant 10 min.</span>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { w: 946 };
+  }
+  renderVals() {
+    var self = this;
+    var w = this.state.w;
+    var fmt = function (t) { return (t / 10).toFixed(1).replace('.', ','); };
+    var ticks = [];
+    for (var i = -8; i <= 8; i++) {
+      var v = w + i;
+      var major = v % 5 === 0;
+      ticks.push({
+        x: 164 + i * 22,
+        lx: 165 + i * 22 - 22,
+        h: major ? 28 : (i === 0 ? 22 : 14),
+        c: i === 0 ? '#FFD23D' : (major ? '#FFF4E3' : '#5A2A7A'),
+        label: major ? fmt(v) : '',
+        lo: major ? 1 : 0
+      });
+    }
+    return {
+      weight: fmt(w),
+      ticks: ticks,
+      minus: function () { self.setState({ w: self.state.w - 1 }); },
+      plus: function () { self.setState({ w: self.state.w + 1 }); },
+      me: { id: 'pe-marc', k: 0.59, w: 126, flip: true, skin: '#F0B38A', shorts: '#D22B3A', glove: '#D22B3A', hair: '#3B2416', trim: '#FFF4E3', boot: '#FFF4E3' }
+    };
+  }
+}
+</script>
+</body>
+</html>
