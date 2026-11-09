@@ -1,5 +1,6 @@
 import 'server-only';
-import webpush from 'web-push';
+// web-push 4 est un module ES sans export par défaut : imports nommés uniquement.
+import { sendNotification, setVapidDetails } from 'web-push';
 import { eq, inArray } from 'drizzle-orm';
 import { db } from './db';
 import { notifLog, pushSubscriptions, users } from './db/schema';
@@ -10,7 +11,15 @@ function setup(): boolean {
   if (configured !== null) return configured;
   const pub = process.env.VAPID_PUBLIC_KEY, priv = process.env.VAPID_PRIVATE_KEY;
   configured = !!(pub && priv);
-  if (configured) webpush.setVapidDetails(process.env.VAPID_SUBJECT || 'mailto:ring@localhost', pub!, priv!);
+  if (configured) {
+    try {
+      setVapidDetails(process.env.VAPID_SUBJECT || 'mailto:ring@localhost', pub!, priv!);
+    } catch (e) {
+      // Clés ou sujet invalides : on désactive l'envoi plutôt que de planter chaque notification.
+      console.error('[push] configuration VAPID invalide, notifications désactivées :', (e as Error).message);
+      configured = false;
+    }
+  }
   return configured;
 }
 
@@ -38,7 +47,7 @@ export async function sendPush(userIds: string[], payload: PushPayload): Promise
   }
   await Promise.all(subs.filter((x) => x.notify && isAllowedPushEndpoint(x.s.endpoint)).map(async ({ s }) => {
     try {
-      await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, JSON.stringify(payload), { TTL: 6 * 3600 });
+      await sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, JSON.stringify(payload), { TTL: 6 * 3600 });
       sent++;
     } catch (e: unknown) {
       const code = (e as { statusCode?: number }).statusCode;
