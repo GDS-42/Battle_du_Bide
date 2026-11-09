@@ -4,8 +4,16 @@ import { eq } from 'drizzle-orm';
 import { currentUser } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { pushSubscriptions } from '@/lib/db/schema';
+import { isAllowedPushEndpoint, PUSH_KEY_RE } from '@/lib/push-endpoint';
 
-const Sub = z.object({ endpoint: z.url(), keys: z.object({ p256dh: z.string().min(10), auth: z.string().min(4) }) });
+// L'endpoint doit être un service push de navigateur (anti-SSRF), les clés en base64url.
+const Sub = z.object({
+  endpoint: z.string().refine(isAllowedPushEndpoint),
+  keys: z.object({
+    p256dh: z.string().min(10).max(200).regex(PUSH_KEY_RE),
+    auth: z.string().min(4).max(100).regex(PUSH_KEY_RE)
+  })
+});
 
 export async function POST(req: Request) {
   const user = await currentUser();

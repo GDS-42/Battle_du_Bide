@@ -3,6 +3,7 @@ import webpush from 'web-push';
 import { eq, inArray } from 'drizzle-orm';
 import { db } from './db';
 import { notifLog, pushSubscriptions, users } from './db/schema';
+import { isAllowedPushEndpoint } from './push-endpoint';
 
 let configured: boolean | null = null;
 function setup(): boolean {
@@ -31,7 +32,11 @@ export async function sendPush(userIds: string[], payload: PushPayload): Promise
     .innerJoin(users, eq(users.id, pushSubscriptions.userId))
     .where(inArray(pushSubscriptions.userId, userIds));
   let sent = 0;
-  await Promise.all(subs.filter((x) => x.notify).map(async ({ s }) => {
+  // Abonnements enregistrés avant le contrôle anti-SSRF : on n'y envoie rien et on les supprime.
+  for (const { s } of subs) {
+    if (!isAllowedPushEndpoint(s.endpoint)) await db.delete(pushSubscriptions).where(eq(pushSubscriptions.id, s.id));
+  }
+  await Promise.all(subs.filter((x) => x.notify && isAllowedPushEndpoint(x.s.endpoint)).map(async ({ s }) => {
     try {
       await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, JSON.stringify(payload), { TTL: 6 * 3600 });
       sent++;
