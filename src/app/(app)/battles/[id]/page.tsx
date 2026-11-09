@@ -11,9 +11,10 @@ import { BOSS_ID } from '@/lib/engine/rules';
 import { formatEuros, settleStakes } from '@/lib/engine/stakes';
 import { TAUNTS } from '@/lib/taunts';
 import { addDays, dayDiff, now, prettyDate } from '@/lib/time';
-import { armSuper, leaveBattle, nudge, rematch, sendTaunt } from '@/app/actions/battle';
+import { armSuper, leaveBattle, nudge, rematch } from '@/app/actions/battle';
 import { Fighter } from '@/components/Fighter';
 import { InviteBox } from '@/components/InviteBox';
+import { TauntBox } from '@/components/TauntBox';
 import { TrendChart } from '@/components/TrendChart';
 import { Empty, Gauge, HpBar, Icon, RingScene, Ribbon, TopBar } from '@/components/ui';
 
@@ -269,17 +270,14 @@ export default async function RingPage({ params, searchParams }: { params: Promi
           <section className="flex flex-col gap-2">
             <h2 className="label">Le fil du ring</h2>
             {status !== 'finished' ? (
-              <form action={sendTaunt} className="flex flex-wrap gap-1.5">
-                <input type="hidden" name="battleId" value={id} />
-                {TAUNTS[b.tone].map((t, i) => <button key={i} name="taunt" value={i} className="pill text-left text-[13px]">{t}</button>)}
-              </form>
+              <TauntBox battleId={id} suggestions={TAUNTS[b.tone]} />
             ) : null}
             {feedRows.length ? feedRows.map(({ f, u }) => (
               <div key={f.id} className="card-line px-3 py-2 text-[14px]">
                 {f.kind === 'taunt' || f.kind === 'comment' ? <><b className="text-soleil">{u ? displayName(u) : '?'}</b> : « {f.text} »</> : f.text}
                 <span className="ml-2 text-[11px] text-lilas">{f.createdAt.toLocaleString('fr-FR', { timeZone: b.timezone, weekday: 'short', hour: '2-digit', minute: '2-digit' })}</span>
               </div>
-            )) : <Empty>Rien encore. Lance la première provocation !</Empty>}
+            )) : <Empty>Rien encore. Écris le premier message !</Empty>}
           </section>
 
           {status === 'warmup' ? (

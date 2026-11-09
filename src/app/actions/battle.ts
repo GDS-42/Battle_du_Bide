@@ -2,7 +2,7 @@
 import { z } from 'zod';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, gte } from 'drizzle-orm';
 import { requireFighter } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { battleMembers, battles, feed, nudges, reactions, supers } from '@/lib/db/schema';
@@ -11,7 +11,7 @@ import {
 } from '@/lib/battles';
 import { settleStakes } from '@/lib/engine/stakes';
 import { sendPush } from '@/lib/push';
-import { REACTIONS, TAUNTS } from '@/lib/taunts';
+import { cleanTaunt, REACTIONS } from '@/lib/taunts';
 import { addDays, nextMonday, now, weekday } from '@/lib/time';
 import { TimeSchema } from '@/lib/validation';
 
@@ -120,10 +120,15 @@ export async function armSuper(form: FormData): Promise<void> {
 
 export async function sendTaunt(form: FormData): Promise<void> {
   const id = String(form.get('battleId'));
-  const { user, bundle } = await memberContext(id);
-  const idx = Number(form.get('taunt'));
-  const text = TAUNTS[bundle.battle.tone][idx];
-  if (text) await db.insert(feed).values({ battleId: id, userId: user.id, kind: 'taunt', text });
+  const { user } = await memberContext(id);
+  const text = cleanTaunt(form.get('text'));
+  if (text) {
+    // Anti-rafale : 5 messages par minute et par joueur au maximum.
+    const recent = await db.select({ id: feed.id }).from(feed)
+      .where(and(eq(feed.battleId, id), eq(feed.userId, user.id), eq(feed.kind, 'taunt'), gte(feed.createdAt, new Date(Date.now() - 60_000))))
+      .limit(5);
+    if (recent.length < 5) await db.insert(feed).values({ battleId: id, userId: user.id, kind: 'taunt', text });
+  }
   revalidatePath(`/battles/${id}`);
 }
 

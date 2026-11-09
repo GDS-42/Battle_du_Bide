@@ -1,22 +1,21 @@
-// Provocations prêtes à l'emploi. On chambre le joueur, jamais le corps.
+// Fil du ring : chacun écrit son message ; ces quelques suggestions courtes préremplissent le champ.
+// On chambre le joueur, jamais le corps.
 export const TAUNTS = {
-  bon: [
-    'Rendez-vous sur le ring à 21 h !',
-    'Prépare ta serviette, ce soir ça va piquer !',
-    'Ma tendance descend, la tienne médite ?',
-    'Je me pèse demain à 7 h pile, et toi ?',
-    'Belle série ! Mais la mienne est plus longue.',
-    'Ce round est pour moi, c’est écrit.'
-  ],
-  trash: [
-    'Tu t’entraînes ou tu fais la sieste ?',
-    'Ce soir, je te mets au tapis.',
-    'Ta jauge de super, elle est en grève ?',
-    'J’espère que t’as pris un protège-dents.',
-    'La ceinture ? Je lui ai déjà fait une place.',
-    'Tu sèches la pesée ou tu as perdu la balance ?'
-  ]
+  bon: ['Rendez-vous à 21 h !', 'Ce soir, ça va piquer !', 'Ce round est pour moi.'],
+  trash: ['Ce soir, au tapis !', 'Tu fais la sieste ?', 'La ceinture est à moi.']
 } as const;
+
+/** Longueur maximale d'un message du fil. */
+export const TAUNT_MAX = 140;
+
+/** Nettoie un message libre : caractères de contrôle retirés, espaces resserrés, longueur bornée. */
+export function cleanTaunt(raw: unknown): string {
+  return String(raw ?? '')
+    .replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u2028-\u202e\u2060-\u2064\ufeff]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, TAUNT_MAX);
+}
 
 export const REACTIONS = [
   { key: 'feu', label: 'En feu', icon: 'fire' },

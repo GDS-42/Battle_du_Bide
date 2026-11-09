@@ -289,7 +289,7 @@ Entre deux battles, tous les joueurs s'allient contre **« Le Bide »**, le boss
 | Fonction | Détail |
 |---|---|
 | **Réactions sur le replay** | Emojis (🔥 💪 😱 😂 🥊) sur chaque combat du soir. |
-| **Provocations** | Phrases prédéfinies adaptées au ton de la battle, envoyées en un tap. |
+| **Provocations** | Message libre dans le fil du ring, avec quelques suggestions courtes adaptées au ton de la battle. |
 | **Commentaire de pesée** | Une ligne facultative : *« Raclette hier, soyez indulgents »*. |
 | **Coup de coude 👊** | Un rival ne s'est pas encore pesé ? Un tap lui envoie une notification. **Une fois par jour** et par personne. |
 | **Flamme du ring** | Série commune : nombre de jours consécutifs où **tous** les joueurs se sont pesés. À 7, 14 et 30 jours, le décor du ring s'améliore. |
