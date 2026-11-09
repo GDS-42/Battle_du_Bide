@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Choisis ton combattant</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&amp;family=Rubik:ital,wght@0,400;0,500;0,700;0,800;0,900;1,900&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#FFD23D}a:hover{color:#FFF4E3}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; padding: 36px 56px 40px; background: #1C0E33; color: #FFF4E3; font-family: 'Rubik', sans-serif; display: flex; flex-direction: column; gap: 22px">
+
+  <header style="display: flex; justify-content: space-between; align-items: flex-end; gap: 32px">
+    <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 12px">
+      <div style="transform: skewX(-12deg); background: #D22B3A; border: 3px solid #140A22; box-shadow: 4px 4px 0 #140A22; padding: 2px 14px">
+        <div style="transform: skewX(12deg); font-family: 'Lilita One', sans-serif; font-size: 17px; letter-spacing: 0.05em; color: #FFF4E3">ÉTAPE 1 SUR 2 · SÉLECTION</div>
+      </div>
+      <div style="display: grid; transform: skewX(-8deg)">
+        <div aria-hidden="true" style="grid-area: 1 / 1; font-family: 'Rubik', sans-serif; font-weight: 900; font-size: 58px; line-height: 1; color: #2A1548; -webkit-text-stroke: 3px #140A22; text-shadow: 2px 2px 0 #2A1548, 4px 4px 0 #2A1548, 6px 6px 0 #2A1548, 8px 8px 0 #140A22">CHOISIS TON COMBATTANT</div>
+        <h1 style="grid-area: 1 / 1; margin: 0; font-family: 'Rubik', sans-serif; font-weight: 900; font-size: 58px; line-height: 1; background: linear-gradient(180deg, #FFF0A0 0 24%, #FFD23D 24% 58%, #F7893B 58% 100%); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-stroke: 3px #140A22">CHOISIS TON COMBATTANT</h1>
+      </div>
+    </div>
+    <p style="margin: 0; max-width: 420px; text-align: right; font-size: 16px; line-height: 1.5; color: #E6DAF7">Douze personnages tout prêts, à retoucher à l'étape suivante. Sur le ring, la silhouette suit ensuite <b style="color: #FFD23D">ta corpulence réelle</b>.</p>
+  </header>
+
+  <div style="display: flex; gap: 32px; flex-grow: 1; min-height: 0">
+
+    <div style="width: 500px; flex-shrink: 0; position: relative; box-sizing: border-box; border: 4px solid #140A22; border-radius: 20px; box-shadow: 0 7px 0 #140A22; overflow: hidden; background: linear-gradient(180deg, #3A1A5E 0 14%, #6B1E6E 14% 28%, #B3206F 28% 42%, #E8287C 42% 56%, #F25C4A 56% 68%, #F7893B 68% 80%, #FFB23D 80% 100%)">
+      <div aria-hidden="true" style="position: absolute; inset: 0; background-image: radial-gradient(#140A22 1.3px, transparent 1.6px); background-size: 10px 10px; opacity: 0.13"></div>
+      <div aria-hidden="true" style="position: absolute; left: 0; right: 0; bottom: 0; height: 200px; background: #2A1548; border-top: 6px solid #E8287C"></div>
+      <div style="position: absolute; left: 0; right: 0; bottom: 150px; display: flex; justify-content: center">
+        <dc-import name="Fighter" cfg="{{bigCfg}}" hint-size="290px,387px"></dc-import>
+      </div>
+      <div style="position: absolute; left: 24px; right: 24px; bottom: 22px; display: flex; flex-direction: column; gap: 10px">
+        <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 12px">
+          <div style="display: flex; flex-direction: column; gap: 6px; min-width: 0">
+            <span style="font-family: 'Lilita One', sans-serif; font-size: 34px; line-height: 1; color: #FFD23D; text-shadow: 3px 3px 0 #140A22">{{selName}}</span>
+            <span style="font-size: 15px; color: #FFF4E3">Coup spécial : <b>« {{selMove}} »</b></span>
+          </div>
+          <span style="flex-shrink: 0; font-size: 13px; font-weight: 700; letter-spacing: 0.08em; color: #140A22; background: #FFD23D; border: 2px solid #140A22; border-radius: 999px; padding: 4px 10px">{{selTag}}</span>
+        </div>
+        <a href="Createur.dc.html" style="min-height: 56px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-family: 'Lilita One', sans-serif; font-size: 24px; color: #140A22; text-decoration: none; background: #FFD23D; border: 3px solid #140A22; border-radius: 16px; box-shadow: 0 6px 0 #140A22">CHOISIR ET RETOUCHER</a>
+      </div>
+    </div>
+
+    <div style="flex: 1 1 0; min-width: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 14px">
+      <sc-for list="{{cards}}" as="c" hint-placeholder-count="12">
+        <button type="button" onClick="{{c.pick}}" aria-pressed="{{c.pressed}}" aria-label="{{c.aria}}" style="position: relative; box-sizing: border-box; padding: 0; border: 4px solid {{c.border}}; border-radius: 16px; background: #2A1548; box-shadow: {{c.shadow}}; overflow: hidden; cursor: pointer; display: flex; flex-direction: column; text-align: left">
+          <div style="position: relative; height: 138px; width: 100%; overflow: hidden; background: linear-gradient(180deg, #6B1E6E 0 25%, #B3206F 25% 50%, #E8287C 50% 75%, #F25C4A 75% 100%)">
+            <div style="position: absolute; left: 50%; top: -4px; margin-left: -78px">
+              <dc-import name="Fighter" cfg="{{c.cfg}}" hint-size="156px,208px"></dc-import>
+            </div>
+          </div>
+          <div style="padding: 8px 10px 10px; display: flex; flex-direction: column; gap: 2px; border-top: 3px solid #140A22; background: {{c.foot}}; flex-grow: 1">
+            <span style="font-family: 'Lilita One', sans-serif; font-size: 18px; line-height: 1.1; color: {{c.nameC}}">{{c.name}}</span>
+            <span style="font-size: 12px; color: {{c.subC}}">{{c.tag}}</span>
+          </div>
+        </button>
+      </sc-for>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { sel: 2 };
+  }
+  presets() {
+    return [
+      { name: 'Le Bulldozer', move: 'Le Rouleau Compresseur', tag: 'Boxe · adulte', cfg: { base: 'A', skin: 'peche', hairStyle: 'spiky', hairColor: 'brun', outfit: 'boxe', main: '#D22B3A', trim: '#FFF4E3', boot: '#FFF4E3', k: 0.6 } },
+      { name: 'La Fusée', move: 'La Raclette Volante', tag: 'Boxe · adulte', cfg: { base: 'B', skin: 'cannelle', hairStyle: 'ponytail', hairColor: 'noir', acc: ['headband'], band: '#E8287C', outfit: 'boxe', main: '#2BB5FF', trim: '#FFF4E3', boot: '#140A22', k: 0.1 } },
+      { name: 'La Mamie Cogneuse', move: 'Le Coup du Sac à Main', tag: 'Survêt rétro · senior', cfg: { base: 'B', age: 'senior', skin: 'porcelaine', hairStyle: 'bun', hairColor: 'blanc', acc: ['glassesRound'], eyes: 'ronds', outfit: 'track', main: '#5A2A7A', trim: '#FFD23D', k: 0.5 } },
+      { name: 'Papy Uppercut', move: "L'Uppercut de 1974", tag: 'Boxe vintage · senior', cfg: { base: 'A', age: 'senior', skin: 'cacao', hairStyle: 'receding', hairColor: 'blanc', beard: 'moustache', nose: 'large', outfit: 'boxe', main: '#B5532A', trim: '#FFF4E3', boot: '#2A1548', k: 0.35 } },
+      { name: 'El Tornado', move: 'La Tornade Tropicale', tag: 'Catch masqué · adulte', cfg: { base: 'A', skin: 'caramel', outfit: 'catch', mask: true, main: '#2BB5FF', trim: '#FFD23D', k: 0.75 } },
+      { name: 'La Ceinture Noire', move: 'Le Balayage Fatal', tag: 'Kimono · adulte', cfg: { base: 'B', skin: 'ebene', hairStyle: 'braids', hairColor: 'noir', lips: 'pleines', outfit: 'kimono', glove: '#D22B3A', k: 0.2 } },
+      { name: 'Le Bûcheron', move: 'La Hache Velue', tag: 'Catch · adulte', cfg: { base: 'A', skin: 'porcelaine', hairStyle: 'buzz', hairColor: 'roux', beard: 'big', outfit: 'catch', main: '#2E9E6B', trim: '#FFF4E3', k: 0.85 } },
+      { name: 'La Punk', move: 'Le Pogo Dévastateur', tag: 'MMA · jeune', cfg: { base: 'B', age: 'jeune', skin: 'miel', hairStyle: 'mohawk', hairColor: 'rose', acc: ['earrings'], eyes: 'etires', outfit: 'mma', top: '#140A22', bottom: '#140A22', trim: '#FF5FA2', glove: '#FF5FA2', k: 0.3 } },
+      { name: 'Le Groove', move: 'La Boule à Facettes', tag: 'Survêt rétro · adulte', cfg: { base: 'A', skin: 'noisette', hairStyle: 'afro', hairColor: 'noir', beard: 'moustache', outfit: 'track', main: '#FFD23D', trim: '#140A22', glove: '#E8287C', k: 0.45 } },
+      { name: 'Le Geek', move: 'Le Ctrl+Alt+Suppr', tag: 'MMA · jeune', cfg: { base: 'A', age: 'jeune', skin: 'peche', hairStyle: 'bob', hairColor: 'chatain', acc: ['glassesSquare'], eyes: 'ronds', outfit: 'mma', top: '#2BB5FF', bottom: '#140A22', trim: '#FFF4E3', glove: '#2BB5FF', k: 0.55 } },
+      { name: 'La Reine du Ring', move: 'Le Sceptre Royal', tag: 'Boxe dorée · adulte', cfg: { base: 'B', skin: 'noisette', hairStyle: 'long', hairColor: 'brun', acc: ['earrings'], lips: 'pleines', outfit: 'boxe', main: '#FFD23D', trim: '#140A22', boot: '#FFD23D', glove: '#FFD23D', k: 0.65 } },
+      { name: 'Le Chauve Furieux', move: 'Le Coup de Boule Lustré', tag: 'Catch · adulte', cfg: { base: 'A', skin: 'cannelle', hairStyle: 'bald', hairColor: 'noir', beard: 'goatee', nose: 'busque', outfit: 'catch', main: '#140A22', trim: '#D22B3A', k: 0.4 } }
+    ];
+  }
+  renderVals() {
+    var self = this;
+    var list = this.presets();
+    var sel = this.state.sel;
+    var cur = list[sel];
+    return {
+      bigCfg: Object.assign({}, cur.cfg, { id: 'gal-big', w: 290 }),
+      selName: cur.name,
+      selMove: cur.move,
+      selTag: cur.tag,
+      cards: list.map(function (p, i) {
+        var on = i === sel;
+        return {
+          name: p.name, tag: p.tag, aria: 'Choisir ' + p.name,
+          cfg: Object.assign({}, p.cfg, { id: 'gal-' + i, w: 156 }),
+          pressed: on ? 'true' : 'false',
+          border: on ? '#FFD23D' : '#140A22',
+          shadow: on ? '0 0 0 3px #140A22, 0 6px 0 #140A22' : '0 5px 0 #140A22',
+          foot: on ? '#FFD23D' : '#2A1548',
+          nameC: on ? '#140A22' : '#FFF4E3',
+          subC: on ? '#2A1548' : '#CDB8F0',
+          pick: function () { self.setState({ sel: i }); }
+        };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

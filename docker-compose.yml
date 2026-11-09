@@ -1,0 +1,46 @@
+# Déploiement complet : l'app + PostgreSQL. Compatible Coolify (type « Docker Compose »).
+# Variables à définir (Coolify : onglet « Environment Variables », sinon fichier .env) :
+#   APP_URL, POSTGRES_PASSWORD, et de préférence SMTP_URL, MAIL_FROM, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT.
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://bdb:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD manquant}@db:5432/battle_du_bide
+      APP_URL: ${APP_URL:?APP_URL manquant}
+      SMTP_URL: ${SMTP_URL:-}
+      MAIL_FROM: ${MAIL_FROM:-Battle du Bide <ring@localhost>}
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      VAPID_SUBJECT: ${VAPID_SUBJECT:-mailto:ring@localhost}
+      DEFAULT_TIMEZONE: ${DEFAULT_TIMEZONE:-Europe/Paris}
+      SHOW_MAGIC_LINK: ${SHOW_MAGIC_LINK:-0}
+      INTERNAL_CLOCK: ${INTERNAL_CLOCK:-1}
+      CRON_SECRET: ${CRON_SECRET:-}
+    # Le proxy de Coolify (ou le vôtre) joint l'app sur le port 3000 : rien à publier sur l'hôte.
+    expose:
+      - "3000"
+    volumes:
+      - uploads:/app/uploads
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: bdb
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD manquant}
+      POSTGRES_DB: battle_du_bide
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bdb -d battle_du_bide"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  pgdata:
+  uploads:

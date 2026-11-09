@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Coup chargé</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&amp;family=Rubik:ital,wght@0,400;0,500;0,700;0,800;0,900;1,900&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#FFD23D}a:hover{color:#FFF4E3}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; background: #1C0E33; color: #FFF4E3; font-family: 'Rubik', sans-serif; display: flex; flex-direction: column">
+
+  <section style="position: relative; height: 280px; flex-shrink: 0; overflow: hidden; background: linear-gradient(180deg, #6B1E6E 0 20%, #B3206F 20% 40%, #E8287C 40% 60%, #F25C4A 60% 80%, #F7893B 80% 100%); border-bottom: 5px solid #140A22">
+    <div aria-hidden="true" style="position: absolute; inset: 0; background-image: radial-gradient(#140A22 1.2px, transparent 1.5px); background-size: 9px 9px; opacity: 0.13"></div>
+    <svg viewBox="0 0 390 280" width="390" height="280" aria-hidden="true" style="position: absolute; left: 0; top: 0">
+      <g style="stroke: #FFE98A; stroke-width: 3px; stroke-linecap: round; opacity: 0.7">
+        <path d="{{speed}}"></path>
+      </g>
+      <polygon points="{{burstOuter}}" style="fill: #FFD23D; stroke: #140A22; stroke-width: 5px; stroke-linejoin: round"></polygon>
+      <polygon points="{{burstInner}}" style="fill: #F7893B"></polygon>
+      <ellipse cx="128" cy="196" rx="74" ry="92" style="fill: none; stroke: #2BB5FF; stroke-width: 5px; opacity: 0.9"></ellipse>
+      <ellipse cx="128" cy="196" rx="88" ry="106" style="fill: none; stroke: #2BB5FF; stroke-width: 3px; opacity: 0.45"></ellipse>
+    </svg>
+
+    <div style="position: absolute; left: 56px; bottom: -14px">
+      <dc-import name="Fighter" cfg="{{me}}" hint-size="140px,187px"></dc-import>
+    </div>
+
+    <div style="position: absolute; left: 0; right: 0; top: 22px; display: flex; justify-content: center">
+      <div style="display: grid; transform: skewX(-8deg) rotate(-3deg)">
+        <div aria-hidden="true" style="grid-area: 1 / 1; font-family: 'Rubik', sans-serif; font-weight: 900; font-size: 46px; line-height: 1; color: #2A1548; -webkit-text-stroke: 3px #140A22; text-shadow: 2px 2px 0 #2A1548, 4px 4px 0 #2A1548, 6px 6px 0 #140A22">COUP CHARGÉ !</div>
+        <h1 style="grid-area: 1 / 1; margin: 0; font-family: 'Rubik', sans-serif; font-weight: 900; font-size: 46px; line-height: 1; background: linear-gradient(180deg, #FFF0A0 0 25%, #FFD23D 25% 60%, #F7893B 60% 100%); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-stroke: 3px #140A22">COUP CHARGÉ !</h1>
+      </div>
+    </div>
+
+    <div style="position: absolute; right: 24px; top: 104px; width: 132px; height: 132px; box-sizing: border-box; border-radius: 50%; background: #D22B3A; border: 4px solid #140A22; box-shadow: 5px 5px 0 #140A22; transform: rotate(8deg); display: flex; flex-direction: column; align-items: center; justify-content: center">
+      <span style="font-family: 'Rubik', sans-serif; font-weight: 900; font-style: italic; font-size: 58px; line-height: 0.9; color: #FFD23D; -webkit-text-stroke: 2px #140A22">10</span>
+      <span style="font-family: 'Lilita One', sans-serif; font-size: 20px; color: #FFF4E3">PV CHARGÉS</span>
+    </div>
+  </section>
+
+  <div style="margin: 16px 16px 0; box-sizing: border-box; background: #2A1548; border: 3px solid #140A22; border-radius: 16px; box-shadow: 0 5px 0 #140A22; padding: 12px 16px; display: flex; flex-direction: column; gap: 8px">
+    <div style="display: flex; align-items: center; gap: 12px">
+      <span style="width: 92px; flex-shrink: 0; font-family: 'Lilita One', sans-serif; font-size: 20px; color: #FFD23D">JAB</span>
+      <span style="flex-grow: 1; font-size: 14px; color: #CDB8F0">Pesée du jour · combo ×9</span>
+      <span style="font-family: 'Lilita One', sans-serif; font-size: 20px">5 PV</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px">
+      <span style="width: 92px; flex-shrink: 0; font-family: 'Lilita One', sans-serif; font-size: 20px; color: #FFD23D">CROCHET</span>
+      <span style="flex-grow: 1; font-size: 14px; color: #CDB8F0">Tendance −0,10 %, nouveau plus bas du round</span>
+      <span style="font-family: 'Lilita One', sans-serif; font-size: 20px">5 PV</span>
+    </div>
+  </div>
+
+  <div style="margin: 14px 16px 0; box-sizing: border-box; border: 2px solid #5A2A7A; border-radius: 16px; padding: 12px 16px 10px; display: flex; flex-direction: column; gap: 4px">
+    <div style="display: flex; justify-content: space-between; align-items: baseline">
+      <span style="font-family: 'Lilita One', sans-serif; font-size: 19px">Ta tendance</span>
+      <span style="font-size: 14px; color: #CDB8F0"><b style="color: #FFD23D">95,00 kg</b> · −0,10 kg</span>
+    </div>
+    <svg viewBox="0 0 320 96" width="320" height="96" role="img" aria-label="Tendance sur 7 jours : de 95,32 à 95,00 kg, pesées entre 94,6 et 95,4 kg">
+      <path d="M 0 16 L 320 16 M 0 48 L 320 48 M 0 80 L 320 80" style="stroke: #3A1F5E; stroke-width: 1px"></path>
+      <path d="{{rawDots}}" style="fill: #5A2A7A; stroke: #140A22; stroke-width: 2px"></path>
+      <path d="{{trend}}" style="fill: none; stroke: #FFD23D; stroke-width: 4px; stroke-linecap: round; stroke-linejoin: round"></path>
+      <path d="{{todayDot}}" style="fill: #FFD23D; stroke: #140A22; stroke-width: 2.5px"></path>
+    </svg>
+    <div style="display: flex; justify-content: space-between; font-size: 12px; color: #CDB8F0; padding: 0 2px">
+      <span>jeu.</span><span>ven.</span><span>sam.</span><span>dim.</span><span>lun.</span><span>mar.</span><span style="color: #FFD23D; font-weight: 700">auj.</span>
+    </div>
+    <p style="margin: 4px 0 0; font-size: 14px; line-height: 1.4">La balance fait du yo-yo. Ta tendance, elle, descend.</p>
+  </div>
+
+  <div style="margin: 14px 16px 0; box-sizing: border-box; background: #2A1548; border: 3px solid #140A22; border-radius: 16px; box-shadow: 0 5px 0 #140A22; padding: 12px 16px 14px; display: flex; flex-direction: column; gap: 10px">
+    <div style="display: flex; align-items: center; justify-content: space-between">
+      <div style="display: flex; gap: 6px; transform: skewX(-16deg)" role="img" aria-label="Jauge de super pleine : 7 crans sur 7">
+        <div style="width: 22px; height: 18px; background: #2BB5FF; border: 2px solid #140A22"></div>
+        <div style="width: 22px; height: 18px; background: #2BB5FF; border: 2px solid #140A22"></div>
+        <div style="width: 22px; height: 18px; background: #2BB5FF; border: 2px solid #140A22"></div>
+        <div style="width: 22px; height: 18px; background: #2BB5FF; border: 2px solid #140A22"></div>
+        <div style="width: 22px; height: 18px; background: #2BB5FF; border: 2px solid #140A22"></div>
+        <div style="width: 22px; height: 18px; background: #2BB5FF; border: 2px solid #140A22"></div>
+        <div style="width: 22px; height: 18px; background: #2BB5FF; border: 2px solid #140A22"></div>
+      </div>
+      <span style="font-size: 13px; color: #CDB8F0">Garde : <b style="color: #FFF4E3">1</b></span>
+    </div>
+    <button type="button" style="width: 100%; min-height: 54px; border: 3px solid #140A22; border-radius: 14px; background: #E8287C; box-shadow: 0 5px 0 #140A22; color: #FFFFFF; font-family: 'Lilita One', sans-serif; font-size: 21px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.1; padding: 6px">
+      <span>DÉCLENCHER MON SUPER CE SOIR</span>
+      <span style="font-family: 'Rubik', sans-serif; font-weight: 700; font-size: 13px">« Le Rouleau Compresseur » · +15 PV</span>
+    </button>
+  </div>
+
+  <div style="margin: auto 16px 0; padding-bottom: 22px; display: flex; align-items: center; gap: 12px">
+    <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px">
+      <span style="font-size: 14px; font-weight: 700">Julie a chargé son coup.</span>
+      <span style="font-size: 13px; color: #CDB8F0">Verdict sur le ring à 21:00</span>
+    </div>
+    <a href="Combat.dc.html" style="flex-shrink: 0; min-height: 48px; box-sizing: border-box; display: flex; align-items: center; padding: 0 16px; border: 3px solid #FFD23D; border-radius: 14px; font-family: 'Lilita One', sans-serif; font-size: 18px; color: #FFD23D; text-decoration: none">VOIR LE RING</a>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  burst(cx, cy, ro, ri, n, sq) {
+    var pts = [];
+    for (var i = 0; i < n * 2; i++) {
+      var a = Math.PI * i / n - Math.PI / 2;
+      var r = i % 2 === 0 ? ro * (i % 4 === 0 ? 1 : 0.84) : ri;
+      pts.push(Math.round(cx + Math.cos(a) * r) + ',' + Math.round(cy + Math.sin(a) * r * sq));
+    }
+    return pts.join(' ');
+  }
+  renderVals() {
+    var weights = [95.4, 95.0, 95.3, 94.9, 95.1, 94.8, 94.6];
+    var t = 95.3, trendPts = [], rawDots = '', todayDot = '';
+    var dot = function (cx, cy, r) { return 'M ' + (cx - r) + ' ' + cy + ' a ' + r + ' ' + r + ' 0 1 0 ' + (2 * r) + ' 0 a ' + r + ' ' + r + ' 0 1 0 ' + (-2 * r) + ' 0 Z '; };
+    var y = function (v) { return Math.round((95.6 - v) / 1.2 * 80 + 8); };
+    for (var i = 0; i < weights.length; i++) {
+      t = t + 0.2 * (weights[i] - t);
+      var x = Math.round(14 + i * 48.6);
+      trendPts.push((i === 0 ? 'M ' : 'L ') + x + ' ' + y(t));
+      var today = i === weights.length - 1;
+      if (today) { todayDot = dot(x, y(weights[i]), 7); } else { rawDots += dot(x, y(weights[i]), 5); }
+    }
+    var speed = '';
+    for (var s = 0; s < 18; s++) {
+      var a = Math.PI * 2 * s / 18;
+      speed += 'M ' + Math.round(195 + Math.cos(a) * 150) + ' ' + Math.round(150 + Math.sin(a) * 110) + ' L ' + Math.round(195 + Math.cos(a) * 240) + ' ' + Math.round(150 + Math.sin(a) * 180) + ' ';
+    }
+    return {
+      rawDots: rawDots,
+      todayDot: todayDot,
+      trend: trendPts.join(' '),
+      speed: speed,
+      burstOuter: this.burst(195, 150, 190, 120, 14, 0.62),
+      burstInner: this.burst(195, 150, 140, 92, 14, 0.62),
+      me: { id: 'cp-marc', k: 0.59, w: 140, skin: '#F0B38A', shorts: '#D22B3A', glove: '#D22B3A', hair: '#3B2416', trim: '#FFF4E3', boot: '#FFF4E3' }
+    };
+  }
+}
+</script>
+</body>
+</html>
