@@ -339,7 +339,7 @@ Entre amis, la triche reste marginale, mais un minimum de règles protège le je
 ### Premier lancement (moins de 2 minutes)
 
 ```
-Lien d'invitation reçu sur WhatsApp
+Lien d'invitation reçu sur Signal
  → « Julie "La Fusée" te défie ! Enjeu : le resto »
  → Relever le défi : prénom + e-mail → lien magique (pas de mot de passe)
  → Créer son combattant : surnom, gabarit, style, couleurs, coup spécial
@@ -359,7 +359,7 @@ Lien d'invitation reçu sur WhatsApp
 | 2 | **Connexion** | Lien magique par e-mail. |
 | 3 | **Création du combattant** | Surnom, gabarit, style, couleurs, coup spécial, phrase d'entrée, taille. |
 | 4 | **Création de battle** | Assistant en quelques étapes, tout pré-rempli. |
-| 5 | **Partage** | Lien, QR code, bouton WhatsApp. |
+| 5 | **Partage** | Lien, QR code, bouton Signal. |
 | 6 | ⭐ **Pesée** | L'écran roi : gros chiffres, molette, un bouton. |
 | 7 | ⭐ **Retour immédiat** | Tendance, coup chargé, jauge de super, bouton « Déclencher mon super ». |
 | 8 | ⭐ **Face-à-face et replay du combat** | Le spectacle du soir : barres de vie, coups, commentateur. |
@@ -395,7 +395,7 @@ Lien d'invitation reçu sur WhatsApp
 - **Combattants entièrement animés** : chorégraphies de combat complètes par style.
 - **Balance connectée** (Withings…) et import depuis Apple Santé ou Google Health Connect.
 - **Raid de fin de saison** contre « Le Bide ».
-- **Cartes de partage** : image du KO, de la transformation ou du podium, pour WhatsApp ou Instagram.
+- **Cartes de partage** : image du KO, de la transformation ou du podium, pour Signal ou Instagram.
 - Badges complets et niveau de combattant toutes battles confondues.
 - Commentateur vocal.
 
