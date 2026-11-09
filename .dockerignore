@@ -10,4 +10,5 @@ coverage
 test-results
 playwright-report
 *.md
+!LICENSE.md
 docs
