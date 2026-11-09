@@ -42,7 +42,7 @@ Déploiement sur vos serveurs : **[guide Coolify](docs/04-deploiement-coolify.md
 
 Next.js 16 (App Router, React 19, TypeScript) · Tailwind CSS v4 · PostgreSQL 16 + Drizzle ORM · Web Push · Vitest · Docker.
 
-Licence : [PolyForm Noncommercial 1.0.0](LICENSE.md), gratuite pour tout usage non commercial (voir [plus bas](#licence)).
+Licence : [MIT](LICENSE).
 
 ## Feuille de route
 
@@ -54,21 +54,6 @@ Licence : [PolyForm Noncommercial 1.0.0](LICENSE.md), gratuite pour tout usage n
 
 ## Licence
 
-Battle du Bide est publié sous la licence **[PolyForm Noncommercial 1.0.0](LICENSE.md)** (© 2026 GDS-42).
-C'est une licence « à source ouverte » : le code est visible, modifiable et partageable, mais l'usage commercial est réservé. Ce n'est donc pas une licence « libre » au sens de l'OSI ou de la FSF. Seul le texte anglais du fichier [LICENSE.md](LICENSE.md) fait foi ; le résumé ci-dessous n'est qu'une aide.
-
-**Permis sans rien demander**, tant que ce n'est pas dans un but commercial :
-
-- jouer entre amis, en famille ou entre collègues, et héberger l'app pour son groupe ;
-- étudier, modifier le code et partager ses modifications, en gardant la mention `Required Notice` du fichier de licence ;
-- l'utiliser dans une association, une école, un organisme de recherche ou un service public.
-
-**Soumis à un accord écrit** (licence commerciale) :
-
-- vendre l'app, ou proposer un service payant qui repose dessus (hébergement, abonnement, version en marque blanche) ;
-- l'intégrer à un produit ou à une offre commerciale ;
-- l'utiliser dans une entreprise à des fins lucratives.
-
-Pour une licence commerciale, [ouvre une issue](https://github.com/GDS-42/Battle_du_Bide/issues) sur le dépôt.
+Battle du Bide est publié sous la **[licence MIT](LICENSE)** (© 2026 GDS-42) : chacun peut l'utiliser, le modifier, le partager et l'héberger, y compris à des fins commerciales, à condition de conserver la mention de copyright et le texte de la licence. Le logiciel est fourni tel quel, sans garantie.
 
 Les dépendances (Next.js, React, Drizzle ORM, etc.) restent sous leurs propres licences, de même que les polices Lilita One et Rubik (SIL Open Font License 1.1).
