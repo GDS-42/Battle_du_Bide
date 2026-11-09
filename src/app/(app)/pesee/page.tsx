@@ -42,7 +42,7 @@ export default async function PeseePage() {
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-[520px] flex-col">
-      <TopBar kicker={kicker} title="Pesée du matin" right={<Link href="/aide" aria-label="Quand me peser ? Mode d'emploi" className="grid size-11 place-items-center rounded-xl border-2 border-prune text-soleil"><Icon name="help" size={22} /></Link>} />
+      <TopBar kicker={kicker} title="Pesée du matin" right={<Link href="/aide#quand-se-peser" aria-label="Quand me peser ? Mode d'emploi" className="grid size-11 place-items-center rounded-xl border-2 border-prune text-soleil"><Icon name="help" size={22} /></Link>} />
       <WeighForm
         name={displayName(user)}
         initial={existing?.weight ?? prev?.weight ?? 75}
