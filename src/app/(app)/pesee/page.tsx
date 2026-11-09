@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { and, desc, eq, lt } from 'drizzle-orm';
 import { requireFighter } from '@/lib/auth';
 import { db } from '@/lib/db';
@@ -6,7 +7,7 @@ import { weighIns } from '@/lib/db/schema';
 import { displayName, endDateOf, fightPending, loadBundle, roundOf, wordOfDay } from '@/lib/battles';
 import { liveBattles } from '@/lib/weighin';
 import { dayName, localDate, now } from '@/lib/time';
-import { TopBar } from '@/components/ui';
+import { Icon, TopBar } from '@/components/ui';
 import { WeighForm } from './WeighForm';
 
 export const metadata: Metadata = { title: 'Pesée du matin' };
@@ -41,7 +42,7 @@ export default async function PeseePage() {
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-[520px] flex-col">
-      <TopBar kicker={kicker} title="Pesée du matin" />
+      <TopBar kicker={kicker} title="Pesée du matin" right={<Link href="/aide" aria-label="Quand me peser ? Mode d'emploi" className="grid size-11 place-items-center rounded-xl border-2 border-prune text-soleil"><Icon name="help" size={22} /></Link>} />
       <WeighForm
         name={displayName(user)}
         initial={existing?.weight ?? prev?.weight ?? 75}

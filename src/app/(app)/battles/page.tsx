@@ -45,7 +45,7 @@ export default async function BattlesPage() {
 
   return (
     <>
-      <TopBar kicker={`Salut ${user.name ?? ''}`} title="Mes battles" right={<Link href="/battles/nouvelle" className="btn btn-soleil min-h-11 px-3 text-base"><Icon name="plus" size={18} />Nouvelle</Link>} />
+      <TopBar kicker={`Salut ${user.name ?? ''}`} title="Mes battles" right={<div className="flex items-center gap-2"><Link href="/aide" aria-label="Comment ça marche ?" className="grid size-11 place-items-center rounded-xl border-2 border-prune text-soleil"><Icon name="help" size={22} /></Link><Link href="/battles/nouvelle" className="btn btn-soleil min-h-11 px-3 text-base"><Icon name="plus" size={18} />Nouvelle</Link></div>} />
       <main className="flex flex-col gap-5 px-4 py-4">
         {!weighed ? (
           <Link href="/pesee" className="card flex items-center gap-3 bg-magenta p-4 text-white">

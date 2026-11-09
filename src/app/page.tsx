@@ -36,6 +36,7 @@ export default async function Home() {
         <div className="mt-auto grid gap-3 pt-2">
           <Link href="/connexion?next=/battles/nouvelle" className="btn btn-soleil w-full text-[24px]">LANCER UNE BATTLE</Link>
           <Link href="/connexion" className="btn btn-violet w-full">J'ai déjà un compte</Link>
+          <Link href="/aide" className="text-center text-[15px] font-bold text-lilas underline">Comment ça marche ?</Link>
         </div>
       </section>
     </main>

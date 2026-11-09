@@ -62,6 +62,7 @@ export default async function ProfilPage({ searchParams }: { searchParams: Promi
           </div>
         ) : null}
         <Link href="/combattant?next=/profil" className="btn btn-soleil w-full text-[19px]">RETOUCHER MON COMBATTANT</Link>
+        <Link href="/aide" className="btn btn-ghost min-h-12 w-full text-base"><Icon name="help" size={18} /> Comment ça marche ?</Link>
 
         <InstallCard />
 

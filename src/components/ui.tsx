@@ -28,6 +28,7 @@ export function Icon({ name, size = 22, className = '' }: { name: keyof typeof I
 }
 
 const ICONS = {
+  help: <><circle cx="12" cy="12" r="9" /><path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.4c-.6.3-1 .8-1 1.5v.4" /><path d="M12 17h.01" /></>,
   scale: <><rect x="4" y="5" width="16" height="15" rx="3" /><path d="M8.5 10a3.5 3.5 0 0 1 7 0" /><path d="M12 10l1.5-2" /></>,
   ring: <><path d="M3 20V8M21 20V8" /><path d="M3 10h18M3 14h18M3 18h18" /></>,
   user: <><circle cx="12" cy="8" r="4" /><path d="M4 21v-1a7 7 0 0 1 16 0v1" /></>,
