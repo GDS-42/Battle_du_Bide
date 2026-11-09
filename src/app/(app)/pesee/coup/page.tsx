@@ -47,7 +47,7 @@ export default async function CoupPage({ searchParams }: { searchParams: Promise
     const rivalsDone = rivals.filter((m) => bundle.weighIns.some((w) => w.userId === m.userId && w.date === today)).map((m) => displayName(m.user));
     cards.push({ b, p, sup, mine, rivals, rivalsDone, bundle });
   }
-  const first = cards.find((c) => c.p);
+  const first = cards.find((c) => c.p?.attack.weighed);
   const total = first?.p?.attack.total ?? 0;
   const big = !!first?.p && (first.p.attack.crochet > 0 || first.p.attack.super > 0);
 
@@ -88,9 +88,9 @@ export default async function CoupPage({ searchParams }: { searchParams: Promise
               <span className="truncate font-display text-[20px]">{b.name}</span>
               <span className="shrink-0 text-[13px] text-lilas">{today < b.startDate ? `début ${prettyDate(b.startDate, false)}` : `verdict à ${b.fightTime}`}</span>
             </div>
-            {!p ? (
+            {!p || !p.attack.weighed ? (
               <p className="text-sm text-lilas">
-                {today < b.startDate ? `Échauffement : tes pesées d'ici le ${prettyDate(b.startDate)} fixent ton poids de départ.` : 'Le combat de ce soir est déjà passé : cette pesée compte pour ta tendance et le combat de demain.'}
+                {today < b.startDate ? `Échauffement : tes pesées d'ici le ${prettyDate(b.startDate)} fixent ton poids de départ.` : `Pesée faite après l'heure du combat (${b.fightTime}) : elle ne compte pas dans la battle aujourd'hui, c'est comme un jour sans pesée. Elle sert quand même à suivre ta courbe. Demain, pèse-toi avant ${b.fightTime} !`}
               </p>
             ) : (
               <>

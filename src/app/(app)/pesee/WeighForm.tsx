@@ -85,7 +85,7 @@ export function WeighForm({ name, initial, last, existing, rivals, fightTime, la
 
       {late.length ? (
         <p role="note" className="rounded-xl border-2 border-orange bg-encre px-3 py-2 text-sm">
-          Le combat du soir est déjà passé pour {late.join(', ')} : cette pesée comptera pour ta tendance et le combat de demain.
+          Le combat du soir est déjà passé pour {late.join(', ')} : cette pesée ne comptera pas dans la battle aujourd'hui (comme un jour sans pesée). Elle sert quand même à suivre ta courbe.
         </p>
       ) : null}
       {noBattle ? <p className="text-sm text-lilas">Tu n'as pas de battle en cours : ta pesée sert à suivre ta tendance et ta silhouette.</p> : null}
