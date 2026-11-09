@@ -12,6 +12,7 @@ import { localDate, now } from '@/lib/time';
 import { logout } from '@/app/actions/auth';
 import { deleteAccount } from '@/app/actions/profile';
 import { Fighter } from '@/components/Fighter';
+import { InstallCard } from '@/components/InstallPrompt';
 import { Icon, RingScene, Ribbon } from '@/components/ui';
 import { SettingsForm } from './SettingsForm';
 
@@ -61,6 +62,8 @@ export default async function ProfilPage({ searchParams }: { searchParams: Promi
           </div>
         ) : null}
         <Link href="/combattant?next=/profil" className="btn btn-soleil w-full text-[19px]">RETOUCHER MON COMBATTANT</Link>
+
+        <InstallCard />
 
         <SettingsForm weighTime={user.weighTime} notifyOn={user.notifyOn} timezone={user.timezone} vapidKey={vapidPublicKey()} pushDevices={subs} />
 
