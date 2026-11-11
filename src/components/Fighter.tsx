@@ -6,10 +6,30 @@ import type { FighterRender } from '@/lib/fighter/types';
 const S = (o: React.CSSProperties) => o;
 const OUT = { strokeLinejoin: 'round' as const };
 
+/**
+ * Ceinture de champion, posée sur la taille. Elle se calcule à partir du tracé `waist` du générateur
+ * (un quadrilatère : haut arrière, haut avant, bas avant, bas arrière), sans toucher au générateur
+ * lui-même, qui doit rester identique à celui de l'atelier de design.
+ */
+function champBelt(waist: string): { strap: string; cx: number; cy: number; angle: number } | null {
+  const n = (waist.match(/-?\d+(?:\.\d+)?/g) ?? []).map(Number);
+  if (n.length < 8) return null;
+  const [x1, y1, x2, y2, x3, y3, x4, y4] = n;
+  const r = (v: number) => Math.round(v * 10) / 10;
+  const t = 0.56; // la plaque est un peu vers l'avant : le combattant est vu de trois quarts
+  return {
+    strap: `M ${r(x1 - 2)} ${r(y1 - 3)} L ${r(x2 + 2)} ${r(y2 - 3)} L ${r(x3 + 2)} ${r(y3 + 4)} L ${r(x4 - 2)} ${r(y4 + 4)} Z`,
+    cx: r(x1 + (x2 - x1) * t),
+    cy: r(((y1 + (y2 - y1) * t) + (y4 + (y3 - y4) * t)) / 2 + 0.5),
+    angle: r((Math.atan2(y2 - y1, x2 - x1) * 180) / Math.PI)
+  };
+}
+
 export function Fighter({ cfg, className, title }: { cfg: FighterRender; className?: string; title?: string }) {
   const raw = useId();
   const id = 'f' + raw.replace(/[^a-zA-Z0-9_-]/g, '');
   const f = useMemo(() => gen({ ...cfg, id }), [cfg, id]);
+  const belt = cfg.champ && !cfg.ghost ? champBelt(f.waist) : null;
   return (
     <svg
       viewBox="0 0 240 320"
@@ -84,6 +104,18 @@ export function Fighter({ cfg, className, title }: { cfg: FighterRender; classNa
       <path d={f.stripe} style={S({ fill: 'none', stroke: f.trim, strokeWidth: 4, strokeLinecap: 'round', opacity: f.stripeOp })} />
       <path d={f.shortsD} style={S({ fill: 'none', stroke: f.ink, strokeWidth: 3.5, ...OUT })} />
       <path d={f.beltKnot} style={S({ fill: f.beltC, stroke: f.ink, strokeWidth: 2.5, ...OUT })} />
+      {belt ? (
+        <g data-reward="ceinture">
+          <path d={belt.strap} style={S({ fill: '#FFD23D', stroke: f.ink, strokeWidth: 3, ...OUT })} />
+          <g transform={`translate(${belt.cx} ${belt.cy}) rotate(${belt.angle})`}>
+            <rect x={-33} y={-8} width={12} height={16} rx={3} style={S({ fill: '#FFF4E3', stroke: f.ink, strokeWidth: 2.2 })} />
+            <rect x={21} y={-8} width={12} height={16} rx={3} style={S({ fill: '#FFF4E3', stroke: f.ink, strokeWidth: 2.2 })} />
+            <rect x={-15} y={-14} width={30} height={28} rx={8} style={S({ fill: '#FFE98A', stroke: f.ink, strokeWidth: 3 })} />
+            <circle r={6.5} style={S({ fill: '#D22B3A', stroke: f.ink, strokeWidth: 2.2 })} />
+            <circle cx={-2} cy={-2} r={1.8} style={S({ fill: '#FFFFFF', opacity: 0.7 })} />
+          </g>
+        </g>
+      ) : null}
 
       <g clipPath={f.clipRear}>
         <path d={f.rear} style={S({ fill: f.skinSh })} />

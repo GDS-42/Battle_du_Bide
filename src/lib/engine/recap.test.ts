@@ -99,3 +99,26 @@ describe('libellés du bilan', () => {
     expect(resultLabel({ result: 'pending', ko: false }).text).toBe('EN COURS');
   });
 });
+
+describe('exploits du round', () => {
+  it('7 pesées sur 7, K.O. et victoire sur Le Bide', () => {
+    const ko = duel([...series('marc', addDays(START, -3), 10, 100, -0.9), ...series('julie', START, 7, 70, 0)]);
+    expect(roundRecap(simulateBattle(ko, addDays(START, 6)), 'marc', 0, 2)!.feats).toContain('ko');
+    const flat = duel([...series('marc', START, 7, 100, 0), ...series('julie', START, 7, 70, 0, [1])]);
+    const state = simulateBattle(flat, addDays(START, 6));
+    expect(roundRecap(state, 'marc', 0, 2)!.feats).toEqual(['perfect']);
+    expect(roundRecap(state, 'julie', 0, 2)!.feats).toEqual([]);
+    const trio: EngineInput = {
+      battle: { format: 'tournoi', startDate: START, rounds: 1, members: [{ userId: 'a' }, { userId: 'b' }, { userId: 'c' }] },
+      weighIns: [...series('a', START, 7, 100, -0.15), ...series('b', START, 7, 100, 0), ...series('c', START, 7, 100, 0)], supers: []
+    };
+    expect(roundRecap(simulateBattle(trio, addDays(START, 6)), 'a', 0, 1)!.feats).toEqual(expect.arrayContaining(['perfect', 'boss']));
+  });
+
+  it('remontée : mené au 4e soir, vainqueur à la fin', () => {
+    const w = [...series('julie', START, 4, 70, 0), ...series('marc', addDays(START, -3), 3, 100, 0), ...series('marc', addDays(START, 4), 3, 99, -0.8)];
+    const state = simulateBattle(duel(w, 1), addDays(START, 6));
+    expect(roundRecap(state, 'marc', 0, 1)!.feats).toContain('comeback');
+    expect(roundRecap(state, 'julie', 0, 1)!.feats).not.toContain('comeback');
+  });
+});

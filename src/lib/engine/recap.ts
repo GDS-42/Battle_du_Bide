@@ -1,6 +1,18 @@
 // Bilan d'un round pour un joueur : résultat de son camp et ses statistiques de la semaine. Pur et testé.
+import { trailedAtMidRound } from './badges';
 import { roundPairings } from './battle';
+import { BOSS_ID } from './rules';
 import type { BattleState } from './types';
+
+export type RoundFeat = 'perfect' | 'ko' | 'boss' | 'comeback' | 'super';
+
+export const FEAT_LABELS: Record<RoundFeat, string> = {
+  perfect: '7 pesées sur 7',
+  ko: 'Victoire par K.O.',
+  boss: 'Le Bide au tapis',
+  comeback: 'Remontée',
+  super: 'Super déclenché'
+};
 
 export interface RoundRecap {
   /** Numéro du round (1 = premier) et nombre de rounds de la battle. */
@@ -32,6 +44,8 @@ export interface RoundRecap {
   lossPct: number | null;
   /** Camp affronté au round suivant, s'il y en a un. */
   nextOpponent: string | null;
+  /** Exploits du round : semaine sans pesée ratée, K.O. infligé, victoire sur Le Bide, remontée, super déclenché. */
+  feats: RoundFeat[];
   /** Rang du camp au classement à l'issue de ce round (hors boss). */
   rank: number | null;
   ranked: number;
@@ -81,6 +95,13 @@ export function roundRecap(state: BattleState, userId: string, roundIndex: numbe
     if (next) nextOpponent = next[0] === mine.id ? next[1] : next[0];
   }
   const rankIdx = state.standings.findIndex((s) => s.sideId === mine.id);
+  const won = pair.complete && pair.winner === mine.id;
+  const feats: RoundFeat[] = [];
+  if (weighIns === 7) feats.push('perfect');
+  if (won && pair.ko) feats.push('ko');
+  if (won && pair[opp] === BOSS_ID) feats.push('boss');
+  if (won && trailedAtMidRound(state, roundIndex, mine.id)) feats.push('comeback');
+  if (supers > 0) feats.push('super');
 
   return {
     round: roundIndex + 1, rounds: totalRounds, startDate: r.startDate, endDate: r.endDate,
@@ -92,6 +113,7 @@ export function roundRecap(state: BattleState, userId: string, roundIndex: numbe
     damage: { me: Math.round(pair.damage[me]), opp: Math.round(pair.damage[opp]) },
     days, weighIns, late, bestHit: Math.round(bestHit), crochets, supers, combo, lossPct,
     nextOpponent,
+    feats,
     rank: rankIdx >= 0 ? rankIdx + 1 : null,
     ranked: state.standings.length
   };

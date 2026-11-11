@@ -7,8 +7,10 @@ import { db } from '@/lib/db';
 import { weighIns } from '@/lib/db/schema';
 import { displayName, endDateOf, fighterFor, fightPending, loadBundle, previewFor, superState } from '@/lib/battles';
 import { armSuper } from '@/app/actions/battle';
+import { BADGES } from '@/lib/engine/badges';
 import { RULES } from '@/lib/engine/rules';
 import { stageLabel, bmi } from '@/lib/engine/silhouette';
+import { rewardsFor } from '@/lib/career';
 import { personalSeries } from '@/lib/progress';
 import { liveBattles } from '@/lib/weighin';
 import { localDate, now, prettyDate, zonedInstant } from '@/lib/time';
@@ -22,7 +24,7 @@ export const metadata: Metadata = { title: 'Coup chargé' };
 const fmt = (n: number, d = 1) => n.toLocaleString('fr-FR', { minimumFractionDigits: d, maximumFractionDigits: d });
 const STAGE_K: Record<string, number> = { S1: 1, S2: 0.8, S3: 0.6, S4: 0.4, S5: 0.2, S6: 0 };
 
-export default async function CoupPage({ searchParams }: { searchParams: Promise<{ transfo?: string; corrige?: string }> }) {
+export default async function CoupPage({ searchParams }: { searchParams: Promise<{ transfo?: string; corrige?: string; badges?: string }> }) {
   const sp = await searchParams;
   const user = await requireFighter('/pesee/coup');
   const at = now();
@@ -30,9 +32,11 @@ export default async function CoupPage({ searchParams }: { searchParams: Promise
   const [wi] = await db.select().from(weighIns).where(and(eq(weighIns.userId, user.id), eq(weighIns.date, today))).limit(1);
   if (!wi) redirect('/pesee');
   const g = await personalSeries(user.id, today);
+  const reward = (await rewardsFor([user.id], at)).get(user.id);
   const live = await liveBattles(user.id);
   const [from, to] = (sp.transfo ?? '').split('-');
   const transfo = STAGE_K[from] !== undefined && STAGE_K[to] !== undefined ? { from, to } : null;
+  const newBadges = (sp.badges ?? '').split(',').map((k) => BADGES.find((x) => x.key === k)).filter((x) => !!x);
   const delta = g.trend !== null && g.prevTrend !== null ? g.trend - g.prevTrend : null;
 
   const cards = [];
@@ -65,7 +69,7 @@ export default async function CoupPage({ searchParams }: { searchParams: Promise
           </div>
         ) : (
           <>
-            <div className="absolute bottom-10 left-6"><Fighter cfg={fighterFor(user, g.trend ?? wi.weight, { w: 160, pose: first?.p?.attack.total ? 'punch' : 'guard' })} title={displayName(user)} /></div>
+            <div className="absolute bottom-10 left-6"><Fighter cfg={fighterFor(user, g.trend ?? wi.weight, { w: 160, pose: first?.p?.attack.total ? 'punch' : 'guard' }, reward)} title={displayName(user)} /></div>
             {first?.p ? (
               <div className="absolute right-3 top-16 animate-pop"><Burst text={`${Math.round(total)} PV`} sub="CHARGÉS" color={big ? '#FFD23D' : '#FFF4E3'} /></div>
             ) : null}
@@ -74,6 +78,16 @@ export default async function CoupPage({ searchParams }: { searchParams: Promise
       </RingScene>
 
       <section className="flex flex-col gap-4 px-4 py-5">
+        {newBadges.map((bd) => (
+          <Link key={bd.key} href="/profil#badges" className="card flex items-center gap-3 bg-soleil p-4 text-encre">
+            <span className="grid size-12 shrink-0 place-items-center rounded-full border-[3px] border-encre bg-creme"><Icon name={bd.icon} size={26} /></span>
+            <span className="min-w-0">
+              <span className="block text-[12px] font-bold uppercase tracking-[.14em]">Nouveau badge</span>
+              <span className="block font-display text-[22px] leading-tight">{bd.name}</span>
+              <span className="block text-[13px]">{bd.how}</span>
+            </span>
+          </Link>
+        ))}
         {transfo ? (
           <div className="card flex flex-col gap-1 p-4">
             <div className="font-display text-[22px] text-soleil">Silhouette {from} → {to} !</div>

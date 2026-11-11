@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { requireFighter } from '@/lib/auth';
 import { BOSS_FIGHTER, computeState, displayName, fighterFor, loadBundle, reactionsFor, roundOf, sideMembers, sideName, type Bundle } from '@/lib/battles';
+import { rewardsFor, type Reward } from '@/lib/career';
 import { commentaryParts } from '@/lib/engine/commentary';
 import { BOSS_ID } from '@/lib/engine/rules';
 import type { BattleState, PairingDay, SideAttack } from '@/lib/engine/types';
@@ -38,8 +39,9 @@ export default async function CombatPage({ params }: { params: Promise<{ id: str
     const s = state.players[uid]?.series.find((x) => x.date === date);
     return s?.trend ?? state.players[uid]?.startWeight ?? null;
   };
+  const rewards = await rewardsFor(bundle.members.map((m) => m.userId), now());
   const scenes: Scene[] = fight.pairings
-    .map((p, i) => toScene(bundle, p, date, i, trendAt, fight.dayIndex === 6))
+    .map((p, i) => toScene(bundle, p, date, i, trendAt, fight.dayIndex === 6, rewards))
     .sort((x, y) => Number(y.a.id === mySide || y.b.id === mySide) - Number(x.a.id === mySide || x.b.id === mySide));
   for (const s of scenes) s.mine = s.a.id === mySide || s.b.id === mySide;
 
@@ -81,7 +83,7 @@ export default async function CombatPage({ params }: { params: Promise<{ id: str
   );
 }
 
-function toScene(bundle: Bundle, p: PairingDay, date: string, i: number, trendAt: (uid: string) => number | null, lastDay: boolean): Scene {
+function toScene(bundle: Bundle, p: PairingDay, date: string, i: number, trendAt: (uid: string) => number | null, lastDay: boolean, rewards: Map<string, Reward>): Scene {
   const names: Record<string, string> = { [p.a]: sideName(bundle, p.a), [p.b]: sideName(bundle, p.b) };
   const supers: Record<string, string | undefined> = {};
   for (const sid of [p.a, p.b]) {
@@ -99,7 +101,7 @@ function toScene(bundle: Bundle, p: PairingDay, date: string, i: number, trendAt
       sub: sid === BOSS_ID ? 'Le boss du ring' : sid.startsWith('team-') ? ms.map((m) => displayName(m.user)).join(' & ') : ms[0]?.user.nickname ? `« ${ms[0].user.nickname} »` : '',
       fighters: sid === BOSS_ID
         ? [{ key: 'boss', cfg: { ...BOSS_FIGHTER, flip, w: 150 } }]
-        : ms.slice(0, 2).map((m, j) => ({ key: m.userId, cfg: fighterFor(m.user, trendAt(m.userId), { flip, w: j ? 112 : 150 }) })),
+        : ms.slice(0, 2).map((m, j) => ({ key: m.userId, cfg: fighterFor(m.user, trendAt(m.userId), { flip, w: j ? 112 : 150 }, rewards.get(m.userId)) })),
       attack: {
         total: att.total, jab: att.jab, crochet: att.crochet, super: att.super, teamBonus: att.teamBonus,
         weighed: sid === BOSS_ID || players.some((m) => m.weighed),

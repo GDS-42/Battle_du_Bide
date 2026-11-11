@@ -6,6 +6,7 @@ import { currentUser } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { battles } from '@/lib/db/schema';
 import { battleStatus, displayName, fighterFor, loadBundle } from '@/lib/battles';
+import { rewardsFor } from '@/lib/career';
 import { joinBattle } from '@/app/actions/battle';
 import { Fighter } from '@/components/Fighter';
 import { Icon, Logo, RingScene, Ribbon } from '@/components/ui';
@@ -29,6 +30,7 @@ export default async function InvitePage({ params, searchParams }: { params: Pro
   const b = bundle.battle;
   const closed = battleStatus(b, now()) !== 'warmup';
   const host = bundle.members.find((m) => m.userId === b.createdBy) ?? bundle.members[0];
+  const rewards = host ? await rewardsFor([host.userId], now()) : null;
   const user = await currentUser();
   const member = user && bundle.members.some((m) => m.userId === user.id);
   const full = bundle.members.length >= b.maxPlayers;
@@ -44,7 +46,7 @@ export default async function InvitePage({ params, searchParams }: { params: Pro
           <div className="extrude text-[46px]">{host ? displayName(host.user).toUpperCase() : 'ON'}<br />TE DÉFIE !</div>
         </div>
         <div className="absolute inset-x-4 bottom-[34px] flex items-end justify-between">
-          {host ? <Fighter cfg={fighterFor(host.user, null, { w: 130 })} /> : <span />}
+          {host ? <Fighter cfg={fighterFor(host.user, null, { w: 130 }, rewards?.get(host.userId))} /> : <span />}
           <div className="mb-24 grid size-14 place-items-center rounded-full border-[3px] border-encre bg-soleil font-sans text-[26px] font-black italic text-magenta">VS</div>
           <div className="relative">
             <Fighter cfg={{ k: 0.42, ghost: true, flip: true, w: 130 }} />

@@ -3,10 +3,10 @@ import Link from 'next/link';
 import { eq } from 'drizzle-orm';
 import { requireFighter } from '@/lib/auth';
 import { db } from '@/lib/db';
-import { pushSubscriptions, weighIns } from '@/lib/db/schema';
-import { battleStatus, computeState, displayName, fighterFor, loadBundle, userBattles } from '@/lib/battles';
+import { pushSubscriptions } from '@/lib/db/schema';
+import { displayName, fighterFor } from '@/lib/battles';
 import { bmi, stageLabel } from '@/lib/engine/silhouette';
-import { personalSeries } from '@/lib/progress';
+import { careerFor, rewardsFor } from '@/lib/career';
 import { vapidPublicKey } from '@/lib/push';
 import { localDate, now, prettyDate } from '@/lib/time';
 import { logout } from '@/app/actions/auth';
@@ -20,34 +20,28 @@ import { SettingsForm } from './SettingsForm';
 export const metadata: Metadata = { title: 'Profil' };
 
 const PERIODS = [['30', '30 jours'], ['90', '90 jours'], ['tout', 'Tout']] as const;
+const BADGE_GROUPS = [['regularite', 'Régularité'], ['progression', 'Progression'], ['combat', 'Combat']] as const;
+const fmtShort = (n: number) => n.toLocaleString('fr-FR', { maximumFractionDigits: 1 });
 
 export default async function ProfilPage({ searchParams }: { searchParams: Promise<{ erreur?: string; periode?: string }> }) {
   const { erreur, periode } = await searchParams;
   const user = await requireFighter('/profil');
   const at = now();
   const today = localDate(at, user.timezone);
-  const g = await personalSeries(user.id, today);
+  // Palmarès, badges et courbe : calculés à partir des pesées et des battles, jamais stockés.
+  const { career: c, badges, personal: g } = await careerFor(user, at);
+  const reward = (await rewardsFor([user.id], at)).get(user.id);
   const period = PERIODS.some(([k]) => k === periode) ? periode! : '30';
   const range = period === 'tout' ? null : Number(period);
   const lost = g.firstWeight !== null && g.trend !== null ? g.firstWeight - g.trend : null;
-  const count = (await db.select({ d: weighIns.date }).from(weighIns).where(eq(weighIns.userId, user.id))).length;
   const subs = (await db.select({ id: pushSubscriptions.id }).from(pushSubscriptions).where(eq(pushSubscriptions.userId, user.id))).length;
-  const list = await userBattles(user.id);
-  let titles = 0, finished = 0;
-  for (const b of list) {
-    if (battleStatus(b, at) !== 'finished') continue;
-    finished++;
-    const bundle = await loadBundle(b.id);
-    if (!bundle) continue;
-    const { state } = computeState(bundle, at);
-    if (state.champion && state.sides.find((s) => s.id === state.champion)?.members.includes(user.id)) titles++;
-  }
+  const earned = badges.filter((x) => x.earned).length;
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-[520px] flex-col">
       <RingScene height={300} className="border-b-[5px] border-encre">
         <div className="absolute left-4 top-[max(16px,env(safe-area-inset-top))]"><Ribbon>TON COMBATTANT</Ribbon></div>
-        <div className="absolute bottom-9 left-1/2 -translate-x-1/2"><Fighter cfg={fighterFor(user, g.trend ?? g.last, { w: 170 })} title={displayName(user)} /></div>
+        <div className="absolute bottom-9 left-1/2 -translate-x-1/2"><Fighter cfg={fighterFor(user, g.trend ?? g.last, { w: 170 }, reward)} title={displayName(user)} /></div>
         <div className="absolute right-4 top-16 flex flex-col items-end text-right">
           <span className="extrude text-[30px] leading-none">{displayName(user).toUpperCase()}</span>
           {user.nickname ? <span className="font-display text-[16px] text-soleil">« {user.nickname} »</span> : null}
@@ -57,9 +51,49 @@ export default async function ProfilPage({ searchParams }: { searchParams: Promi
 
       <section className="flex flex-col gap-4 px-4 py-5">
         <div className="grid grid-cols-3 gap-2">
-          <Stat k="Pesées" v={String(count)} />
-          <Stat k={finished ? `Battles · ${finished} finie${finished > 1 ? 's' : ''}` : 'Battles'} v={String(list.length)} />
-          <Stat k="Ceintures" v={String(titles)} />
+          <Stat k="Pesées" v={String(c.weighIns)} />
+          <Stat k={`Série en cours · record ×${c.bestStreak}`} v={`×${c.currentStreak}`} />
+          <Stat k={c.belts > 1 ? 'Ceintures' : 'Ceinture'} v={String(c.belts)} />
+          <Stat k={c.roundsWon > 1 ? 'Rounds gagnés' : 'Round gagné'} v={String(c.roundsWon)} />
+          <Stat k="K.O." v={String(c.kos)} />
+          <Stat k={c.finished ? `Battles · ${c.finished} finie${c.finished > 1 ? 's' : ''}` : 'Battles'} v={String(c.battles)} />
+        </div>
+        {reward?.gold || reward?.belt ? (
+          <p className="card-line flex items-center gap-3 px-4 py-3 text-[15px]">
+            <Icon name="trophy" className="shrink-0 text-soleil" />
+            <span>
+              {reward.belt ? <>Tu portes la <b className="text-soleil">ceinture de champion</b>. </> : null}
+              {reward.gold ? <>Tes <b className="text-soleil">gants sont dorés</b> : ils le restent tant que ta série tient.</> : null}
+            </span>
+          </p>
+        ) : null}
+
+        <div id="badges" className="card flex scroll-mt-4 flex-col gap-3 p-4">
+          <div className="flex items-baseline justify-between gap-2">
+            <h2 className="font-display text-[20px] text-soleil">Mes badges</h2>
+            <span className="text-[13px] text-lilas">{earned} / {badges.length}</span>
+          </div>
+          {BADGE_GROUPS.map(([group, title]) => (
+            <div key={group} className="flex flex-col gap-2">
+              <span className="label">{title}</span>
+              <ul className="grid grid-cols-1 gap-2">
+                {badges.filter((x) => x.def.group === group).map(({ def, earned: ok, value }) => (
+                  <li key={def.key} className={`flex items-center gap-3 rounded-2xl border-2 px-3 py-2 ${ok ? 'border-soleil bg-encre' : 'border-prune opacity-70'}`}>
+                    <span className={`grid size-11 shrink-0 place-items-center rounded-full border-[3px] border-encre ${ok ? 'bg-soleil text-encre' : 'bg-violet-2 text-lilas'}`}>
+                      <Icon name={ok ? def.icon : 'lock'} size={22} />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className={`block font-display text-[17px] leading-tight ${ok ? 'text-soleil' : ''}`}>{def.name}</span>
+                      <span className="block text-[13px] leading-snug text-lilas">{def.how}</span>
+                    </span>
+                    {ok ? <span className="sr-only">Badge obtenu</span>
+                      : def.goal > 1 ? <span className="shrink-0 text-right text-[12px] font-bold text-lilas">{fmtShort(Math.min(value, def.goal))} / {def.goal}{def.unit ? <><br />{def.unit}</> : null}</span>
+                      : <span className="sr-only">Badge à débloquer</span>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
         <div id="courbe" className="card flex scroll-mt-4 flex-col gap-3 p-4">
           <div className="flex items-baseline justify-between gap-2">
@@ -71,7 +105,7 @@ export default async function ProfilPage({ searchParams }: { searchParams: Promi
               <div className="grid grid-cols-3 gap-2 text-center">
                 <Fact k={`Départ · ${prettyDate(g.first!, false)}`} v={`${fmt(g.firstWeight!)} kg`} />
                 <Fact k="Tendance" v={g.trend !== null ? `${fmt(g.trend)} kg` : '—'} />
-                <Fact k="Évolution" v={lost !== null ? `${lost >= 0 ? '−' : '+'}${fmt(Math.abs(lost))} kg` : '—'} strong={lost !== null && lost > 0} />
+                <Fact k="Évolution" v={lost === null ? '—' : Math.abs(lost) < 0.05 ? 'stable' : `${lost > 0 ? '−' : '+'}${fmt(Math.abs(lost))} kg`} strong={lost !== null && lost >= 0.05} />
               </div>
               <WeightChart days={g.days} range={range} label="Courbe de toutes tes pesées" />
               {g.days.length > 30 ? (

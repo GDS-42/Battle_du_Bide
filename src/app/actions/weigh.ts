@@ -17,5 +17,6 @@ export async function submitWeighIn(_prev: WeighState, form: FormData): Promise<
   const q = new URLSearchParams();
   if (res.transformation) q.set('transfo', `${res.transformation.from}-${res.transformation.to}`);
   if (res.updated) q.set('corrige', '1');
+  if (res.badges.length) q.set('badges', res.badges.join(','));
   redirect(`/pesee/coup${q.size ? `?${q}` : ''}`);
 }

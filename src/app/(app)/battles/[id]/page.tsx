@@ -7,8 +7,10 @@ import {
   roundOf, sideMembers, sideName, superState, warmupLabel
 } from '@/lib/battles';
 import { beltHeld, roundPairings } from '@/lib/engine/battle';
+import { trendLabel } from '@/lib/engine/recap';
 import { BOSS_ID } from '@/lib/engine/rules';
 import { formatEuros, settleStakes } from '@/lib/engine/stakes';
+import { rewardsFor } from '@/lib/career';
 import { personalSeries } from '@/lib/progress';
 import { canStartTonight, START_MAX_DAYS } from '@/lib/start-date';
 import { TAUNTS } from '@/lib/taunts';
@@ -54,9 +56,11 @@ export default async function RingPage({ params, searchParams }: { params: Promi
   const yesterday = inBattle ? previewFor(bundle, user.id, addDays(today, -1)) : null;
   const { armed: superArmed, ready: superReady } = superState(bundle, user.id, at);
   const trendOf = (uid: string) => state.players[uid]?.trend ?? bundle.weighIns.filter((w) => w.userId === uid).at(-1)?.weight ?? null;
+  // Récompenses portées par les combattants : gants dorés (série de 21 jours), ceinture de champion
+  const rewards = await rewardsFor(bundle.members.map((m) => m.userId), at);
   const fighterOfSide = (sideId: string, flip: boolean, w: number) => {
     if (sideId === BOSS_ID) return [{ key: 'boss', cfg: { ...BOSS_FIGHTER, flip, w } }];
-    return sideMembers(bundle, sideId).slice(0, 2).map((m, i) => ({ key: m.userId, cfg: fighterFor(m.user, trendOf(m.userId), { flip, w: i ? Math.round(w * 0.8) : w }) }));
+    return sideMembers(bundle, sideId).slice(0, 2).map((m, i) => ({ key: m.userId, cfg: fighterFor(m.user, trendOf(m.userId), { flip, w: i ? Math.round(w * 0.8) : w }, rewards.get(m.userId)) }));
   };
   // Photo de balance (mode transparent) : la dernière déjà révélée
   const photoOf = (uid: string) => !pudique && b.photoProof
@@ -196,7 +200,7 @@ export default async function RingPage({ params, searchParams }: { params: Promi
                 <div className="flex flex-col gap-1">
                   <div className="flex items-baseline justify-between gap-2"><span className="label">Ta courbe</span>
                     <span className="text-right text-sm">
-                      {showLoss ? <b className="text-soleil">{me.lossPct >= 0 ? '−' : '+'}{fmt(Math.abs(me.lossPct), 2)} %</b> : null}
+                      {showLoss ? <b className="text-soleil">{trendLabel(me.lossPct)}</b> : null}
                       {personal.trend !== null ? <span className="text-lilas">{showLoss ? ' · ' : ''}{fmt(personal.trend, 1)} kg{pudique ? ' (visible par toi seul)' : ''}</span> : null}
                     </span></div>
                   <WeightChart days={personal.days} range={30} marker={{ date: b.startDate, label: 'Début' }} label="Courbe de tes pesées" />
@@ -214,12 +218,12 @@ export default async function RingPage({ params, searchParams }: { params: Promi
               return (
                 <div key={m.userId} className="card-line flex items-center gap-3 px-3 py-2">
                   <div className="relative h-[60px] w-[54px] shrink-0 overflow-hidden rounded-xl bg-violet-2">
-                    <div className="absolute left-1/2 top-0 -ml-[40px]"><Fighter cfg={fighterFor(m.user, trendOf(m.userId), { w: 80 })} /></div>
+                    <div className="absolute left-1/2 top-0 -ml-[40px]"><Fighter cfg={fighterFor(m.user, trendOf(m.userId), { w: 80 }, rewards.get(m.userId))} /></div>
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="truncate font-display text-[17px]">{displayName(m.user)}{m.user.nickname ? <span className="text-lilas"> « {m.user.nickname} »</span> : null}</div>
                     <div className="text-[13px] text-lilas">
-                      {p?.startWeight ? <>{p.lossPct >= 0 ? '−' : '+'}{fmt(Math.abs(p.lossPct), 2)} %{!pudique && p.trend ? ` · ${fmt(p.trend)} kg` : ''}{status === 'finished' ? ` · meilleur combo ×${p.bestCombo}` : ` · combo ×${p.combo}`}</> : 'pas encore de pesée'}
+                      {p?.startWeight ? <>{trendLabel(p.lossPct)}{!pudique && p.trend ? ` · ${fmt(p.trend)} kg` : ''}{status === 'finished' ? ` · meilleur combo ×${p.bestCombo}` : ` · combo ×${p.combo}`}</> : 'pas encore de pesée'}
                       {b.format === 'equipes' ? ` · ${b.teamNames?.[String(m.team ?? 1)] ?? `Équipe ${m.team}`}` : ''}
                     </div>
                   </div>

@@ -238,9 +238,12 @@ tendance_du_jour = tendance_d_hier + α × (pesée_du_jour − tendance_d_hier)
 
 ### 8.3 Ce qui s'ajoute au fil des battles
 
-- **Équipement** : gants, short, bandeau…, débloqué par les victoires, les KO et les combos.
-- **Aura** : plus le combo est long, plus elle est intense.
-- **Ceintures** : une par battle gagnée, exposées sur le profil.
+- **Gants dorés** : à 21 jours de pesée d'affilée, les gants du combattant deviennent dorés. Ils le restent tant que la série tient : les perdre fait plus mal que ne pas les avoir.
+- **Ceinture de champion** : le vainqueur de sa dernière battle terminée la porte à la taille, visible de ses rivaux, tant que la défense tient (en solo).
+- **Badges** : 16 badges calculés à partir des pesées et des battles, jamais stockés. Régularité (première pesée, séries de 7, 21 et 50 jours), progression (premier kilo, −2 %, −5 %, −10 %), combat (premier crochet, super, round gagné, cinq rounds, K.O., vainqueur du Bide, remontée, ceinture). Un joueur qui stagne en poids gagne quand même par sa régularité.
+- **Palmarès** dans le profil : pesées, série en cours et record, rounds gagnés, K.O., battles, ceintures.
+- **Exploits du round**, affichés dans le bilan : 7 pesées sur 7, victoire par K.O., Le Bide au tapis, remontée, super déclenché.
+- Plus tard : équipement à débloquer (short, bandeau…) et aura de combo.
 
 ---
 

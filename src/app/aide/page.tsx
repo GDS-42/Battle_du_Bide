@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { GOLD_STREAK } from '@/lib/engine/badges';
 import { BOSS_NAME, RULES } from '@/lib/engine/rules';
 import { Icon, Ribbon, TopBar } from '@/components/ui';
 
@@ -169,7 +170,21 @@ export default function AidePage() {
           </ul>
         </Block>
 
-        {/* 8. Vie privée et astuces */}
+        {/* 8. Badges et récompenses */}
+        <Block icon="trophy" title="Badges et récompenses">
+          <ul className="flex flex-col gap-2 text-[15px] leading-snug">
+            <Bullet>Des <b className="text-soleil">badges</b> saluent ta régularité, ta progression et tes combats. Tu les retrouves dans ton Profil.</Bullet>
+            <Bullet>
+              <b className="text-soleil">Gants dorés</b> : à {GOLD_STREAK} jours de pesée d'affilée, tes gants deviennent dorés, et le restent tant que ta série tient.
+            </Bullet>
+            <Bullet>
+              <b className="text-soleil">Ceinture de champion</b> : le vainqueur d'une battle la porte à la taille, visible de tous ses rivaux, tant qu'il la défend.
+            </Bullet>
+            <Bullet>À la fin de chaque round, ton bilan affiche tes exploits de la semaine.</Bullet>
+          </ul>
+        </Block>
+
+        {/* 9. Vie privée et astuces */}
         <Block icon="zap" title="Vie privée et astuces">
           <ul className="flex flex-col gap-3">
             <Step icon="lock" k="Mode pudique">

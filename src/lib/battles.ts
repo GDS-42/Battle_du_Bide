@@ -155,9 +155,21 @@ export function sideMembers(bundle: Bundle, sideId: string): MemberRow[] {
 
 export const BOSS_FIGHTER: FighterRender = { k: 1, base: 'A', skin: 'cacao', outfit: 'catch', mask: true, main: '#5A2A7A', trim: '#FFD23D' };
 
-export function fighterFor(u: Pick<User, 'fighter' | 'presetKey' | 'heightCm'>, weight: number | null | undefined, extra: Partial<FighterRender> = {}): FighterRender {
+/** Couleur des gants dorés (série de 21 jours). */
+export const GOLD_GLOVE = '#FFC61A';
+
+/**
+ * Paramètres de dessin du combattant d'un joueur : son apparence, sa corpulence (IMC réel) et,
+ * s'il en a, ses récompenses (gants dorés, ceinture de champion).
+ */
+export function fighterFor(
+  u: Pick<User, 'fighter' | 'presetKey' | 'heightCm'>,
+  weight: number | null | undefined,
+  extra: Partial<FighterRender> = {},
+  reward?: { gold: boolean; belt: boolean } | null
+): FighterRender {
   const cfg: FighterConfig = u.fighter ?? PRESETS.find((p) => p.key === u.presetKey)?.cfg ?? PRESETS[0].cfg;
-  return { ...cfg, k: kFromBmi(bmi(weight, u.heightCm)), ...extra };
+  return { ...cfg, k: kFromBmi(bmi(weight, u.heightCm)), ...(reward?.gold ? { glove: GOLD_GLOVE } : {}), ...(reward?.belt ? { champ: true } : {}), ...extra };
 }
 
 export async function userBattles(userId: string) {

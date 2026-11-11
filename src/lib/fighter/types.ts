@@ -38,4 +38,6 @@ export interface FighterRender extends FighterConfig {
   flip?: boolean;
   ghost?: boolean;
   w?: number;
+  /** Ceinture de champion portée à la taille (récompense ; dessinée par le composant Fighter, pas par le générateur). */
+  champ?: boolean;
 }

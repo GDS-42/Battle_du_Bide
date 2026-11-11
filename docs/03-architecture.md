@@ -43,6 +43,7 @@ src/
     fighter/                    générateur de combattant et presets
     db/                         schéma Drizzle, connexion, migrations
     battles.ts, weighin.ts      chargement des données, règles d'écriture
+    career.ts                   palmarès, badges et récompenses portées par le combattant (calculés, jamais stockés)
     notify.ts, push.ts          tâche planifiée et notifications
     auth.ts, mail.ts            sessions et liens magiques
     time.ts                     dates locales par fuseau (sans dépendance)

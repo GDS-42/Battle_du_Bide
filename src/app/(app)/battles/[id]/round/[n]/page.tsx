@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { requireFighter } from '@/lib/auth';
 import { displayName, loadBundle, revealedUntil, roundRecapFor, sideName } from '@/lib/battles';
-import { resultLabel, trendLabel } from '@/lib/engine/recap';
+import { FEAT_LABELS, resultLabel, trendLabel } from '@/lib/engine/recap';
 import { addDays, now, prettyDate } from '@/lib/time';
 import { ShareRound } from '@/components/ShareRound';
 import { HpBar, Icon, Ribbon, TopBar } from '@/components/ui';
@@ -58,6 +58,15 @@ export default async function RoundPage({ params }: { params: Promise<{ id: stri
           <Stat k={r.crochets > 1 ? 'Crochets' : 'Crochet'} v={String(r.crochets)} />
           <Stat k="Tendance" v={trendLabel(r.lossPct)} good={r.lossPct !== null && r.lossPct > 0} />
         </div>
+        {r.feats.length ? (
+          <div className="flex flex-wrap items-center gap-2" aria-label="Exploits du round">
+            {r.feats.map((f) => (
+              <span key={f} className="flex items-center gap-1.5 rounded-full border-2 border-encre bg-soleil px-3 py-1 text-[13px] font-bold text-encre">
+                <Icon name="trophy" size={15} /> {FEAT_LABELS[f]}
+              </span>
+            ))}
+          </div>
+        ) : null}
         {r.late || r.supers ? (
           <p className="text-[13px] text-lilas">
             {r.supers ? `Super déclenché ${r.supers > 1 ? `${r.supers} fois` : 'une fois'}. ` : ''}

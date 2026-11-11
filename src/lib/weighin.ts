@@ -8,7 +8,8 @@ import { battleStatus, displayName, endDateOf, loadBundle, settleStart, wordOfDa
 import { rivalsOn } from './engine/battle';
 import { sendOnce } from './push';
 import { bmi, stageIndex } from './engine/silhouette';
-import { globalTrend } from './progress';
+import { BADGES, career, earnedKeys } from './engine/badges';
+import { personalSeries } from './progress';
 import { localDate, now, zonedInstant } from './time';
 
 export const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(/*turbopackIgnore: true*/ process.cwd(), 'uploads');
@@ -16,7 +17,7 @@ const EDIT_MINUTES = 10;
 const STAGES = ['S1', 'S2', 'S3', 'S4', 'S5', 'S6'];
 
 export type WeighResult =
-  | { ok: true; weighIn: WeighIn; updated: boolean; transformation: { from: string; to: string } | null; lateFor: string[] }
+  | { ok: true; weighIn: WeighIn; updated: boolean; transformation: { from: string; to: string } | null; lateFor: string[]; /** Badges de régularité et de progression que cette pesée vient de débloquer. */ badges: string[] }
   | { ok: false; error: string };
 
 /** Battles en cours (ou en échauffement) du joueur. */
@@ -39,7 +40,7 @@ export async function recordWeighIn(user: User, input: { weight: number; comment
   const fightsToday = live.filter((b) => date >= b.startDate && date <= endDateOf(b)).map((b) => ({ b, at: zonedInstant(date, b.fightTime, b.timezone) }));
   const lateFor = fightsToday.filter((f) => at >= f.at).map((f) => f.b.name);
 
-  const before = await globalTrend(user.id, date);
+  const before = await personalSeries(user.id, date);
   const [existing] = await db.select().from(weighIns).where(and(eq(weighIns.userId, user.id), eq(weighIns.date, date))).limit(1);
   let row: WeighIn;
   let updated = false;
@@ -70,7 +71,7 @@ export async function recordWeighIn(user: User, input: { weight: number; comment
 
   // « Transformation ! » : la silhouette clé change avec la nouvelle tendance.
   let transformation: { from: string; to: string } | null = null;
-  const after = await globalTrend(user.id, date);
+  const after = await personalSeries(user.id, date);
   const s0 = stageIndex(bmi(before.trend, user.heightCm)), s1 = stageIndex(bmi(after.trend, user.heightCm));
   if (s0 >= 0 && s1 >= 0 && s1 !== s0) {
     transformation = { from: STAGES[s0], to: STAGES[s1] };
@@ -85,7 +86,17 @@ export async function recordWeighIn(user: User, input: { weight: number; comment
     await db.insert(feed).values(live.map((b) => ({ battleId: b.id, userId: user.id, kind: 'comment' as const, text: input.comment! })));
   }
   if (!updated) await notifyRivals(user, date, fightsToday.filter((f) => at < f.at).map((f) => f.b.id));
-  return { ok: true, weighIn: row, updated, transformation, lateFor };
+
+  // Badges débloqués par cette pesée (régularité et progression : ceux de combat se gagnent le soir).
+  const had = new Set(earnedKeys(career({ days: before.days, battles: [] }, user.id)));
+  const badges = earnedKeys(career({ days: after.days, battles: [] }, user.id)).filter((k) => !had.has(k));
+  if (badges.length && live.length) {
+    const names = badges.map((k) => `« ${BADGES.find((b) => b.key === k)!.name} »`).join(' et ');
+    await db.insert(feed).values(live.map((b) => ({
+      battleId: b.id, userId: user.id, kind: 'system' as const, text: `${displayName(user)} décroche ${badges.length > 1 ? 'les badges' : 'le badge'} ${names} !`
+    })));
+  }
+  return { ok: true, weighIn: row, updated, transformation, lateFor, badges };
 }
 
 /**
