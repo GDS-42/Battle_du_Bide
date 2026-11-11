@@ -259,10 +259,11 @@ export default async function RingPage({ params, searchParams }: { params: Promi
                   const p = r.pairings.find((x) => x.a === mySide?.id || x.b === mySide?.id) ?? r.pairings[0];
                   const won = p?.winner && p.winner === mySide?.id, lost = p?.winner && p.winner !== mySide?.id;
                   return (
-                    <div key={r.index} className={`rounded-xl border-2 px-2 py-2 text-center ${won ? 'border-encre bg-soleil text-encre' : lost ? 'border-prune bg-violet' : 'border-prune'}`}>
+                    <Link key={r.index} href={`/battles/${id}/round/${r.index + 1}`} aria-label={`Bilan du round ${r.index + 1}`}
+                      className={`rounded-xl border-2 px-2 py-2 text-center ${won ? 'border-encre bg-soleil text-encre' : lost ? 'border-prune bg-violet' : 'border-prune'}`}>
                       <div className="font-display text-[15px]">R{r.index + 1}</div>
                       <div className="text-[11px]">{!p?.complete ? 'en cours' : won ? (p.ko ? 'K.O. !' : 'gagné') : lost ? 'perdu' : 'nul'}</div>
-                    </div>
+                    </Link>
                   );
                 })}
               </div>

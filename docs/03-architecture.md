@@ -31,7 +31,7 @@ src/
     combattant/                 studio : galerie → retouches → fiche
     b/[code]/                   page d'invitation (publique)
     (app)/                      espace connecté, avec barre de navigation
-      battles/                  liste, création, ring, replay du combat du soir
+      battles/                  liste, création, ring, replay du combat du soir, bilan de round et son image à partager
       pesee/                    pesée du matin, puis « coup chargé »
       profil/                   combattant, réglages, export, suppression
     actions/                    server actions (auth, combattant, pesée, battle, profil)

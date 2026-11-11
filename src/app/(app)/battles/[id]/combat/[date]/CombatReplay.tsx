@@ -40,9 +40,9 @@ function hitOf(s: SideView): { text: string; sub?: string; sound: SoundName; col
   return { text: 'JAB', sub: `${r(a.total)} PV${a.blocked ? ' · crochet bloqué' : ''}`, sound: 'jab', color: '#FFF4E3', big: false };
 }
 
-export function CombatReplay({ battleId, title, round, day, when, dateLabel, scenes, reactions, target, lastOfRound }: {
+export function CombatReplay({ battleId, title, round, day, when, dateLabel, scenes, reactions, target, lastOfRound, recapHref }: {
   battleId: string; title: string; round: number; day: number; when: string; dateLabel: string;
-  scenes: Scene[]; reactions: Reaction[]; target: string; lastOfRound: boolean;
+  scenes: Scene[]; reactions: Reaction[]; target: string; lastOfRound: boolean; recapHref: string | null;
 }) {
   const [idx, setIdx] = useState(0);
   const [step, setStep] = useState(0);
@@ -189,6 +189,10 @@ export function CombatReplay({ battleId, title, round, day, when, dateLabel, sce
           </p>
         ))}
       </section>
+
+      {step === 3 && recapHref && s.mine ? (
+        <a href={recapHref} className="btn btn-soleil mx-3.5 mt-4 text-[20px]"><Icon name="trophy" size={20} /> VOIR LE BILAN DU ROUND</a>
+      ) : null}
 
       {step === 3 ? (
         <section className="mx-3.5 mt-4 flex flex-col gap-2">

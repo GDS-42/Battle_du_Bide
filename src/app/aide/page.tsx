@@ -134,6 +134,7 @@ export default function AidePage() {
           <ul className="flex flex-col gap-2 text-[15px] leading-snug">
             <Bullet>Dans la journée, tu vois qui s'est pesé, mais les résultats restent secrets jusqu'au combat.</Bullet>
             <Bullet>À l'heure du combat, les coups du jour sont échangés. Chaque combat se revoit en replay.</Bullet>
+            <Bullet>À la fin de chaque round, ton bilan t'attend, avec une image à partager (touche un round sur le ring).</Bullet>
             <Bullet>Au début de chaque round (tous les 7 jours), chaque camp repart avec {pv(RULES.HP)}.</Bullet>
             <Bullet>Tombé à 0&nbsp;PV ? <b className="text-soleil">K.O.</b> : le round s'arrête là et va à l'adversaire.</Bullet>
             <Bullet>Sinon, au 7ᵉ soir, celui qui a le plus de PV gagne le round (à égalité : celui qui s'est pesé le plus de jours).</Bullet>

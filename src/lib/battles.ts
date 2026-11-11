@@ -4,6 +4,7 @@ import { and, asc, desc, eq, gte, inArray } from 'drizzle-orm';
 import { db } from './db';
 import { battleMembers, battles, feed, reactions, supers, users, weighIns, type Battle, type User } from './db/schema';
 import { battleEndDate, buildSides, playerDayPreview, simulateBattle } from './engine/battle';
+import { roundRecap, type RoundRecap } from './engine/recap';
 import { BOSS_ID, BOSS_NAME } from './engine/rules';
 import { bmi, kFromBmi } from './engine/silhouette';
 import type { BattleState, EngineInput } from './engine/types';
@@ -211,4 +212,15 @@ export function warmupLabel(b: Pick<Battle, 'startDate' | 'fightTime' | 'timezon
   return b.startDate <= battleToday(b, at)
     ? `Premier combat ce soir à ${b.fightTime.replace(':', ' h ')}`
     : `Échauffement · début ${prettyDate(b.startDate)}`;
+}
+
+/** Bilan du round `n` (1 = premier) pour un joueur, ou null si ce round n'a pas encore commencé. */
+export function roundRecapFor(bundle: Bundle, userId: string, n: number, at: Date): RoundRecap | null {
+  const b = bundle.battle;
+  if (!Number.isInteger(n) || n < 1 || n > b.rounds) return null;
+  const until = revealedUntil(b, at);
+  const start = addDays(b.startDate, (n - 1) * 7), end = addDays(start, 6);
+  if (!until || until < start) return null;
+  // Simulé jusqu'à la fin du round seulement : le classement est celui « à l'issue du round ».
+  return roundRecap(simulateBattle(engineInput(bundle), until < end ? until : end), userId, n - 1, b.rounds);
 }

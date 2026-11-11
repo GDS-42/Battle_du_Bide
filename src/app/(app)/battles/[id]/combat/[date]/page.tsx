@@ -51,6 +51,9 @@ export default async function CombatPage({ params }: { params: Promise<{ id: str
     mine: rx.some((x) => x.emoji === r.key && x.userId === user.id)
   }));
   const { round, day } = roundOf(b, date);
+  // Bilan du round : proposé à la fin du replay quand le round de mon camp vient de se terminer (7e soir ou K.O.).
+  const myRound = state.rounds[fight.roundIndex]?.pairings.find((p) => p.a === mySide || p.b === mySide);
+  const recapHref = myRound?.complete && (day === 7 || myRound.koDate === date) ? `/battles/${id}/round/${round}` : null;
   const prev = date > b.startDate ? addDays(date, -1) : null;
   const next = date < until ? addDays(date, 1) : null;
 
@@ -67,6 +70,7 @@ export default async function CombatPage({ params }: { params: Promise<{ id: str
         reactions={reactions}
         target={target}
         lastOfRound={day === 7}
+        recapHref={recapHref}
       />
       <nav className="flex items-center justify-between gap-2 px-4 pb-6 pt-2 text-sm font-bold">
         {prev ? <Link className="btn btn-ghost min-h-11 px-3 text-sm" href={`/battles/${id}/combat/${prev}`}>← Veille</Link> : <span />}

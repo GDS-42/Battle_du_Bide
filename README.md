@@ -14,6 +14,7 @@ Chaque matin, ta pesée charge ton coup. À 21 h, les combattants montent sur le
 - **Le combat du soir** rejoué en animation, avec barres de vie, éclats, commentateur, sons d'arcade et réactions.
 - **Le ring** : face-à-face, classement, rounds, fil de provocations, coups de coude, finale avec ceinture et partage de la cagnotte, revanche en un clic.
 - **Notifications** (rappel du matin, combat prêt, série en danger) et **app installable** sur l'écran d'accueil.
+- **Le bilan de round** : à la fin de chaque round, ton score, tes pesées, ta série et ta tendance, avec une image à envoyer à tes rivaux (PV et %, jamais de kilos).
 - **Ta courbe** : tes pesées et ta tendance en kilos, dès la première pesée (échauffement compris) ; sur le ring, après chaque pesée et dans le profil (30 jours, 90 jours ou tout l'historique). Visible par toi seul.
 - **Tes données** : export CSV/JSON et suppression du compte.
 
