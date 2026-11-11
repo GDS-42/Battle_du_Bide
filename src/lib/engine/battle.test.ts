@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { battleEndDate, beltHeld, buildSides, playerDayPreview, roundPairings, simulateBattle, simulatePlayer } from './battle';
+import { battleEndDate, beltHeld, buildSides, playerDayPreview, rivalsOn, roundPairings, simulateBattle, simulatePlayer } from './battle';
 import { commentary } from './commentary';
 import { RULES } from './rules';
 import { settleStakes } from './stakes';
@@ -389,5 +389,33 @@ describe('pesée après l’heure du combat', () => {
     expect(p.attacks.a.total).toBe(0);
     expect(p.attacks.a.members.marc.super).toBe(0);
     expect(simulateBattle(input, START).rounds[0].pairings[0].weighIns).toEqual({ a: 0, b: 1 });
+  });
+});
+
+describe('rivalsOn : qui prévenir quand un joueur se pèse', () => {
+  it('duel : l’adversaire, pas de coéquipier', () => {
+    const b = duel([]).battle;
+    expect(rivalsOn(b, 'marc', START)).toEqual({ opponents: ['julie'], mates: [] });
+  });
+
+  it('rien avant le départ ni après la fin', () => {
+    const b = duel([]).battle;
+    expect(rivalsOn(b, 'marc', addDays(START, -1)).opponents).toEqual([]);
+    expect(rivalsOn(b, 'marc', addDays(battleEndDate(b), 1)).opponents).toEqual([]);
+    expect(rivalsOn(b, 'inconnu', START)).toEqual({ opponents: [], mates: [] });
+  });
+
+  it('équipes : les deux adversaires et le coéquipier', () => {
+    const b = { format: 'equipes' as const, startDate: START, rounds: 2, members: [{ userId: 'a', team: 1 }, { userId: 'b', team: 1 }, { userId: 'c', team: 2 }, { userId: 'd', team: 2 }] };
+    expect(rivalsOn(b, 'a', START)).toEqual({ opponents: ['c', 'd'], mates: ['b'] });
+  });
+
+  it('tournoi : l’adversaire change à chaque round, et personne face au Bide', () => {
+    const b = { format: 'tournoi' as const, startDate: START, rounds: 3, members: [{ userId: 'a' }, { userId: 'b' }, { userId: 'c' }] };
+    const perRound = [0, 7, 14].map((d) => rivalsOn(b, 'a', addDays(START, d)).opponents.join(','));
+    expect(new Set(perRound).size).toBe(3);
+    expect(perRound).toContain(''); // un round contre Le Bide : aucun humain à prévenir
+    expect(perRound).toContain('b');
+    expect(perRound).toContain('c');
   });
 });

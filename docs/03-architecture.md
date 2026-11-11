@@ -92,6 +92,7 @@ Au démarrage, [`instrumentation-node.ts`](../src/instrumentation-node.ts) appli
 | Pesée du matin | à l'heure de pesée choisie (jusqu'à 3 h après), si pas encore pesé |
 | Combat prêt | à l'heure du combat (jusqu'à 3 h après) ; message spécial en fin de round et en finale |
 | Série en danger | dans l'heure avant le combat, si pas pesé et combo ≥ 3 |
+| Ton rival vient de se peser | à la pesée d'un joueur : son adversaire du round (et son coéquipier) pas encore pesé, une fois par jour et par battle |
 | Coup de coude, arrivée d'un joueur | immédiatement |
 
 Pour piloter la tâche depuis l'extérieur (cron, plusieurs instances) : `INTERNAL_CLOCK=0` et `CRON_SECRET`, puis appeler `POST /api/cron/tick` avec `Authorization: Bearer <CRON_SECRET>` chaque minute.

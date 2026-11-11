@@ -314,6 +314,7 @@ Entre deux battles, tous les joueurs s'allient contre **« Le Bide »**, le boss
 | Moment | Exemple |
 |---|---|
 | **Rappel du matin**, à l'heure choisie à l'inscription | *« ⚖️ Ton coup t'attend. Julie a déjà chargé le sien… »* |
+| **Ton rival vient de se peser** (adversaire du round ou coéquipier) | *« 🥊 Julie a chargé son coup. À toi, avant 21 h ! »* |
 | **21 h, le combat est prêt** | *« 🔔 Round 3, jour 4 : le combat est prêt ! »* |
 | Événement : coup de coude reçu | *« 👊 Julie te met un coup de coude. »* |
 | Événement : KO, ceinture, transformation | *« 💥 KO ! »*, *« 🏆 La ceinture est vacante ! »*, *« ✨ Ton combattant se transforme ! »* |

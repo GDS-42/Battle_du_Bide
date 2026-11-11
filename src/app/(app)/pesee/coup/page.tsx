@@ -5,13 +5,14 @@ import { redirect } from 'next/navigation';
 import { requireFighter } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { weighIns } from '@/lib/db/schema';
-import { displayName, endDateOf, fighterFor, loadBundle, previewFor, superState } from '@/lib/battles';
+import { displayName, endDateOf, fighterFor, fightPending, loadBundle, previewFor, superState } from '@/lib/battles';
 import { armSuper } from '@/app/actions/battle';
 import { RULES } from '@/lib/engine/rules';
 import { stageLabel, bmi } from '@/lib/engine/silhouette';
 import { personalSeries } from '@/lib/progress';
 import { liveBattles } from '@/lib/weighin';
-import { localDate, now, prettyDate } from '@/lib/time';
+import { localDate, now, prettyDate, zonedInstant } from '@/lib/time';
+import { Countdown } from '@/components/Countdown';
 import { Fighter } from '@/components/Fighter';
 import { WeightChart } from '@/components/WeightChart';
 import { Burst, Gauge, Icon, RingScene, Ribbon, TopBar } from '@/components/ui';
@@ -84,7 +85,11 @@ export default async function CoupPage({ searchParams }: { searchParams: Promise
           <div key={b.id} className="card flex flex-col gap-3 p-4">
             <div className="flex items-baseline justify-between gap-2">
               <span className="truncate font-display text-[20px]">{b.name}</span>
-              <span className="shrink-0 text-[13px] text-lilas">{today < b.startDate ? `début ${prettyDate(b.startDate, false)}` : `verdict à ${b.fightTime}`}</span>
+              <span className="shrink-0 text-[13px] text-lilas">
+                {today < b.startDate ? `début ${prettyDate(b.startDate, false)}`
+                  : fightPending(b, today, at) ? <Countdown prefix="verdict dans" target={zonedInstant(today, b.fightTime, b.timezone).getTime()} serverNow={at.getTime()} />
+                  : 'combat joué'}
+              </span>
             </div>
             {!p || !p.attack.weighed ? (
               <p className="text-sm text-lilas">

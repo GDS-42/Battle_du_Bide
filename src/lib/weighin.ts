@@ -4,7 +4,9 @@ import path from 'node:path';
 import { and, eq } from 'drizzle-orm';
 import { db } from './db';
 import { battleMembers, battles, feed, weighIns, type User, type WeighIn } from './db/schema';
-import { battleStatus, displayName, endDateOf, settleStart, wordOfDay } from './battles';
+import { battleStatus, displayName, endDateOf, loadBundle, settleStart, wordOfDay } from './battles';
+import { rivalsOn } from './engine/battle';
+import { sendOnce } from './push';
 import { bmi, stageIndex } from './engine/silhouette';
 import { globalTrend } from './progress';
 import { localDate, now, zonedInstant } from './time';
@@ -82,5 +84,30 @@ export async function recordWeighIn(user: User, input: { weight: number; comment
   if (input.comment && !updated && live.length) {
     await db.insert(feed).values(live.map((b) => ({ battleId: b.id, userId: user.id, kind: 'comment' as const, text: input.comment! })));
   }
+  if (!updated) await notifyRivals(user, date, fightsToday.filter((f) => at < f.at).map((f) => f.b.id));
   return { ok: true, weighIn: row, updated, transformation, lateFor };
+}
+
+/**
+ * « Ton rival vient de se peser » : prévient l'adversaire du round (et le coéquipier) qui ne s'est pas
+ * encore pesé, pour chaque battle dont le combat de ce soir est à venir. Une fois par jour et par battle ;
+ * le résultat reste secret jusqu'au combat.
+ */
+async function notifyRivals(user: User, date: string, battleIds: string[]): Promise<void> {
+  for (const id of battleIds) {
+    const bundle = await loadBundle(id);
+    if (!bundle) continue;
+    const b = bundle.battle;
+    const { opponents, mates } = rivalsOn(
+      { format: b.format, startDate: b.startDate, rounds: b.rounds, members: bundle.members.map((m) => ({ userId: m.userId, team: m.team })) }, user.id, date
+    );
+    const waiting = (uid: string) => !bundle.weighIns.some((w) => w.userId === uid && w.date === date);
+    const until = b.fightTime.replace(':', ' h ');
+    for (const uid of opponents.filter(waiting)) {
+      await sendOnce(uid, `rival:${id}:${date}`, { title: `🥊 ${b.name}`, body: `${displayName(user)} a chargé son coup. À toi, avant ${until} !`, url: '/pesee', tag: `rival-${id}` });
+    }
+    for (const uid of mates.filter(waiting)) {
+      await sendOnce(uid, `rival:${id}:${date}`, { title: `🥊 ${b.name}`, body: `${displayName(user)} s'est pesé. À toi pour le bonus d'équipe, avant ${until} !`, url: '/pesee', tag: `rival-${id}` });
+    }
+  }
 }

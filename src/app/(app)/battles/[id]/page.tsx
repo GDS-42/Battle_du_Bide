@@ -12,9 +12,10 @@ import { formatEuros, settleStakes } from '@/lib/engine/stakes';
 import { personalSeries } from '@/lib/progress';
 import { canStartTonight, START_MAX_DAYS } from '@/lib/start-date';
 import { TAUNTS } from '@/lib/taunts';
-import { addDays, dayDiff, now, prettyDate } from '@/lib/time';
+import { addDays, dayDiff, now, prettyDate, zonedInstant } from '@/lib/time';
 import { armSuper, leaveBattle, nudge, rematch } from '@/app/actions/battle';
 import { Fighter } from '@/components/Fighter';
+import { Countdown } from '@/components/Countdown';
 import { InviteBox } from '@/components/InviteBox';
 import { StartDateBox } from '@/components/StartDateBox';
 import { TauntBox } from '@/components/TauntBox';
@@ -164,7 +165,11 @@ export default async function RingPage({ params, searchParams }: { params: Promi
             <section className="card flex flex-col gap-3 p-4">
               <div className="flex items-center justify-between">
                 <h2 className="font-display text-[20px]">Ton coup du jour</h2>
-                <span className="text-sm text-lilas">{inBattle ? (fightAtToday ? `combat à ${b.fightTime.replace(':', ' h ')}` : 'combat joué') : 'échauffement'}</span>
+                <span className="text-sm text-lilas">
+                  {inBattle
+                    ? (fightAtToday ? <Countdown prefix="combat dans" target={zonedInstant(today, b.fightTime, b.timezone).getTime()} serverNow={at.getTime()} /> : 'combat joué')
+                    : <Countdown prefix="1er combat dans" target={zonedInstant(b.startDate, b.fightTime, b.timezone).getTime()} serverNow={at.getTime()} />}
+                </span>
               </div>
               {weighedToday(user.id) ? (
                 preview ? (

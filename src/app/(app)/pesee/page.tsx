@@ -6,8 +6,9 @@ import { db } from '@/lib/db';
 import { weighIns } from '@/lib/db/schema';
 import { displayName, endDateOf, fightPending, loadBundle, roundOf, wordOfDay } from '@/lib/battles';
 import { liveBattles } from '@/lib/weighin';
-import { dayName, localDate, now } from '@/lib/time';
+import { dayName, localDate, now, zonedInstant } from '@/lib/time';
 import { Icon, TopBar } from '@/components/ui';
+import { Countdown } from '@/components/Countdown';
 import { WeighForm } from './WeighForm';
 
 export const metadata: Metadata = { title: 'Pesée du matin' };
@@ -25,11 +26,13 @@ export default async function PeseePage() {
   const late: string[] = [];
   let photo = false;
   let ctx: { round: number; day: number; fightTime: string } | null = null;
+  let nextFight: number | null = null; // prochain combat de ce soir encore à venir
   for (const b of live) {
     const inFight = today >= b.startDate && today <= endDateOf(b);
     if (b.photoProof) photo = true;
     if (!inFight) continue;
     if (!fightPending(b, today, at)) late.push(b.name);
+    else nextFight = Math.min(nextFight ?? Infinity, zonedInstant(today, b.fightTime, b.timezone).getTime());
     const bundle = await loadBundle(b.id);
     if (!bundle) continue;
     ctx ??= { ...roundOf(b, today), fightTime: b.fightTime };
@@ -43,6 +46,12 @@ export default async function PeseePage() {
   return (
     <main className="mx-auto flex min-h-dvh max-w-[520px] flex-col">
       <TopBar kicker={kicker} title="Pesée du matin" right={<Link href="/aide#quand-se-peser" aria-label="Quand me peser ? Mode d'emploi" className="grid size-11 place-items-center rounded-xl border-2 border-prune text-soleil"><Icon name="help" size={22} /></Link>} />
+      {nextFight !== null && !existing ? (
+        <p className="flex items-center gap-2 px-4 pt-4 text-[15px]">
+          <Icon name="clock" size={18} className="shrink-0 text-soleil" />
+          <span><Countdown className="font-bold text-soleil" prefix="Combat dans" target={nextFight} serverNow={at.getTime()} done="C'est l'heure du combat !" /> : pèse-toi avant.</span>
+        </p>
+      ) : null}
       <WeighForm
         name={displayName(user)}
         initial={existing?.weight ?? prev?.weight ?? 75}

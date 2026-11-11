@@ -46,6 +46,21 @@ export function roundPairings(ids: string[], roundIndex: number): [string, strin
   return pairs;
 }
 
+/**
+ * Pour un joueur, à une date donnée : ses adversaires du round (les membres du camp d'en face)
+ * et ses coéquipiers. Vide contre Le Bide ou hors battle.
+ */
+export function rivalsOn(b: EngineBattle, userId: string, date: string): { opponents: string[]; mates: string[] } {
+  const none = { opponents: [], mates: [] };
+  if (date < b.startDate || date > battleEndDate(b)) return none;
+  const sides = buildSides(b);
+  const mine = sides.find((s) => s.members.includes(userId));
+  if (!mine) return none;
+  const pair = roundPairings(sides.map((s) => s.id), Math.floor(dayDiff(b.startDate, date) / 7)).find(([x, y]) => x === mine.id || y === mine.id);
+  const other = pair ? sides.find((s) => s.id === (pair[0] === mine.id ? pair[1] : pair[0])) : undefined;
+  return { opponents: other ? [...other.members] : [], mates: mine.members.filter((u) => u !== userId) };
+}
+
 function emptyAttack(): PlayerAttack {
   return { weighed: false, late: false, combo: 0, flagged: false, jab: 0, crochet: 0, crochetPct: 0, super: 0, total: 0, blocked: false, gardeUsed: false };
 }

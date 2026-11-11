@@ -62,7 +62,8 @@ export default function AidePage() {
             <Icon name="bell" size={20} className="shrink-0" />
             <span>
               Un rappel t'arrive à ton heure de pesée si tu ne t'es pas encore pesé (tu la règles dans ton <b>Profil</b>).
-              Et si ta série est en jeu, une alerte « Série en danger » tombe une heure avant le combat.
+              Tu es aussi prévenu dès que ton adversaire du round s'est pesé, et une alerte « Série en danger » tombe une heure
+              avant le combat si ta série est en jeu. Un compte à rebours t'indique partout le temps qu'il reste.
             </span>
           </p>
         </div>

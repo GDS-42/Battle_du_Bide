@@ -185,8 +185,7 @@ export function CombatReplay({ battleId, title, round, day, when, dateLabel, sce
         {!s.idle && !shown.length ? <p className="text-[15px] leading-snug text-lilas">Le commentateur s'éclaircit la voix…</p> : null}
         {shown.map((l, i) => (
           <p key={i} className={`animate-pop text-[15px] leading-snug ${l.c === 'end' ? 'text-lilas' : ''}`}>
-            {l.c !== 'end' ? <b className={l.c === 'a' ? 'text-soleil' : 'text-[#2BB5FF]'}>{l.c === 'a' ? s.a.name : s.b.name}</b> : null}
-            {l.c !== 'end' ? ' · ' : ''}{l.t}
+            <Marked text={l.t} marks={[{ name: s.a.name, cls: 'text-soleil' }, { name: s.b.name, cls: 'text-[#2BB5FF]' }]} />
           </p>
         ))}
       </section>
@@ -223,6 +222,18 @@ export function CombatReplay({ battleId, title, round, day, when, dateLabel, sce
       ) : null}
     </div>
   );
+}
+
+/** Met en couleur le nom de chaque camp dans une phrase du commentateur (jaune à gauche, bleu à droite). */
+function Marked({ text, marks }: { text: string; marks: { name: string; cls: string }[] }) {
+  const names = marks.map((m) => m.name).filter(Boolean);
+  if (!names.length) return <>{text}</>;
+  const esc = (v: string) => v.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const parts = text.split(new RegExp(`(${names.map(esc).sort((x, y) => y.length - x.length).join('|')})`, 'g'));
+  return <>{parts.map((part, i) => {
+    const m = marks.find((x) => x.name === part);
+    return m ? <b key={i} className={m.cls}>{part}</b> : <span key={i}>{part}</span>;
+  })}</>;
 }
 
 function Corner({ side, pose }: { side: SideView; pose: FighterRender['pose'] }) {

@@ -39,7 +39,7 @@ export default async function CombatPage({ params }: { params: Promise<{ id: str
     return s?.trend ?? state.players[uid]?.startWeight ?? null;
   };
   const scenes: Scene[] = fight.pairings
-    .map((p, i) => toScene(bundle, state, p, date, i, trendAt))
+    .map((p, i) => toScene(bundle, p, date, i, trendAt, fight.dayIndex === 6))
     .sort((x, y) => Number(y.a.id === mySide || y.b.id === mySide) - Number(x.a.id === mySide || x.b.id === mySide));
   for (const s of scenes) s.mine = s.a.id === mySide || s.b.id === mySide;
 
@@ -77,7 +77,7 @@ export default async function CombatPage({ params }: { params: Promise<{ id: str
   );
 }
 
-function toScene(bundle: Bundle, state: BattleState, p: PairingDay, date: string, i: number, trendAt: (uid: string) => number | null): Scene {
+function toScene(bundle: Bundle, p: PairingDay, date: string, i: number, trendAt: (uid: string) => number | null, lastDay: boolean): Scene {
   const names: Record<string, string> = { [p.a]: sideName(bundle, p.a), [p.b]: sideName(bundle, p.b) };
   const supers: Record<string, string | undefined> = {};
   for (const sid of [p.a, p.b]) {
@@ -85,7 +85,7 @@ function toScene(bundle: Bundle, state: BattleState, p: PairingDay, date: string
     const who = ms.find((m) => p.attacks[sid === p.a ? 'a' : 'b'].members[m.userId]?.super) ?? ms[0];
     supers[sid] = who?.user.superMove ?? undefined;
   }
-  const parts = commentaryParts(p, names, bundle.battle.tone, `${bundle.battle.id}:${date}:${i}`, supers);
+  const parts = commentaryParts(p, names, bundle.battle.tone, `${bundle.battle.id}:${date}:${i}`, supers, { lastDay });
   const view = (sid: string, att: SideAttack, flip: boolean): SideView => {
     const ms = sideMembers(bundle, sid);
     const players = Object.values(att.members);
