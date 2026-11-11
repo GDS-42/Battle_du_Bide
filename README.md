@@ -12,8 +12,9 @@ Chaque matin, ta pesée charge ton coup. À 21 h, les combattants montent sur le
 - **Battles** en duel, tournoi (3 à 8) ou équipes de 2 ; invitation par lien ou Signal ; date de départ au choix (dès le soir même) ; 4, 8 ou 12 rounds de 7 jours ; enjeu : gage, cagnotte déclarative ou honneur ; mode pudique (des %, jamais de kilos) ou transparent ; commentateur bon enfant ou trash talk.
 - **La pesée du matin** en 10 secondes, puis l'écran **« Coup chargé »** : jab, crochet, jauge de super, garde.
 - **Le combat du soir** rejoué en animation, avec barres de vie, éclats, commentateur, sons d'arcade et réactions.
-- **Le ring** : face-à-face, classement, rounds, courbe de tendance, fil de provocations, coups de coude, finale avec ceinture et partage de la cagnotte, revanche en un clic.
+- **Le ring** : face-à-face, classement, rounds, fil de provocations, coups de coude, finale avec ceinture et partage de la cagnotte, revanche en un clic.
 - **Notifications** (rappel du matin, combat prêt, série en danger) et **app installable** sur l'écran d'accueil.
+- **Ta courbe** : tes pesées et ta tendance en kilos, dès la première pesée (échauffement compris) ; sur le ring, après chaque pesée et dans le profil (30 jours, 90 jours ou tout l'historique). Visible par toi seul.
 - **Tes données** : export CSV/JSON et suppression du compte.
 
 ## Démarrer

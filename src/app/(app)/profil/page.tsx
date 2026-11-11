@@ -6,24 +6,30 @@ import { db } from '@/lib/db';
 import { pushSubscriptions, weighIns } from '@/lib/db/schema';
 import { battleStatus, computeState, displayName, fighterFor, loadBundle, userBattles } from '@/lib/battles';
 import { bmi, stageLabel } from '@/lib/engine/silhouette';
-import { globalTrend } from '@/lib/progress';
+import { personalSeries } from '@/lib/progress';
 import { vapidPublicKey } from '@/lib/push';
-import { localDate, now } from '@/lib/time';
+import { localDate, now, prettyDate } from '@/lib/time';
 import { logout } from '@/app/actions/auth';
 import { deleteAccount } from '@/app/actions/profile';
 import { Fighter } from '@/components/Fighter';
+import { WeightChart } from '@/components/WeightChart';
 import { InstallCard } from '@/components/InstallPrompt';
 import { Icon, RingScene, Ribbon } from '@/components/ui';
 import { SettingsForm } from './SettingsForm';
 
 export const metadata: Metadata = { title: 'Profil' };
 
-export default async function ProfilPage({ searchParams }: { searchParams: Promise<{ erreur?: string }> }) {
-  const { erreur } = await searchParams;
+const PERIODS = [['30', '30 jours'], ['90', '90 jours'], ['tout', 'Tout']] as const;
+
+export default async function ProfilPage({ searchParams }: { searchParams: Promise<{ erreur?: string; periode?: string }> }) {
+  const { erreur, periode } = await searchParams;
   const user = await requireFighter('/profil');
   const at = now();
   const today = localDate(at, user.timezone);
-  const g = await globalTrend(user.id, today);
+  const g = await personalSeries(user.id, today);
+  const period = PERIODS.some(([k]) => k === periode) ? periode! : '30';
+  const range = period === 'tout' ? null : Number(period);
+  const lost = g.firstWeight !== null && g.trend !== null ? g.firstWeight - g.trend : null;
   const count = (await db.select({ d: weighIns.date }).from(weighIns).where(eq(weighIns.userId, user.id))).length;
   const subs = (await db.select({ id: pushSubscriptions.id }).from(pushSubscriptions).where(eq(pushSubscriptions.userId, user.id))).length;
   const list = await userBattles(user.id);
@@ -54,6 +60,31 @@ export default async function ProfilPage({ searchParams }: { searchParams: Promi
           <Stat k="Pesées" v={String(count)} />
           <Stat k={finished ? `Battles · ${finished} finie${finished > 1 ? 's' : ''}` : 'Battles'} v={String(list.length)} />
           <Stat k="Ceintures" v={String(titles)} />
+        </div>
+        <div id="courbe" className="card flex scroll-mt-4 flex-col gap-3 p-4">
+          <div className="flex items-baseline justify-between gap-2">
+            <h2 className="font-display text-[20px] text-soleil">Ma courbe</h2>
+            <span className="text-[12px] text-lilas">visible par toi seul</span>
+          </div>
+          {g.count ? (
+            <>
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <Fact k={`Départ · ${prettyDate(g.first!, false)}`} v={`${fmt(g.firstWeight!)} kg`} />
+                <Fact k="Tendance" v={g.trend !== null ? `${fmt(g.trend)} kg` : '—'} />
+                <Fact k="Évolution" v={lost !== null ? `${lost >= 0 ? '−' : '+'}${fmt(Math.abs(lost))} kg` : '—'} strong={lost !== null && lost > 0} />
+              </div>
+              <WeightChart days={g.days} range={range} label="Courbe de toutes tes pesées" />
+              {g.days.length > 30 ? (
+                <nav className="flex flex-wrap gap-1.5" aria-label="Période affichée">
+                  {PERIODS.map(([k, l]) => (
+                    <Link key={k} href={`/profil?periode=${k}#courbe`} scroll={false} className="pill grid place-items-center" aria-current={period === k ? 'true' : undefined}>{l}</Link>
+                  ))}
+                </nav>
+              ) : null}
+            </>
+          ) : (
+            <p className="text-sm text-lilas">Ta courbe démarre à ta première pesée. <Link href="/pesee" className="font-bold text-soleil underline">Je me pèse</Link></p>
+          )}
         </div>
         {user.superMove || user.entrance ? (
           <div className="card flex flex-col gap-1 p-4">
@@ -93,6 +124,17 @@ export default async function ProfilPage({ searchParams }: { searchParams: Promi
         </details>
       </section>
     </main>
+  );
+}
+
+const fmt = (n: number) => n.toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
+function Fact({ k, v, strong = false }: { k: string; v: string; strong?: boolean }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span className={`font-sans text-[19px] font-black italic leading-none ${strong ? 'text-neon' : 'text-creme'}`}>{v}</span>
+      <span className="text-[11px] leading-tight text-lilas">{k}</span>
+    </div>
   );
 }
 

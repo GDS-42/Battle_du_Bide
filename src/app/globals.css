@@ -83,7 +83,7 @@ body { font-family: var(--font-sans); -webkit-tap-highlight-color: transparent; 
     min-height: 40px; padding: 0 14px; border: 2px solid var(--color-encre); border-radius: 999px;
     background: var(--color-violet); color: var(--color-creme); font-weight: 700; font-size: 14px; cursor: pointer;
   }
-  .pill[aria-pressed='true'] { background: var(--color-soleil); color: var(--color-encre); box-shadow: 0 3px 0 var(--color-encre); }
+  .pill[aria-pressed='true'], .pill[aria-current='true'] { background: var(--color-soleil); color: var(--color-encre); box-shadow: 0 3px 0 var(--color-encre); }
   .extrude {
     font-family: var(--font-sans); font-weight: 900; line-height: .95;
     color: var(--color-soleil); -webkit-text-stroke: 3px var(--color-encre); paint-order: stroke fill;

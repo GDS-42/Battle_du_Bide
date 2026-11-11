@@ -37,7 +37,7 @@ src/
     actions/                    server actions (auth, combattant, pesée, battle, profil)
     api/                        push, export, photos/[id], health, cron/tick
     icons/[size]/, manifest.ts  PWA
-  components/                   Fighter (SVG), ui (rubans, barres de vie…), TrendChart…
+  components/                   Fighter (SVG), ui (rubans, barres de vie…), WeightChart (courbe de pesées)…
   lib/
     engine/                     moteur de jeu PUR (aucune dépendance à la base)
     fighter/                    générateur de combattant et presets

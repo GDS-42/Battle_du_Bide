@@ -114,6 +114,10 @@ export default function AidePage() {
           <p className="text-[15px] leading-snug">
             +{YOYO_G}&nbsp;g sur la balance un matin ? Ta tendance ne bouge que d'environ {TREND_MOVE_G}&nbsp;g. Pas de quoi stresser.
           </p>
+          <p className="text-[15px] leading-snug">
+            Ta <b className="text-soleil">courbe</b> (tes pesées et ta tendance, en kilos) t'attend sur le ring, après chaque pesée et dans ton Profil.
+            Elle démarre dès ta première pesée, même pendant l'échauffement, et tu es le seul à la voir.
+          </p>
           <p className="text-[14px] leading-snug text-lilas">
             Un chiffre vraiment bizarre (plus de {Math.round(RULES.ANOMALY * 100)}&nbsp;% d'écart d'un coup) est mis de côté
             jusqu'à ce que ta pesée suivante le confirme.

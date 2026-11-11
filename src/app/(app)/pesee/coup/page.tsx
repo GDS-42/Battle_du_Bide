@@ -5,15 +5,15 @@ import { redirect } from 'next/navigation';
 import { requireFighter } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { weighIns } from '@/lib/db/schema';
-import { computeState, displayName, endDateOf, fighterFor, loadBundle, previewFor, superState } from '@/lib/battles';
+import { displayName, endDateOf, fighterFor, loadBundle, previewFor, superState } from '@/lib/battles';
 import { armSuper } from '@/app/actions/battle';
 import { RULES } from '@/lib/engine/rules';
 import { stageLabel, bmi } from '@/lib/engine/silhouette';
-import { globalTrend } from '@/lib/progress';
+import { personalSeries } from '@/lib/progress';
 import { liveBattles } from '@/lib/weighin';
 import { localDate, now, prettyDate } from '@/lib/time';
 import { Fighter } from '@/components/Fighter';
-import { TrendChart } from '@/components/TrendChart';
+import { WeightChart } from '@/components/WeightChart';
 import { Burst, Gauge, Icon, RingScene, Ribbon, TopBar } from '@/components/ui';
 import { CoupFx } from './CoupFx';
 
@@ -28,7 +28,7 @@ export default async function CoupPage({ searchParams }: { searchParams: Promise
   const today = localDate(at, user.timezone);
   const [wi] = await db.select().from(weighIns).where(and(eq(weighIns.userId, user.id), eq(weighIns.date, today))).limit(1);
   if (!wi) redirect('/pesee');
-  const g = await globalTrend(user.id, today);
+  const g = await personalSeries(user.id, today);
   const live = await liveBattles(user.id);
   const [from, to] = (sp.transfo ?? '').split('-');
   const transfo = STAGE_K[from] !== undefined && STAGE_K[to] !== undefined ? { from, to } : null;
@@ -41,11 +41,9 @@ export default async function CoupPage({ searchParams }: { searchParams: Promise
     const inFight = today >= b.startDate && today <= endDateOf(b);
     const p = inFight ? previewFor(bundle, user.id, today) : null;
     const sup = superState(bundle, user.id, at);
-    const { state } = computeState(bundle, at);
-    const mine = state.players[user.id];
     const rivals = bundle.members.filter((m) => m.userId !== user.id);
     const rivalsDone = rivals.filter((m) => bundle.weighIns.some((w) => w.userId === m.userId && w.date === today)).map((m) => displayName(m.user));
-    cards.push({ b, p, sup, mine, rivals, rivalsDone, bundle });
+    cards.push({ b, p, sup, rivals, rivalsDone });
   }
   const first = cards.find((c) => c.p?.attack.weighed);
   const total = first?.p?.attack.total ?? 0;
@@ -82,7 +80,7 @@ export default async function CoupPage({ searchParams }: { searchParams: Promise
           </div>
         ) : null}
 
-        {cards.map(({ b, p, sup, mine, rivals, rivalsDone }) => (
+        {cards.map(({ b, p, sup, rivals, rivalsDone }) => (
           <div key={b.id} className="card flex flex-col gap-3 p-4">
             <div className="flex items-baseline justify-between gap-2">
               <span className="truncate font-display text-[20px]">{b.name}</span>
@@ -114,7 +112,6 @@ export default async function CoupPage({ searchParams }: { searchParams: Promise
                 ) : null}
               </>
             )}
-            {mine?.series?.length ? <TrendChart series={mine.series} startWeight={mine.startWeight} pudique={b.privacy === 'pudique'} label="Ta tendance sur les dernières semaines" /> : null}
             <p className="text-sm">
               {rivalsDone.length ? <><b>{rivalsDone.join(', ')}</b> {p ? `${rivalsDone.length > 1 ? 'ont' : 'a'} chargé ${rivalsDone.length > 1 ? 'leur' : 'son'} coup.` : `${rivalsDone.length > 1 ? 'se sont' : "s'est"} pesé ce matin.`}</> : rivals.length ? <span className="text-lilas">Tes rivaux ne se sont pas encore pesés.</span> : <span className="text-lilas">En attente d'adversaires : partage le lien d'invitation.</span>}
             </p>
@@ -126,7 +123,9 @@ export default async function CoupPage({ searchParams }: { searchParams: Promise
           <span className="label">Ta tendance</span>
           <div className="font-sans text-[28px] font-black italic">{g.trend !== null ? `${fmt(g.trend, 2)} kg` : '—'}
             {delta !== null ? <span className="ml-2 text-[15px] not-italic text-lilas">{delta <= 0 ? '−' : '+'}{fmt(Math.abs(delta), 2)} kg</span> : null}</div>
+          <WeightChart days={g.days} range={30} />
           <p className="text-[13px] text-lilas">La balance fait du yo-yo ; ta tendance lisse les écarts. {stageLabel(bmi(g.trend, user.heightCm))}.</p>
+          <Link href="/profil#courbe" className="text-[13px] font-bold text-soleil underline">Voir toute ma courbe</Link>
         </div>
         {!live.length ? <Link href="/battles/nouvelle" className="btn btn-soleil w-full text-[22px]">LANCER UNE BATTLE</Link> : null}
       </section>

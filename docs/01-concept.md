@@ -366,7 +366,7 @@ Lien d'invitation reçu sur Signal
 | 8 | ⭐ **Face-à-face et replay du combat** | Le spectacle du soir : barres de vie, coups, commentateur. |
 | 9 | **Ring du round** | État du round : PV, combos, jauges, qui s'est pesé, flamme du ring. Pour un tournoi, la carte des duels et le classement. |
 | 10 | **Fil** | Replays, réactions, provocations, coups de coude, transformations. |
-| 11 | **Fiche combattant** | Silhouette, courbe de tendance (en %), stats, équipement, ceintures. |
+| 11 | **Fiche combattant** | Silhouette, courbe de pesées et de tendance (en kilos, visible par le joueur seul), stats, équipement, ceintures. |
 | 12 | **Transformation !** | L'avant/après du combattant au passage d'une silhouette clé. |
 | 13 | **Fin de round** | La cloche : vainqueur du round, stats de la semaine. |
 | 14 | **Fin de battle** | Podium, ceinture, enjeu ou cagnotte, revanche. |

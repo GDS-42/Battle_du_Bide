@@ -9,6 +9,7 @@ import {
 import { beltHeld, roundPairings } from '@/lib/engine/battle';
 import { BOSS_ID } from '@/lib/engine/rules';
 import { formatEuros, settleStakes } from '@/lib/engine/stakes';
+import { personalSeries } from '@/lib/progress';
 import { canStartTonight, START_MAX_DAYS } from '@/lib/start-date';
 import { TAUNTS } from '@/lib/taunts';
 import { addDays, dayDiff, now, prettyDate } from '@/lib/time';
@@ -17,7 +18,7 @@ import { Fighter } from '@/components/Fighter';
 import { InviteBox } from '@/components/InviteBox';
 import { StartDateBox } from '@/components/StartDateBox';
 import { TauntBox } from '@/components/TauntBox';
-import { TrendChart } from '@/components/TrendChart';
+import { WeightChart } from '@/components/WeightChart';
 import { Empty, Gauge, HpBar, Icon, RingScene, Ribbon, TopBar } from '@/components/ui';
 
 export const metadata: Metadata = { title: 'Le ring' };
@@ -60,6 +61,9 @@ export default async function RingPage({ params, searchParams }: { params: Promi
   const photoOf = (uid: string) => !pudique && b.photoProof
     ? bundle.weighIns.filter((w) => w.userId === uid && w.photoPath && (uid === user.id || w.date < today || !fightAtToday)).at(-1)?.id ?? null
     : null;
+  const personal = await personalSeries(user.id, today);
+  // Le % perdu n'a de sens qu'une fois la battle commencée (poids de départ fixé)
+  const showLoss = !!me?.startWeight && today >= b.startDate;
   const feedRows = await recentFeed(id, 30);
   const { round: rNum, day: dNum } = roundOf(b, inBattle ? today : until ?? b.startDate);
   const inviteUrl = `${appUrl()}/b/${b.code}`;
@@ -183,11 +187,14 @@ export default async function RingPage({ params, searchParams }: { params: Promi
                   ) : null}
                 </div>
               ) : null}
-              {me && me.startWeight ? (
+              {personal.count ? (
                 <div className="flex flex-col gap-1">
-                  <div className="flex items-baseline justify-between"><span className="label">Ta tendance</span>
-                    <span className="text-sm"><b className="text-soleil">{me.lossPct >= 0 ? '−' : '+'}{fmt(Math.abs(me.lossPct), 2)} %</b>{me.trend ? <span className="text-lilas"> · {fmt(me.trend, 1)} kg{pudique ? ' (visible par toi seul)' : ''}</span> : null}</span></div>
-                  <TrendChart series={me.series} startWeight={me.startWeight} pudique={false} label="Ta tendance sur la battle" />
+                  <div className="flex items-baseline justify-between gap-2"><span className="label">Ta courbe</span>
+                    <span className="text-right text-sm">
+                      {showLoss ? <b className="text-soleil">{me.lossPct >= 0 ? '−' : '+'}{fmt(Math.abs(me.lossPct), 2)} %</b> : null}
+                      {personal.trend !== null ? <span className="text-lilas">{showLoss ? ' · ' : ''}{fmt(personal.trend, 1)} kg{pudique ? ' (visible par toi seul)' : ''}</span> : null}
+                    </span></div>
+                  <WeightChart days={personal.days} range={30} marker={{ date: b.startDate, label: 'Début' }} label="Courbe de tes pesées" />
                 </div>
               ) : null}
             </section>
