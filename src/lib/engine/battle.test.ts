@@ -259,3 +259,43 @@ describe('commentateur', () => {
     }
   });
 });
+
+describe('date de départ libre', () => {
+  // Mercredi 11 novembre 2026 : la battle ne démarre pas un lundi.
+  const WED = '2026-11-11';
+  const input = (weighIns: EngineWeighIn[], rounds = 2): EngineInput => ({
+    battle: { format: 'duel', startDate: WED, rounds, members: [{ userId: 'marc' }, { userId: 'julie' }] }, weighIns, supers: []
+  });
+
+  it('découpe la battle en rounds de 7 jours à partir du jour de départ', () => {
+    expect(battleEndDate({ startDate: WED, rounds: 2 })).toBe('2026-11-24'); // un mardi
+    const w = [...series('marc', WED, 14, 100, -0.1), ...series('julie', WED, 14, 80, 0)];
+    const state = simulateBattle(input(w), '2026-11-24');
+    expect(state.rounds).toHaveLength(2);
+    expect(state.rounds[0]).toMatchObject({ startDate: WED, endDate: '2026-11-17' });
+    expect(state.rounds[1]).toMatchObject({ startDate: '2026-11-18', endDate: '2026-11-24' });
+    expect(state.finished).toBe(true);
+    // Les PV repartent à 100 au 8e jour, un mercredi
+    const day8 = state.days.find((d) => d.date === '2026-11-18')!;
+    expect(day8.roundIndex).toBe(1);
+    expect(day8.pairings[0].hpBefore).toEqual({ a: 100, b: 100 });
+  });
+
+  it('se joue dès le premier soir, la première pesée servant de poids de départ', () => {
+    const state = simulateBattle(input([{ userId: 'marc', date: WED, weight: 100 }]), WED);
+    expect(state.players.marc.startWeight).toBe(100);
+    const p = state.days[0].pairings[0];
+    expect(state.days[0].date).toBe(WED);
+    // Marc s'est pesé : jab ; Julie non : pas de coup
+    expect(p.hpAfter).toEqual({ a: 100, b: 100 - RULES.JAB[0] });
+  });
+
+  it('remet la référence du crochet à zéro au début de chaque round', () => {
+    // Tendance qui descend régulièrement : un crochet chaque jour, y compris au 8e jour (nouveau round)
+    const w = [...series('marc', addDays(WED, -3), 17, 100, -0.2), ...series('julie', WED, 14, 80, 0)];
+    const sim = simulatePlayer('marc', { weighIns: w, supers: [] }, WED, '2026-11-24');
+    expect(sim.days[7].date).toBe('2026-11-18');
+    expect(sim.days[7].attack.crochet).toBeGreaterThan(0);
+    expect(sim.days.every((d) => d.attack.crochet > 0)).toBe(true);
+  });
+});

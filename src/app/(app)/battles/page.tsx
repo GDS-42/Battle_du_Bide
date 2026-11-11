@@ -4,9 +4,9 @@ import { and, eq } from 'drizzle-orm';
 import { requireFighter } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { weighIns } from '@/lib/db/schema';
-import { battleStatus, computeState, loadBundle, roundOf, sideName, userBattles } from '@/lib/battles';
+import { battleStatus, computeState, loadBundle, roundOf, sideName, userBattles, warmupLabel } from '@/lib/battles';
 import { Icon, Ribbon, TopBar } from '@/components/ui';
-import { localDate, now, prettyDate } from '@/lib/time';
+import { localDate, now } from '@/lib/time';
 
 export const metadata: Metadata = { title: 'Mes battles' };
 const FORMAT = { duel: 'Duel', tournoi: 'Tournoi', equipes: 'Équipes' } as const;
@@ -21,7 +21,7 @@ export default async function BattlesPage() {
   const cards = await Promise.all(list.map(async (b) => {
     const status = battleStatus(b, at);
     let line = '';
-    if (status === 'warmup') line = `Échauffement · début ${prettyDate(b.startDate)}`;
+    if (status === 'warmup') line = warmupLabel(b, at);
     else {
       const bundle = await loadBundle(b.id);
       if (!bundle) return null;

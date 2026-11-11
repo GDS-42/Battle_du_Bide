@@ -4,16 +4,18 @@ import { notFound, redirect } from 'next/navigation';
 import { appUrl, requireFighter } from '@/lib/auth';
 import {
   BOSS_FIGHTER, battleStatus, computeState, displayName, endDateOf, fighterFor, fightPending, loadBundle, previewFor, recentFeed,
-  roundOf, sideMembers, sideName, superState
+  roundOf, sideMembers, sideName, superState, warmupLabel
 } from '@/lib/battles';
 import { beltHeld, roundPairings } from '@/lib/engine/battle';
 import { BOSS_ID } from '@/lib/engine/rules';
 import { formatEuros, settleStakes } from '@/lib/engine/stakes';
+import { canStartTonight, START_MAX_DAYS } from '@/lib/start-date';
 import { TAUNTS } from '@/lib/taunts';
 import { addDays, dayDiff, now, prettyDate } from '@/lib/time';
 import { armSuper, leaveBattle, nudge, rematch } from '@/app/actions/battle';
 import { Fighter } from '@/components/Fighter';
 import { InviteBox } from '@/components/InviteBox';
+import { StartDateBox } from '@/components/StartDateBox';
 import { TauntBox } from '@/components/TauntBox';
 import { TrendChart } from '@/components/TrendChart';
 import { Empty, Gauge, HpBar, Icon, RingScene, Ribbon, TopBar } from '@/components/ui';
@@ -99,7 +101,7 @@ export default async function RingPage({ params, searchParams }: { params: Promi
 
   return (
     <>
-      <TopBar back="/battles" kicker={status === 'warmup' ? `Échauffement · début ${prettyDate(b.startDate)}` : status === 'finished' ? 'Battle terminée' : `Round ${rNum}/${b.rounds} · jour ${dNum}`} title={b.name} />
+      <TopBar back="/battles" kicker={status === 'warmup' ? warmupLabel(b, at) : status === 'finished' ? 'Battle terminée' : `Round ${rNum}/${b.rounds} · jour ${dNum}`} title={b.name} />
       <main className="flex flex-col gap-5 pb-6">
         {/* Face-à-face du round */}
         {mySide && myPair ? (() => {
@@ -137,6 +139,10 @@ export default async function RingPage({ params, searchParams }: { params: Promi
         <div className="flex flex-col gap-5 px-4">
           {sp.erreur === 'createur' ? <p role="alert" className="text-sm text-[#FF8FA3]">Tu as ouvert ce ring : tu ne peux pas le quitter tant que d'autres joueurs y sont.</p> : null}
           {(sp.invite || status === 'warmup') && showInvite ? <InviteBox url={inviteUrl} name={b.name} /> : null}
+          {status === 'warmup' && b.createdBy === user.id ? (
+            <StartDateBox battleId={id} startDate={b.startDate} fightTime={b.fightTime} today={today} tomorrow={addDays(today, 1)}
+              maxDate={addDays(today, START_MAX_DAYS)} tonightOk={canStartTonight(b.fightTime, b.timezone, at)} error={sp.erreur === 'date'} />
+          ) : null}
 
           {/* Combat du soir */}
           {status !== 'warmup' && until ? (

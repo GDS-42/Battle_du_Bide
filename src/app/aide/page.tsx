@@ -29,7 +29,7 @@ export default function AidePage() {
             <Step icon="clock" k="Le soir">
               À l'heure du combat (21&nbsp;h, sauf si le créateur de la battle a choisi une autre heure), les combattants s'affrontent.
             </Step>
-            <Step icon="calendar" k="Chaque semaine">Un round, du lundi au dimanche.</Step>
+            <Step icon="calendar" k="Chaque semaine">Un round de 7 jours, à partir du jour de départ choisi par l'organisateur.</Step>
             <Step icon="trophy" k="À la fin">Celui qui a gagné le plus de rounds remporte la ceinture.</Step>
           </ol>
         </div>
@@ -70,8 +70,9 @@ export default function AidePage() {
         {/* 3. L'échauffement */}
         <Block icon="fire" title="L'échauffement">
           <p className="text-[15px] leading-snug">
-            Entre la création de la battle et son premier lundi, pas encore de combat. Pèse-toi quelques matins :
-            la moyenne de tes 3 dernières pesées devient ton <b className="text-soleil">poids de départ</b>.
+            L'organisateur choisit la date du premier combat : ce soir, demain ou plus tard. D'ici là, pas encore de combat.
+            Pèse-toi quelques matins : la moyenne de tes 3 dernières pesées devient ton <b className="text-soleil">poids de départ</b>.
+            Si la battle démarre le jour même, c'est ta première pesée qui compte.
           </p>
           <p className="text-[14px] leading-snug text-lilas">Profites-en pour créer ton combattant et inviter tes potes.</p>
         </Block>
@@ -84,7 +85,7 @@ export default function AidePage() {
               et {pv(RULES.JAB[2])} dès {RULES.COMBO_TIER_2} jours.
             </Move>
             <Move k="CROCHET">
-              Ta tendance passe sous ton plus bas de la semaine ? Crochet ! Plus tu descends, plus ça cogne
+              Ta tendance passe sous ton plus bas du round ? Crochet ! Plus tu descends, plus ça cogne
               ({pv(CROCHET_PER_TENTH)} par 0,1&nbsp;% de baisse, sans plafond).
             </Move>
             <Move k="SUPER">
@@ -124,9 +125,9 @@ export default function AidePage() {
           <ul className="flex flex-col gap-2 text-[15px] leading-snug">
             <Bullet>Dans la journée, tu vois qui s'est pesé, mais les résultats restent secrets jusqu'au combat.</Bullet>
             <Bullet>À l'heure du combat, les coups du jour sont échangés. Chaque combat se revoit en replay.</Bullet>
-            <Bullet>Chaque lundi, chaque camp repart avec {pv(RULES.HP)}.</Bullet>
+            <Bullet>Au début de chaque round (tous les 7 jours), chaque camp repart avec {pv(RULES.HP)}.</Bullet>
             <Bullet>Tombé à 0&nbsp;PV ? <b className="text-soleil">K.O.</b> : le round s'arrête là et va à l'adversaire.</Bullet>
-            <Bullet>Sinon, le dimanche soir, celui qui a le plus de PV gagne le round (à égalité : celui qui s'est pesé le plus de jours).</Bullet>
+            <Bullet>Sinon, au 7ᵉ soir, celui qui a le plus de PV gagne le round (à égalité : celui qui s'est pesé le plus de jours).</Bullet>
           </ul>
           <div className="flex flex-col gap-2 border-t-2 border-prune pt-3">
             <span className="label">Les formats</span>

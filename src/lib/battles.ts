@@ -9,7 +9,7 @@ import { bmi, kFromBmi } from './engine/silhouette';
 import type { BattleState, EngineInput } from './engine/types';
 import type { FighterConfig, FighterRender } from './fighter/types';
 import { PRESETS } from './fighter/presets';
-import { addDays, dayDiff, localDate, localTime, zonedInstant } from './time';
+import { addDays, dayDiff, localDate, localTime, prettyDate, zonedInstant } from './time';
 
 export type BattleStatus = 'warmup' | 'active' | 'finished';
 
@@ -168,4 +168,11 @@ export function superState(bundle: Bundle, userId: string, at: Date): { inBattle
   const prev = previewFor(bundle, userId, addDays(today, -1));
   const ready = !!((cur?.attack.weighed && (cur.gauge >= 7 || cur.attack.super > 0)) || (!cur?.attack.weighed && (prev?.gauge ?? 0) >= 6));
   return { inBattle, armed, ready, today };
+}
+
+/** Libellé d'une battle avant son premier combat : échauffement, ou premier combat le soir même. */
+export function warmupLabel(b: Pick<Battle, 'startDate' | 'fightTime' | 'timezone'>, at: Date): string {
+  return b.startDate <= battleToday(b, at)
+    ? `Premier combat ce soir à ${b.fightTime.replace(':', ' h ')}`
+    : `Échauffement · début ${prettyDate(b.startDate)}`;
 }

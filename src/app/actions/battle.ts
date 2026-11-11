@@ -12,7 +12,8 @@ import {
 import { settleStakes } from '@/lib/engine/stakes';
 import { sendPush } from '@/lib/push';
 import { cleanTaunt, REACTIONS } from '@/lib/taunts';
-import { addDays, nextMonday, now, weekday } from '@/lib/time';
+import { startDateError } from '@/lib/start-date';
+import { addDays, now, prettyDate } from '@/lib/time';
 import { TimeSchema } from '@/lib/validation';
 
 const CreateSchema = z.object({
@@ -41,8 +42,8 @@ export async function createBattle(_prev: CreateState, form: FormData): Promise<
   const parsed = CreateSchema.safeParse({ ...raw, photoProof: form.get('photoProof') === 'on' });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Formulaire incomplet' };
   const p = parsed.data;
-  const today = battleToday({ timezone: user.timezone }, now());
-  if (weekday(p.startDate) !== 0 || p.startDate < today) return { error: 'La battle démarre un lundi, aujourd’hui ou plus tard.' };
+  const dateError = startDateError(p.startDate, p.fightTime, user.timezone, now());
+  if (dateError) return { error: dateError };
   const maxPlayers = p.format === 'duel' ? 2 : p.format === 'equipes' ? Math.max(4, p.maxPlayers - (p.maxPlayers % 2)) : Math.max(3, p.maxPlayers);
   const teamNames = p.format === 'equipes'
     ? Object.fromEntries(Array.from({ length: maxPlayers / 2 }, (_, i) => [String(i + 1), (i === 0 ? p.team1 : i === 1 ? p.team2 : '') || `Équipe ${i + 1}`]))
@@ -97,6 +98,30 @@ export async function leaveBattle(form: FormData): Promise<void> {
     await db.insert(feed).values({ battleId: id, userId: user.id, kind: 'system', text: `${displayName(user)} s'est retiré du ring.` });
   }
   redirect('/battles');
+}
+
+/** L'organisateur déplace le premier combat, tant qu'aucun combat n'a été joué. */
+export async function changeStartDate(form: FormData): Promise<void> {
+  const id = String(form.get('battleId'));
+  const user = await requireFighter(`/battles/${id}`);
+  const bundle = await loadBundle(id);
+  if (!bundle) redirect('/battles');
+  const b = bundle.battle;
+  const at = now();
+  if (b.createdBy !== user.id || battleStatus(b, at) !== 'warmup') redirect(`/battles/${id}`);
+  const startDate = String(form.get('startDate') ?? '');
+  if (startDateError(startDate, b.fightTime, b.timezone, at)) redirect(`/battles/${id}?erreur=date`);
+  if (startDate !== b.startDate) {
+    await db.update(battles).set({ startDate }).where(eq(battles.id, id));
+    const today = battleToday(b, at);
+    const when = startDate === today ? `ce soir à ${b.fightTime.replace(':', ' h ')}` : `${prettyDate(startDate)}`;
+    await db.insert(feed).values({ battleId: id, userId: user.id, kind: 'system', text: `${displayName(user)} déplace le premier combat : ${when}.` });
+    await sendPush(bundle.members.map((m) => m.userId).filter((u) => u !== user.id), {
+      title: `🥊 ${b.name}`, body: `Nouveau départ : premier combat ${when}.`, url: `/battles/${id}`, tag: `start-${id}`
+    });
+  }
+  revalidatePath(`/battles/${id}`);
+  redirect(`/battles/${id}`);
 }
 
 async function memberContext(battleId: string) {
@@ -176,12 +201,12 @@ export async function rematch(form: FormData): Promise<void> {
   }
   const [nb] = await db.insert(battles).values({
     code: newCode(), name: b.name.startsWith('Revanche · ') ? b.name : `Revanche · ${b.name}`.slice(0, 40), format: b.format, rounds: b.rounds,
-    startDate: nextMonday(battleToday(b, at)), fightTime: b.fightTime, timezone: b.timezone, stakeText: b.stakeText, potAmount: b.potAmount,
+    startDate: addDays(battleToday(b, at), 1), fightTime: b.fightTime, timezone: b.timezone, stakeText: b.stakeText, potAmount: b.potAmount,
     potMode: b.potMode, potObjective: b.potObjective, carryOver: carry, privacy: b.privacy, tone: b.tone, photoProof: b.photoProof,
     teamNames: b.teamNames, maxPlayers: b.maxPlayers, createdBy: user.id, rematchOf: b.id
   }).returning();
   await db.insert(battleMembers).values(bundle.members.map((m) => ({ battleId: nb.id, userId: m.userId, team: m.team })));
-  await db.insert(feed).values({ battleId: nb.id, userId: user.id, kind: 'system', text: `${displayName(user)} lance la revanche ! Premier round le lundi.` });
+  await db.insert(feed).values({ battleId: nb.id, userId: user.id, kind: 'system', text: `${displayName(user)} lance la revanche ! Premier combat demain.` });
   await sendPush(bundle.members.map((m) => m.userId).filter((u) => u !== user.id), { title: 'Revanche !', body: `${displayName(user)} remet ça : « ${nb.name} ».`, url: `/battles/${nb.id}` });
   redirect(`/battles/${nb.id}`);
 }

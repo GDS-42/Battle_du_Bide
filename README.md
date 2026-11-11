@@ -9,7 +9,7 @@ Chaque matin, ta pesée charge ton coup. À 21 h, les combattants montent sur le
 
 - **Connexion sans mot de passe** (lien magique par e-mail).
 - **Ton combattant** : 12 personnages prêts à jouer, à retoucher (peau, visage, coiffure, barbe, accessoires, âge, tenue, couleurs). Sa corpulence suit ton IMC réel et s'affine au fil des semaines (« Transformation ! »).
-- **Battles** en duel, tournoi (3 à 8) ou équipes de 2 ; invitation par lien ou Signal ; 4, 8 ou 12 rounds ; enjeu : gage, cagnotte déclarative ou honneur ; mode pudique (des %, jamais de kilos) ou transparent ; commentateur bon enfant ou trash talk.
+- **Battles** en duel, tournoi (3 à 8) ou équipes de 2 ; invitation par lien ou Signal ; date de départ au choix (dès le soir même) ; 4, 8 ou 12 rounds de 7 jours ; enjeu : gage, cagnotte déclarative ou honneur ; mode pudique (des %, jamais de kilos) ou transparent ; commentateur bon enfant ou trash talk.
 - **La pesée du matin** en 10 secondes, puis l'écran **« Coup chargé »** : jab, crochet, jauge de super, garde.
 - **Le combat du soir** rejoué en animation, avec barres de vie, éclats, commentateur, sons d'arcade et réactions.
 - **Le ring** : face-à-face, classement, rounds, courbe de tendance, fil de provocations, coups de coude, finale avec ceinture et partage de la cagnotte, revanche en un clic.

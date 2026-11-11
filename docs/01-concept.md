@@ -36,7 +36,7 @@ Statut : **concept validé (phase 1)**. C'est le cahier des charges des phases 2
 - Chaque joueur incarne un **combattant** dont la silhouette correspond à sa **corpulence réelle**. Le combattant s'affine à mesure que le joueur maigrit.
 - **Chaque matin**, tu te pèses : ta pesée charge ton coup.
 - **Chaque soir à 21 h**, le serveur fait s'affronter les combattants. Tout le monde découvre en même temps le replay du combat, avec un commentateur.
-- **Chaque semaine** est un round, et chaque lundi les barres de vie repartent à fond.
+- **Chaque semaine** est un round de 7 jours, et au début de chaque round les barres de vie repartent à fond.
 - À la fin de la battle, le vainqueur remporte **la ceinture**, et le perdant s'acquitte du gage ou de la cagnotte.
 
 C'est un jeu de combat **original**, dans la tradition des jeux d'arcade de versus 2D : écran de face-à-face, barres de vie, rounds, jauge de super, KO. Il ne reprend aucun personnage, nom, décor ou élément visuel d'un jeu existant.
@@ -52,7 +52,7 @@ Chaque mécanique s'appuie sur un résultat de recherche (détails dans [00-rech
 | **La rivalité est le moteur** | La compétition fait mieux que le soutien et la collaboration, et c'est la seule à rester efficace après le jeu (STEP UP, 2019). | Duels, même au sein d'un groupe. |
 | **La pesée quotidienne fait maigrir, le jeu la fait tenir** | Une balance et une courbe : −6,6 % contre −0,4 % (Steinberg, 2013). Des points seuls ne suffisent pas (LOSE IT, 2018). | Se peser rapporte toujours un coup. La pesée est l'action centrale. |
 | **Perdre motive plus que gagner** | La même récompense, présentée comme une perte possible plutôt qu'un gain, double presque l'effet (Patel, 2016). | Une **barre de vie à défendre**. |
-| **Le lundi est un nouveau départ** | Effet « nouveau départ » (Dai, Milkman & Riis, 2014). | Rounds du lundi au dimanche, vie remise à fond chaque lundi. |
+| **Chaque round est un nouveau départ** | Effet « nouveau départ » (Dai, Milkman & Riis, 2014). | Rounds de 7 jours, vie remise à fond au début de chaque round. L'organisateur peut faire démarrer la battle un lundi pour en profiter à plein. |
 | **Une habitude met environ 66 jours à se former** | Rater un jour ne la casse pas (Lally, 2010). | Battle de **8 semaines** par défaut. |
 | **Une série cassée fait décrocher** | La réparer limite ce décrochage (Silverman & Barasch, 2023). | Les **gardes** sauvent la série. |
 | **La nouveauté s'use en 4 semaines environ** | Pokémon Go ; méta-analyse Mazeas, 2022. | Des rebondissements : rounds, KO, transformations, ceinture, revanche. |
@@ -67,10 +67,11 @@ Chaque mécanique s'appuie sur un résultat de recherche (détails dans [00-rech
 | Niveau | Durée | Ce qui se joue |
 |---|---|---|
 | **Battle** | 4, 8 (par défaut) ou 12 semaines | Le titre de champion, **la ceinture**, le gage ou la cagnotte. |
-| **Round** | 1 semaine, du lundi au dimanche | Une victoire de round. Chaque combattant commence le round à **100 PV**. |
+| **Round** | 7 jours, à partir du jour de départ | Une victoire de round. Chaque combattant commence le round à **100 PV**. |
 | **Combat du soir** | Chaque jour à 21 h | Les coups chargés par les pesées du jour sont échangés et rejoués en animation. |
 
-- **Échauffement.** Entre la création et le premier lundi, les joueurs rejoignent la battle, créent leur combattant et font leurs premières pesées. Ces pesées servent à fixer le poids de départ.
+- **Date de départ.** L'organisateur choisit le jour du premier combat : ce soir (si l'heure du combat n'est pas passée), demain (choix par défaut), un lundi ou toute autre date dans les 60 jours. Il peut encore la changer tant qu'aucun combat n'a eu lieu.
+- **Échauffement.** Entre la création et le premier combat, les joueurs rejoignent la battle, créent leur combattant et font leurs premières pesées. Ces pesées servent à fixer le poids de départ. Si la battle démarre le jour même, la première pesée sert de poids de départ.
 - **Heure du combat.** 21 h par défaut, réglable par battle à la création.
 - **Vainqueur de la battle.** Celui qui a gagné le plus de rounds. En cas d'égalité, celui qui a infligé le plus de dégâts au total.
 
@@ -121,7 +122,7 @@ Chaque mécanique s'appuie sur un résultat de recherche (détails dans [00-rech
 | 💥 **Crochet** (coup puissant) | Ta tendance atteint **un nouveau plus bas du round**. | **5 PV par 0,1 %** de baisse, en % de ton poids de départ. **Sans plafond.** |
 | ⚡ **Super** | Ta jauge est pleine et tu as choisi de la déclencher ce soir. | **+15 PV**, avec une animation spéciale et ton coup spécial nommé. |
 
-- **Le crochet est calculé par rapport au plus bas du round.** Au début de chaque round, la référence est ta tendance du lundi. Tu ne frappes en crochet que lorsque tu descends sous ton meilleur niveau de la semaine. On ne gagne donc rien à faire du yo-yo, et une semaine ratée n'handicape pas la suivante : nouveau départ.
+- **Le crochet est calculé par rapport au plus bas du round.** Au début de chaque round, la référence est ta tendance du premier jour du round. Tu ne frappes en crochet que lorsque tu descends sous ton meilleur niveau de la semaine. On ne gagne donc rien à faire du yo-yo, et une semaine ratée n'handicape pas la suivante : nouveau départ.
 - **Tout est en % du poids de départ**, pour que la comparaison reste équitable entre gabarits. Perdre 0,7 kg en partant de 98 kg (0,71 %) frappe aussi fort que perdre 0,45 kg en partant de 64 kg (0,70 %).
 
 ### 5.2 Combo, super et garde
@@ -139,8 +140,8 @@ Chaque mécanique s'appuie sur un résultat de recherche (détails dans [00-rech
 | **Tu t'es pesé et ta tendance a baissé sous le plus bas du round** | Jab + crochet. |
 | **Tu t'es pesé mais ta tendance stagne ou remonte** | Jab seul. Ton crochet est **bloqué** : aucune sanction pour une fluctuation. |
 | **Tu ne t'es pas pesé** | Aucune attaque ce soir. Le combo est sauvé si tu as une garde, sinon il retombe à zéro. |
-| **Un combattant tombe à 0 PV avant dimanche** | **KO** : le round s'arrête et va au vainqueur, avec une animation de KO et un badge. Jusqu'au lundi, les pesées continuent de remplir le combo et la jauge de super. |
-| **Fin du round (dimanche 21 h)** | Le combattant qui a **le plus de PV** gagne le round. En cas d'égalité, c'est celui qui s'est pesé le plus de jours. |
+| **Un combattant tombe à 0 PV avant la fin du round** | **KO** : le round s'arrête et va au vainqueur, avec une animation de KO et un badge. Jusqu'au round suivant, les pesées continuent de remplir le combo et la jauge de super. |
+| **Fin du round (7ᵉ soir, 21 h)** | Le combattant qui a **le plus de PV** gagne le round. En cas d'égalité, c'est celui qui s'est pesé le plus de jours. |
 
 ### 5.4 Exemple chiffré : round 3 d'un duel
 
@@ -346,7 +347,7 @@ Lien d'invitation reçu sur Signal
  → Taille + première pesée → la silhouette prend sa corpulence
  → Quand et à quelle heure tu te pèses ? (rappel)
  → Installer l'app sur l'écran d'accueil + activer les notifications
- → « Tu es sur le ring. Premier round lundi. »
+ → « Tu es sur le ring. Premier combat demain. »
 ```
 
 **Créer une battle** : format → durée → heure du combat → enjeu (gage ou cagnotte) → confidentialité → ton → lien d'invitation.

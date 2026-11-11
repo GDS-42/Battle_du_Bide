@@ -1,7 +1,7 @@
 'use client';
 import { useActionState, useState } from 'react';
 import { createBattle, type CreateState } from '@/app/actions/battle';
-import { prettyDate } from '@/lib/time';
+import { addDays, prettyDate } from '@/lib/time';
 
 const FORMATS = [
   { v: 'duel', t: 'Duel', d: 'Un contre un, le format roi.' },
@@ -9,10 +9,29 @@ const FORMATS = [
   { v: 'equipes', t: 'Équipes', d: 'Binômes : couples contre couples, potes contre potes.' }
 ] as const;
 
-export function CreateForm({ mondays, defaultName }: { mondays: string[]; defaultName: string }) {
+type StartChoice = 'tonight' | 'tomorrow' | 'monday' | 'custom';
+
+export function CreateForm({ today, nowTime, monday, maxDate, defaultName }: {
+  /** Date du jour et heure actuelle (HH:MM) dans le fuseau du joueur, prochain lundi, date limite. */
+  today: string; nowTime: string; monday: string; maxDate: string; defaultName: string;
+}) {
   const [state, action, pending] = useActionState<CreateState, FormData>(createBattle, {});
   const [format, setFormat] = useState<'duel' | 'tournoi' | 'equipes'>('duel');
   const [stake, setStake] = useState<'gage' | 'cagnotte' | 'aucun'>('gage');
+  const [fightTime, setFightTime] = useState('21:00');
+  const [rounds, setRounds] = useState('8');
+  const [choice, setChoice] = useState<StartChoice>('tomorrow');
+  const tomorrow = addDays(today, 1);
+  const [custom, setCustom] = useState(tomorrow);
+  // « Ce soir » n'a de sens que si l'heure du combat n'est pas passée.
+  const tonightOk = fightTime > nowTime;
+  const effective: StartChoice = choice === 'tonight' && !tonightOk ? 'tomorrow' : choice;
+  const startDate = effective === 'tonight' ? today : effective === 'tomorrow' ? tomorrow : effective === 'monday' ? monday : custom || tomorrow;
+  const starts: [StartChoice, string][] = [
+    ['tonight', 'Ce soir'], ['tomorrow', 'Demain'],
+    ...(monday > tomorrow ? [['monday', `Lundi ${prettyDate(monday, false)}`] as [StartChoice, string]] : []),
+    ['custom', 'Autre date']
+  ];
   return (
     <form action={action} className="flex flex-col gap-6 px-4 py-4">
       <Section title="Nom de la battle">
@@ -42,11 +61,32 @@ export function CreateForm({ mondays, defaultName }: { mondays: string[]; defaul
       </Section>
 
       <Section title="Durée et horaires">
-        <Select name="rounds" label="Durée" options={[['4', '4 semaines'], ['8', '8 semaines (conseillé)'], ['12', '12 semaines']]} defaultValue="8" />
-        <Select name="startDate" label="Premier round" options={mondays.map((d) => [d, prettyDate(d)])} defaultValue={mondays[mondays.length > 1 ? 1 : 0]} />
+        <label className="flex flex-col gap-2"><span className="label">Durée</span>
+          <select className="field" name="rounds" value={rounds} onChange={(e) => setRounds(e.target.value)}>
+            <option value="4">4 semaines</option><option value="8">8 semaines (conseillé)</option><option value="12">12 semaines</option>
+          </select>
+        </label>
         <label className="flex flex-col gap-2"><span className="label">Heure du combat du soir</span>
-          <input className="field" type="time" name="fightTime" defaultValue="21:00" required /></label>
-        <p className="text-[13px] text-lilas">D'ici le premier lundi, c'est l'échauffement : les pesées servent à fixer ton poids de départ.</p>
+          <input className="field" type="time" name="fightTime" value={fightTime} onChange={(e) => setFightTime(e.target.value)} required /></label>
+        <div className="flex flex-col gap-2">
+          <span className="label" id="start-label">Premier combat</span>
+          <div className="flex flex-wrap gap-1.5" role="group" aria-labelledby="start-label">
+            {starts.map(([v, l]) => (
+              <button type="button" key={v} className="pill disabled:opacity-40" aria-pressed={effective === v}
+                disabled={v === 'tonight' && !tonightOk} onClick={() => setChoice(v)}>{l}</button>
+            ))}
+          </div>
+          {effective === 'custom' ? (
+            <input className="field" type="date" aria-label="Date du premier combat" value={custom} min={today} max={maxDate}
+              onChange={(e) => setCustom(e.target.value)} required />
+          ) : null}
+          <input type="hidden" name="startDate" value={startDate} />
+        </div>
+        <p className="text-[13px] text-lilas">
+          Premier combat <b className="text-creme">{startDate === today ? 'ce soir' : prettyDate(startDate)} à {fightTime.replace(':', ' h ')}</b>.
+          {' '}Chaque round dure 7 jours ; fin de la battle le {prettyDate(addDays(startDate, Number(rounds) * 7 - 1))}.
+          {startDate > today ? ' D’ici là, c’est l’échauffement : tes pesées fixent ton poids de départ.' : ' Pèse-toi avant le combat : cette pesée sera ton poids de départ.'}
+        </p>
       </Section>
 
       <Section title="Enjeu">

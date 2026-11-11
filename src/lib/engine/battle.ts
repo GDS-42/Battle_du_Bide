@@ -64,7 +64,7 @@ export interface PlayerSim {
   supers: number;
 }
 
-/** Simule un joueur du lundi de départ jusqu'à `until` (inclus). */
+/** Simule un joueur du jour de départ jusqu'à `until` (inclus). */
 export function simulatePlayer(
   userId: string,
   input: Pick<EngineInput, 'weighIns' | 'supers'>,

@@ -181,7 +181,7 @@ export function CombatReplay({ battleId, title, round, day, when, dateLabel, sce
         <div className="absolute -top-3.5 left-3.5 -skew-x-12 border-[3px] border-encre bg-soleil px-3 py-px">
           <div className="flex skew-x-12 items-center gap-1.5 font-display text-[15px] text-encre"><Icon name="mic" size={16} /> AU MICRO</div>
         </div>
-        {s.idle ? <p className="text-[15px] leading-snug text-lilas">Ce duel s'est terminé par K.O. plus tôt dans le round. Les deux camps récupèrent jusqu'à lundi.</p> : null}
+        {s.idle ? <p className="text-[15px] leading-snug text-lilas">Ce duel s'est terminé par K.O. plus tôt dans le round. Les deux camps récupèrent jusqu'au prochain round.</p> : null}
         {!s.idle && !shown.length ? <p className="text-[15px] leading-snug text-lilas">Le commentateur s'éclaircit la voix…</p> : null}
         {shown.map((l, i) => (
           <p key={i} className={`animate-pop text-[15px] leading-snug ${l.c === 'end' ? 'text-lilas' : ''}`}>

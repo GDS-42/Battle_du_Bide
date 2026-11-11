@@ -57,7 +57,8 @@ scripts/                        migrate, seed-demo, vapid
 Tout le jeu tient dans [`src/lib/engine/`](../src/lib/engine/) : des **fonctions pures et déterministes**. L'état d'une battle n'est **jamais stocké** : il est recalculé à chaque affichage à partir des pesées (`simulateBattle(input, until)`).
 
 - **Tendance** : moyenne mobile exponentielle (α = 0,2). Une pesée qui s'écarte de plus de 2 % est « à confirmer » et ne compte qu'une fois confirmée le lendemain (à 1 % près).
-- **Poids de départ** : moyenne des 3 dernières pesées d'échauffement (avant le premier lundi), sinon la première pesée de la battle.
+- **Date de départ** : choisie par l'organisateur (d'aujourd'hui à 60 jours, voir `src/lib/start-date.ts`), modifiable tant qu'aucun combat n'a été joué. Le moteur ne dépend pas du jour de la semaine : un round = 7 jours comptés depuis `startDate`.
+- **Poids de départ** : moyenne des 3 dernières pesées d'échauffement (avant le jour de départ), sinon la première pesée de la battle.
 - **Coups** : jab de 4 à 6 PV selon le combo (paliers à 7 et 21 jours), crochet de 50 PV par point de pourcentage sous le plus bas du round, super de +15 PV quand la jauge (7 crans) est pleine et armée. Pas de plafond.
 - **Rounds** : une semaine, 100 PV par camp, K.O. à 0. Vainqueur aux PV restants, puis au nombre de pesées. Champion : victoires, puis dégâts infligés.
 - **Formats** : duel, tournoi (appariements par la méthode du cercle), équipes de 2 (moyenne des membres, +2 si tous pesés). Si le nombre de camps est impair, **Le Bide** (boss, 10 PV par soir) complète le tableau.

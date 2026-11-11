@@ -19,7 +19,7 @@ export interface EngineSuper {
 
 export interface EngineBattle {
   format: Format;
-  /** Premier lundi de la battle. */
+  /** Jour du premier combat (n'importe quel jour de la semaine) ; un round dure 7 jours à partir de là. */
   startDate: string;
   /** Nombre de rounds (semaines). */
   rounds: number;
