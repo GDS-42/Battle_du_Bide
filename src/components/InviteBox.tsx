@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Icon } from './ui';
 
-export function InviteBox({ url, name }: { url: string; name: string }) {
+export function InviteBox({ url, name, note }: { url: string; name: string; note?: string }) {
   const [copied, setCopied] = useState(false);
   const [signalHint, setSignalHint] = useState(false);
   const text = `Je te défie sur Battle du Bide : « ${name} ». Que le meilleur perde ! ${url}`;
@@ -29,6 +29,7 @@ export function InviteBox({ url, name }: { url: string; name: string }) {
         <button type="button" className="btn btn-soleil min-h-12 text-base" onClick={share}><Icon name="share" size={18} />{copied ? 'Copié !' : 'Partager'}</button>
         <button type="button" className="btn btn-violet min-h-12 text-base" onClick={signal}>Signal</button>
       </div>
+      {note ? <p className="text-[13px] text-lilas">{note}</p> : null}
       {signalHint ? <p role="status" className="text-sm text-neon">Message copié : colle-le dans Signal</p> : null}
     </div>
   );

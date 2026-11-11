@@ -88,7 +88,9 @@ export default async function CoupPage({ searchParams }: { searchParams: Promise
             </div>
             {!p || !p.attack.weighed ? (
               <p className="text-sm text-lilas">
-                {today < b.startDate ? `Échauffement : tes pesées d'ici le ${prettyDate(b.startDate)} fixent ton poids de départ.` : `Pesée faite après l'heure du combat (${b.fightTime}) : elle ne compte pas dans la battle aujourd'hui, c'est comme un jour sans pesée. Elle sert quand même à suivre ta courbe. Demain, pèse-toi avant ${b.fightTime} !`}
+                {today < b.startDate
+                  ? `Échauffement : tes pesées d'ici le ${prettyDate(b.startDate)} fixent ton poids de départ.`
+                  : `Pesée après l'heure du combat (${b.fightTime}) : pas de coup ce soir, mais ta série continue${p && p.combo > 1 ? ` (combo ×${p.combo})` : ''} et ta tendance est à jour. Demain, pèse-toi avant ${b.fightTime} !`}
               </p>
             ) : (
               <>

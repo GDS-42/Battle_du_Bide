@@ -47,7 +47,7 @@ export function roundPairings(ids: string[], roundIndex: number): [string, strin
 }
 
 function emptyAttack(): PlayerAttack {
-  return { weighed: false, flagged: false, jab: 0, crochet: 0, crochetPct: 0, super: 0, total: 0, blocked: false, gardeUsed: false };
+  return { weighed: false, late: false, combo: 0, flagged: false, jab: 0, crochet: 0, crochetPct: 0, super: 0, total: 0, blocked: false, gardeUsed: false };
 }
 
 /** Une pesée par jour : la première. */
@@ -73,6 +73,8 @@ export function simulatePlayer(
 ): PlayerSim {
   const mine = input.weighIns.filter((w) => w.userId === userId).sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
   const byDay = firstPerDay(mine);
+  // Pesées faites après l'heure du combat : elles comptent pour la série et la tendance, pas pour le coup du soir.
+  const lateDays = new Set(mine.filter((w) => w.late).map((w) => w.date));
   const supers = new Set(input.supers.filter((s) => s.userId === userId).map((s) => s.date));
 
   const warm = [...byDay.entries()].filter(([d]) => d < startDate).map(([, w]) => w);
@@ -92,7 +94,9 @@ export function simulatePlayer(
     const w = byDay.get(d);
     const att = emptyAttack();
     if (w !== undefined) {
-      att.weighed = true;
+      const late = lateDays.has(d);
+      att.weighed = !late;
+      att.late = late;
       let accepted: boolean;
       if (startWeight === null || trend === null) {
         startWeight = w; trend = w; lastAccepted = w; roundLow = roundLow ?? w; accepted = true;
@@ -112,36 +116,44 @@ export function simulatePlayer(
       bestCombo = Math.max(bestCombo, combo);
       if (combo % RULES.GARDE_EVERY === 0 && garde < RULES.GARDE_MAX) garde += 1;
       gauge = Math.min(RULES.SUPER_MAX, gauge + 1);
-      att.jab = combo >= RULES.COMBO_TIER_2 ? RULES.JAB[2] : combo >= RULES.COMBO_TIER_1 ? RULES.JAB[1] : RULES.JAB[0];
-      if (accepted && roundLow !== null && trend < roundLow - 1e-9) {
-        const pct = ((roundLow - trend) / startWeight) * 100;
-        att.crochetPct = Math.round(pct * 100) / 100;
-        att.crochet = r1(RULES.CROCHET_PER_PCT * pct);
-        roundLow = trend;
-      } else {
-        att.blocked = true;
+      // Une pesée tardive ne frappe pas : le plus bas du round ne bouge pas, le crochet attendra la prochaine pesée à l'heure.
+      if (!late) {
+        att.jab = combo >= RULES.COMBO_TIER_2 ? RULES.JAB[2] : combo >= RULES.COMBO_TIER_1 ? RULES.JAB[1] : RULES.JAB[0];
+        if (accepted && roundLow !== null && trend < roundLow - 1e-9) {
+          const pct = ((roundLow - trend) / startWeight) * 100;
+          att.crochetPct = Math.round(pct * 100) / 100;
+          att.crochet = r1(RULES.CROCHET_PER_PCT * pct);
+          roundLow = trend;
+        } else {
+          att.blocked = true;
+        }
+        if (supers.has(d) && gauge >= RULES.SUPER_MAX) {
+          att.super = RULES.SUPER_DAMAGE;
+          gauge = 0;
+          supersUsed += 1;
+        }
+        att.total = r1(att.jab + att.crochet + att.super);
       }
-      if (supers.has(d) && gauge >= RULES.SUPER_MAX) {
-        att.super = RULES.SUPER_DAMAGE;
-        gauge = 0;
-        supersUsed += 1;
-      }
-      att.total = r1(att.jab + att.crochet + att.super);
     } else if (combo > 0 && garde > 0) {
       garde -= 1;
       att.gardeUsed = true;
     } else {
       combo = 0;
     }
+    att.combo = combo;
     days.push({ date: d, weight: w ?? null, trend: trend === null ? null : Math.round(trend * 100) / 100, combo, garde, gauge, attack: att });
   }
   return { startWeight, days, bestCombo, supers: supersUsed };
 }
 
+/** Le Bide frappe comme la moyenne des autres vrais camps du soir (sans compter son adversaire), au moins BOSS_MIN. */
+function bossAttack(others: SideAttack[]): SideAttack {
+  const mean = others.length ? others.reduce((s, a) => s + a.total, 0) / others.length : 0;
+  const total = r1(Math.max(RULES.BOSS_MIN, mean));
+  return { total, jab: total, crochet: 0, super: 0, teamBonus: 0, members: {} };
+}
+
 function sideAttack(side: Side, dayIdx: number, sims: Map<string, PlayerSim>, format: EngineBattle['format']): SideAttack {
-  if (side.isBoss) {
-    return { total: RULES.BOSS_DAILY, jab: RULES.BOSS_DAILY, crochet: 0, super: 0, teamBonus: 0, members: {} };
-  }
   const members: Record<string, PlayerAttack> = {};
   let sum = 0, jab = 0, crochet = 0, sup = 0, allWeighed = side.members.length > 0;
   for (const uid of side.members) {
@@ -209,10 +221,14 @@ export function simulateBattle(input: EngineInput, until: string | null): Battle
         if (d > last) break;
         const dayIdx = r * 7 + i;
         const fight: DayFight = { date: d, roundIndex: r, dayIndex: i, pairings: [] };
+        // Les coups des vrais camps d'abord : celui du boss en dépend.
+        const real = new Map(sides.filter((s) => !s.isBoss).map((s) => [s.id, sideAttack(s, dayIdx, sims, b.format)]));
+        const attackOf = (side: Side, opponent: Side): SideAttack =>
+          side.isBoss ? bossAttack([...real].filter(([sid]) => sid !== opponent.id).map(([, a]) => a)) : real.get(side.id)!;
         for (const p of pairs) {
           const sa = sideById.get(p.a)!, sb = sideById.get(p.b)!;
-          const attA = sideAttack(sa, dayIdx, sims, b.format);
-          const attB = sideAttack(sb, dayIdx, sims, b.format);
+          const attA = attackOf(sa, sb);
+          const attB = attackOf(sb, sa);
           const before = { a: p.hpA, b: p.hpB };
           let ko: PairingDay['ko'] = null;
           if (!p.done) {

@@ -72,6 +72,9 @@ Chaque mécanique s'appuie sur un résultat de recherche (détails dans [00-rech
 
 - **Date de départ.** L'organisateur choisit le jour du premier combat : ce soir (si l'heure du combat n'est pas passée), demain (choix par défaut), un lundi ou toute autre date dans les 60 jours. Il peut encore la changer tant qu'aucun combat n'a eu lieu.
 - **Échauffement.** Entre la création et le premier combat, les joueurs rejoignent la battle, créent leur combattant et font leurs premières pesées. Ces pesées servent à fixer le poids de départ. Si la battle démarre le jour même, la première pesée sert de poids de départ.
+- **Pas de combat sans adversaire.** Si, à l'heure du premier combat, un seul camp est inscrit, le départ est reporté au soir suivant, et ainsi de suite jusqu'à l'arrivée d'un rival.
+- **Inscriptions.** Elles ferment au premier combat : un combat joué n'est jamais réécrit par un nouvel arrivant.
+- **Pesée après l'heure du combat.** Elle ne donne pas de coup ce soir-là, mais elle conserve la série, remplit la jauge et met la tendance à jour. Le crochet attend la prochaine pesée à l'heure.
 - **Heure du combat.** 21 h par défaut, réglable par battle à la création.
 - **Vainqueur de la battle.** Celui qui a gagné le plus de rounds. En cas d'égalité, celui qui a infligé le plus de dégâts au total.
 
@@ -173,7 +176,7 @@ Le format signature : un face-à-face, un combat chaque soir et un round chaque 
 - **Classement du tournoi** : nombre de rounds gagnés, puis dégâts infligés au total pour départager.
 - **La carte du soir** : à 21 h, tous les duels de la soirée s'enchaînent comme un gala de boxe.
 - **Nombre impair** : chaque semaine, un joueur affronte **« Le Bide »**, le boss joué par l'app.
-  - Le Bide frappe à un rythme fixe d'environ 10 PV par soir, soit 70 PV par semaine : il faut une semaine solide pour le battre.
+  - Le Bide frappe comme la moyenne des autres combattants du soir (au moins 4 PV, un jab de base) : pour le battre, il faut faire mieux que ses rivaux.
   - Le battre compte comme une victoire de round, et le commentateur s'en donne à cœur joie.
 
 ### 🤝 Équipes (2 contre 2)

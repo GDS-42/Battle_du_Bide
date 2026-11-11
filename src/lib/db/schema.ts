@@ -58,6 +58,8 @@ export const battles = pgTable('battles', {
   maxPlayers: integer('max_players').notNull().default(2),
   createdBy: uuid('created_by').notNull().references(() => users.id, { onDelete: 'cascade' }),
   rematchOf: uuid('rematch_of'),
+  /** Vrai dès que le premier combat a eu lieu avec au moins deux camps (voir settleStart). */
+  started: boolean('started').notNull().default(false),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 });
 

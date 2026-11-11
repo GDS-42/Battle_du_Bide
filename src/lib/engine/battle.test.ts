@@ -299,3 +299,95 @@ describe('date de départ libre', () => {
     expect(sim.days.every((d) => d.attack.crochet > 0)).toBe(true);
   });
 });
+
+describe('Le Bide : il frappe comme la moyenne des autres combattants', () => {
+  const trio = (weighIns: EngineWeighIn[]): EngineInput => ({
+    battle: { format: 'tournoi', startDate: START, rounds: 1, members: [{ userId: 'a' }, { userId: 'b' }, { userId: 'c' }] }, weighIns, supers: []
+  });
+  /** Le duel contre le boss du premier soir, et le coup de chaque vrai joueur. */
+  function firstNight(input: EngineInput) {
+    const day = simulateBattle(input, START).days[0];
+    const hits: Record<string, number> = {};
+    for (const p of day.pairings) for (const k of ['a', 'b'] as const) if (p[k] !== 'boss') hits[p[k]] = p.attacks[k].total;
+    const vs = day.pairings.find((p) => p.a === 'boss' || p.b === 'boss')!;
+    const bossKey = vs.a === 'boss' ? 'a' : 'b';
+    return { boss: vs.attacks[bossKey].total, opponent: vs[bossKey === 'a' ? 'b' : 'a'], hits };
+  }
+
+  it('moyenne des camps autres que son adversaire', () => {
+    // Échauffement à 100 kg pour tous ; le premier soir, a et b descendent (crochet), c reste stable (jab seul)
+    const warm = ['a', 'b', 'c'].flatMap((u) => series(u, addDays(START, -3), 3, 100, 0));
+    const { boss, opponent, hits } = firstNight(trio([...warm,
+      { userId: 'a', date: START, weight: 99 }, { userId: 'b', date: START, weight: 98 }, { userId: 'c', date: START, weight: 100 }
+    ]));
+    const others = Object.keys(hits).filter((u) => u !== opponent);
+    expect(others).toHaveLength(2);
+    expect(boss).toBeCloseTo((hits[others[0]] + hits[others[1]]) / 2, 1);
+    expect(boss).not.toBe(10);
+  });
+
+  it('au moins un jab de base, même si personne d’autre ne s’est pesé', () => {
+    const { boss } = firstNight(trio([]));
+    expect(boss).toBe(RULES.BOSS_MIN);
+  });
+
+  it('un joueur régulier peut battre Le Bide quand il fait mieux que ses rivaux', () => {
+    // a perd du poids toute la semaine ; b et c se pèsent sans bouger
+    const input = trio([...series('a', START, 7, 100, -0.15), ...series('b', START, 7, 100, 0), ...series('c', START, 7, 100, 0)]);
+    const state = simulateBattle(input, battleEndDate(input.battle));
+    // Au premier round, c'est « a » qui affronte le boss : il frappe plus fort que la moyenne de b et c, donc il gagne
+    const vs = state.rounds[0].pairings.find((p) => p.a === 'boss' || p.b === 'boss')!;
+    expect([vs.a, vs.b].sort()).toEqual(['a', 'boss']);
+    expect(vs.winner).toBe('a');
+    // À l'inverse, un joueur qui ne fait que se peser fait jeu égal avec un boss calé sur des rivaux identiques
+    const flat = trio(['a', 'b', 'c'].flatMap((u) => series(u, START, 7, 100, 0)));
+    const draw = simulateBattle(flat, battleEndDate(flat.battle)).rounds[0].pairings.find((p) => p.a === 'boss' || p.b === 'boss')!;
+    expect(draw.hp.a).toBe(draw.hp.b);
+    expect(state.standings.map((s) => s.sideId)).not.toContain('boss');
+  });
+});
+
+describe('pesée après l’heure du combat', () => {
+  const late = (date: string, weight: number): EngineWeighIn => ({ userId: 'marc', date, weight, late: true });
+
+  it('ne donne pas de coup ce soir-là, mais conserve la série, la jauge et la tendance', () => {
+    const w = [...series('marc', START, 3, 100, -0.2), late(addDays(START, 3), 99.2), ...series('marc', addDays(START, 4), 1, 99, 0)];
+    const sim = simulatePlayer('marc', { weighIns: w, supers: [] }, START, addDays(START, 4));
+    const d3 = sim.days[3], d4 = sim.days[4];
+    expect(d3.attack).toMatchObject({ weighed: false, late: true, total: 0, jab: 0, crochet: 0, gardeUsed: false });
+    expect(d3.combo).toBe(4);
+    expect(d3.gauge).toBe(4);
+    expect(d3.weight).toBe(99.2);
+    expect(d3.trend).toBeLessThan(sim.days[2].trend!);
+    expect(d4.combo).toBe(5);
+    expect(d4.attack.weighed).toBe(true);
+  });
+
+  it('une vraie absence, elle, remet la série à zéro', () => {
+    const w = [...series('marc', START, 3, 100, -0.2), ...series('marc', addDays(START, 4), 1, 99, 0)];
+    const sim = simulatePlayer('marc', { weighIns: w, supers: [] }, START, addDays(START, 4));
+    expect(sim.days[3].combo).toBe(0);
+    expect(sim.days[4].combo).toBe(1);
+  });
+
+  it('reporte le crochet sur la prochaine pesée à l’heure', () => {
+    // Deux jours de baisse : pesés à l'heure, ils donnent deux crochets ; avec le 2e jour en retard, un seul crochet, du même total
+    const onTime = simulatePlayer('marc', { weighIns: [...series('marc', addDays(START, -3), 3, 100, 0), ...series('marc', START, 3, 99.5, -0.5)], supers: [] }, START, addDays(START, 2));
+    const withLate = simulatePlayer('marc', {
+      weighIns: [...series('marc', addDays(START, -3), 3, 100, 0), { userId: 'marc', date: START, weight: 99.5 }, late(addDays(START, 1), 99), { userId: 'marc', date: addDays(START, 2), weight: 98.5 }],
+      supers: []
+    }, START, addDays(START, 2));
+    const crochets = (s: typeof onTime) => s.days.reduce((t, d) => t + d.attack.crochet, 0);
+    expect(withLate.days[1].attack.crochet).toBe(0);
+    expect(crochets(withLate)).toBeCloseTo(crochets(onTime), 1);
+  });
+
+  it('ne déclenche pas le super armé et ne compte pas comme pesée pour départager le round', () => {
+    const w = [...series('marc', addDays(START, -8), 8, 100, 0), late(START, 100), ...series('julie', START, 1, 80, 0)];
+    const input = duel(w, [{ userId: 'marc', date: START }], 1);
+    const p = simulateBattle(input, START).days[0].pairings[0];
+    expect(p.attacks.a.total).toBe(0);
+    expect(p.attacks.a.members.marc.super).toBe(0);
+    expect(simulateBattle(input, START).rounds[0].pairings[0].weighIns).toEqual({ a: 0, b: 1 });
+  });
+});

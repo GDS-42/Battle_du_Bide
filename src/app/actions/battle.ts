@@ -66,8 +66,8 @@ export async function joinBattle(form: FormData): Promise<void> {
   if (!b) redirect('/battles');
   if (await isMember(b.id, user.id)) redirect(`/battles/${b.id}`);
   const bundle = (await loadBundle(b.id))!;
-  const today = battleToday(b, now());
-  if (today > addDays(b.startDate, 6)) redirect(`/b/${code}?erreur=ferme`);
+  // Les inscriptions ferment au premier combat : aucun combat joué n'est réécrit par un nouvel arrivant.
+  if (battleStatus(bundle.battle, now()) !== 'warmup') redirect(`/b/${code}?erreur=ferme`);
   if (bundle.members.length >= b.maxPlayers) redirect(`/b/${code}?erreur=complet`);
   let team: number | null = null;
   if (b.format === 'equipes') {

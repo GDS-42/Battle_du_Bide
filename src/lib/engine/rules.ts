@@ -21,8 +21,11 @@ export const RULES = {
   ANOMALY: 0.02,
   /** Tolérance de confirmation d'une pesée signalée. */
   CONFIRM: 0.01,
-  /** Boss « Le Bide » (nombre impair de camps) : dégâts fixes par soir. */
-  BOSS_DAILY: 10,
+  /**
+   * Boss « Le Bide » (nombre impair de camps) : il frappe comme la moyenne des autres combattants du soir,
+   * avec ce minimum (un jab de base), pour qu'une absence soit toujours punie.
+   */
+  BOSS_MIN: 4,
   /** Équipes : bonus si tous les membres se sont pesés le même jour. */
   TEAM_BONUS: 2,
   /** Défense de ceinture : écart de tendance toléré et pesées minimales sur 7 jours. */

@@ -99,9 +99,10 @@ function toScene(bundle: Bundle, state: BattleState, p: PairingDay, date: string
       attack: {
         total: att.total, jab: att.jab, crochet: att.crochet, super: att.super, teamBonus: att.teamBonus,
         weighed: sid === BOSS_ID || players.some((m) => m.weighed),
+        late: players.some((m) => m.late),
         blocked: players.length > 0 && players.every((m) => !m.weighed || m.blocked) && att.crochet === 0,
         garde: players.some((m) => m.gardeUsed),
-        combo: Math.max(0, ...ms.map((m) => state.players[m.userId]?.series ? comboAt(state, m.userId, date) : 0))
+        combo: Math.max(0, ...players.map((m) => m.combo))
       },
       boss: sid === BOSS_ID
     };
@@ -117,12 +118,4 @@ function toScene(bundle: Bundle, state: BattleState, p: PairingDay, date: string
     ko: p.ko,
     lines: parts
   };
-}
-
-/** Combo du joueur au soir donné (jours de pesée consécutifs). */
-function comboAt(state: BattleState, uid: string, date: string): number {
-  const s = state.players[uid].series;
-  let n = 0;
-  for (let i = s.findIndex((x) => x.date === date); i >= 0 && s[i].weight !== null; i--) n++;
-  return n;
 }

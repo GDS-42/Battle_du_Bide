@@ -4,7 +4,7 @@ import path from 'node:path';
 import { and, eq } from 'drizzle-orm';
 import { db } from './db';
 import { battleMembers, battles, feed, weighIns, type User, type WeighIn } from './db/schema';
-import { battleStatus, displayName, endDateOf, wordOfDay } from './battles';
+import { battleStatus, displayName, endDateOf, settleStart, wordOfDay } from './battles';
 import { bmi, stageIndex } from './engine/silhouette';
 import { globalTrend } from './progress';
 import { localDate, now, zonedInstant } from './time';
@@ -22,7 +22,8 @@ export async function liveBattles(userId: string) {
   const rows = await db.select({ b: battles }).from(battleMembers).innerJoin(battles, eq(battles.id, battleMembers.battleId))
     .where(eq(battleMembers.userId, userId));
   const at = now();
-  return rows.map((r) => r.b).filter((b) => battleStatus(b, at) !== 'finished');
+  const list = await Promise.all(rows.map((r) => settleStart(r.b)));
+  return list.filter((b) => battleStatus(b, at) !== 'finished');
 }
 
 /**

@@ -8,6 +8,13 @@
       "when": 1794162322289,
       "tag": "0000_init",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794405452336,
+      "tag": "0001_battle_started",
+      "breakpoints": true
     }
   ]
 }

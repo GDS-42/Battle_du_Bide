@@ -10,6 +10,8 @@ export interface EngineWeighIn {
   /** Date locale 'YYYY-MM-DD' (une seule pesée retenue par jour : la première). */
   date: string;
   weight: number;
+  /** Pesée faite après l'heure du combat : pas de coup ce soir-là, mais elle compte pour la série et la tendance. */
+  late?: boolean;
 }
 
 export interface EngineSuper {
@@ -34,7 +36,12 @@ export interface EngineInput {
 
 /** Ce qu'un joueur charge comme coup un soir donné. */
 export interface PlayerAttack {
+  /** Pesé à temps pour le combat du soir. */
   weighed: boolean;
+  /** Pesé, mais après l'heure du combat : pas de coup, série conservée. */
+  late: boolean;
+  /** Série (jours de pesée d'affilée) à l'issue de cette journée. */
+  combo: number;
   flagged: boolean;
   jab: number;
   crochet: number;

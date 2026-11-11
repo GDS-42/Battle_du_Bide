@@ -55,8 +55,8 @@ export default function AidePage() {
             <Bullet dark>Une seule pesée suffit pour toutes tes battles.</Bullet>
           </ul>
           <div className="rounded-2xl border-[3px] border-encre bg-creme px-3 py-2.5 text-[15px] leading-snug">
-            <b>Trop tard ?</b> Après l'heure du combat, ta pesée est bien notée, mais elle ne compte pas pour la battle :
-            ce jour-là, c'est comme si tu ne t'étais pas pesé.
+            <b>Trop tard ?</b> Une pesée après l'heure du combat ne donne pas de coup ce soir-là, mais elle sauve ta série
+            et met ta tendance à jour. Ton crochet attendra ta prochaine pesée à l'heure.
           </div>
           <p className="flex gap-2 text-[14px] leading-snug">
             <Icon name="bell" size={20} className="shrink-0" />
@@ -73,6 +73,10 @@ export default function AidePage() {
             L'organisateur choisit la date du premier combat : ce soir, demain ou plus tard. D'ici là, pas encore de combat.
             Pèse-toi quelques matins : la moyenne de tes 3 dernières pesées devient ton <b className="text-soleil">poids de départ</b>.
             Si la battle démarre le jour même, c'est ta première pesée qui compte.
+          </p>
+          <p className="text-[15px] leading-snug">
+            Pas de combat sans adversaire : tant que personne n'a relevé le défi, le premier combat est reporté au soir suivant.
+            Et les inscriptions ferment au premier combat.
           </p>
           <p className="text-[14px] leading-snug text-lilas">Profites-en pour créer ton combattant et inviter tes potes.</p>
         </Block>
@@ -141,8 +145,8 @@ export default function AidePage() {
               Une barre de vie commune. Vos dégâts, c'est la moyenne des deux, +{pv(RULES.TEAM_BONUS)} si vous vous êtes pesés tous les deux.
             </Format>
             <p className="text-[14px] leading-snug text-lilas">
-              Il manque un adversaire (nombre impair) ? On affronte « {BOSS_NAME} », le boss de l'app : il frappe {pv(RULES.BOSS_DAILY)} chaque soir,
-              sans jamais rater.
+              Nombre impair de camps ? Chaque semaine, l'un d'eux affronte « {BOSS_NAME} », le boss de l'app. Il frappe comme la moyenne
+              des autres combattants du soir (au moins {pv(RULES.BOSS_MIN)}) : pour le battre, il faut faire mieux que tes rivaux.
             </p>
           </div>
         </Block>

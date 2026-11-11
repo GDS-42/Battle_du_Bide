@@ -61,10 +61,12 @@ Tout le jeu tient dans [`src/lib/engine/`](../src/lib/engine/) : des **fonctions
 - **Poids de départ** : moyenne des 3 dernières pesées d'échauffement (avant le jour de départ), sinon la première pesée de la battle.
 - **Coups** : jab de 4 à 6 PV selon le combo (paliers à 7 et 21 jours), crochet de 50 PV par point de pourcentage sous le plus bas du round, super de +15 PV quand la jauge (7 crans) est pleine et armée. Pas de plafond.
 - **Rounds** : une semaine, 100 PV par camp, K.O. à 0. Vainqueur aux PV restants, puis au nombre de pesées. Champion : victoires, puis dégâts infligés.
-- **Formats** : duel, tournoi (appariements par la méthode du cercle), équipes de 2 (moyenne des membres, +2 si tous pesés). Si le nombre de camps est impair, **Le Bide** (boss, 10 PV par soir) complète le tableau.
+- **Formats** : duel, tournoi (appariements par la méthode du cercle), équipes de 2 (moyenne des membres, +2 si tous pesés). Si le nombre de camps est impair, **Le Bide** complète le tableau : ce boss frappe comme la moyenne des autres camps du soir, avec un minimum de 4 PV.
 - Barème : [`rules.ts`](../src/lib/engine/rules.ts). Règles détaillées : [concept, §5](01-concept.md).
 
-**Règle d'équité du soir.** Une pesée ne compte pour le combat d'une date que si elle a été saisie **avant l'heure du combat** de cette battle, ce jour-là. Un combat révélé ne peut donc plus changer. La première pesée du jour est corrigeable 10 minutes, jamais après un combat déjà joué.
+**Règle d'équité du soir.** Une pesée ne frappe au combat d'une date que si elle a été saisie **avant l'heure du combat** de cette battle, ce jour-là. Saisie après, elle est « tardive » : pas de coup, mais elle compte pour la série, la jauge et la tendance. Un combat révélé ne peut donc plus changer. La première pesée du jour est corrigeable 10 minutes, jamais après un combat déjà joué.
+
+**Départ effectif** (`settleStart`, `src/lib/battles.ts`). À chaque chargement d'une battle non démarrée dont l'heure du premier combat est passée : s'il y a au moins deux camps, `battles.started` passe à vrai et les inscriptions ferment ; sinon `startDate` est reportée au prochain soir. Personne n'affronte Le Bide faute d'adversaire, et aucun combat joué n'est réécrit.
 
 **Révélation.** Le combat du jour est visible à partir de l'heure du combat (21 h par défaut, dans le fuseau de la battle). Avant, les résultats des rivaux restent secrets ; on sait seulement qui s'est pesé.
 

@@ -37,12 +37,15 @@ async function run(at: Date): Promise<number> {
 
   // 1) Combat prêt et 3) série en danger, battle par battle
   const remindedToday = new Set<string>();
-  for (const b of live) {
-    const today = localDate(at, b.timezone);
-    if (today < b.startDate || today > endDateOf(b)) continue;
-    const fightAt = zonedInstant(today, b.fightTime, b.timezone).getTime();
-    const bundle = await loadBundle(b.id);
+  for (const row of live) {
+    const today = localDate(at, row.timezone);
+    if (today < row.startDate || today > endDateOf(row)) continue;
+    const fightAt = zonedInstant(today, row.fightTime, row.timezone).getTime();
+    // loadBundle applique settleStart : sans adversaire, le départ vient d'être reporté et il n'y a pas de combat ce soir.
+    const bundle = await loadBundle(row.id);
     if (!bundle) continue;
+    const b = bundle.battle;
+    if (today < b.startDate || today > endDateOf(b)) continue;
     const { day } = roundOf(b, today);
     const last = today === endDateOf(b);
 

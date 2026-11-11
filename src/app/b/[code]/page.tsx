@@ -5,12 +5,12 @@ import { notFound } from 'next/navigation';
 import { currentUser } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { battles } from '@/lib/db/schema';
-import { displayName, fighterFor, loadBundle } from '@/lib/battles';
+import { battleStatus, displayName, fighterFor, loadBundle } from '@/lib/battles';
 import { joinBattle } from '@/app/actions/battle';
 import { Fighter } from '@/components/Fighter';
 import { Icon, Logo, RingScene, Ribbon } from '@/components/ui';
 import { formatEuros } from '@/lib/engine/stakes';
-import { prettyDate } from '@/lib/time';
+import { now, prettyDate } from '@/lib/time';
 
 const FORMAT = { duel: 'Duel', tournoi: 'Tournoi', equipes: 'Équipes' } as const;
 
@@ -23,9 +23,11 @@ export async function generateMetadata({ params }: { params: Promise<{ code: str
 export default async function InvitePage({ params, searchParams }: { params: Promise<{ code: string }>; searchParams: Promise<{ erreur?: string }> }) {
   const { code } = await params;
   const { erreur } = await searchParams;
-  const [b] = await db.select().from(battles).where(eq(battles.code, code.toUpperCase())).limit(1);
-  if (!b) notFound();
-  const bundle = (await loadBundle(b.id))!;
+  const [row] = await db.select().from(battles).where(eq(battles.code, code.toUpperCase())).limit(1);
+  if (!row) notFound();
+  const bundle = (await loadBundle(row.id))!;
+  const b = bundle.battle;
+  const closed = battleStatus(b, now()) !== 'warmup';
   const host = bundle.members.find((m) => m.userId === b.createdBy) ?? bundle.members[0];
   const user = await currentUser();
   const member = user && bundle.members.some((m) => m.userId === user.id);
@@ -63,10 +65,12 @@ export default async function InvitePage({ params, searchParams }: { params: Pro
         </div>
 
         {erreur === 'complet' ? <p role="alert" className="text-sm text-[#FF8FA3]">Le ring est complet.</p> : null}
-        {erreur === 'ferme' ? <p role="alert" className="text-sm text-[#FF8FA3]">Les inscriptions sont closes : le premier round est terminé.</p> : null}
+        {erreur === 'ferme' ? <p role="alert" className="text-sm text-[#FF8FA3]">Les inscriptions sont closes : le premier combat a eu lieu.</p> : null}
 
         {member ? (
           <Link href={`/battles/${b.id}`} className="btn btn-soleil w-full text-[24px]">ENTRER SUR LE RING</Link>
+        ) : closed ? (
+          erreur === 'ferme' ? null : <p role="status" className="text-sm text-lilas">Les inscriptions sont closes : le premier combat a eu lieu. Demande une revanche pour la prochaine !</p>
         ) : full ? null : (
           <form action={joinBattle} className="flex flex-col gap-3">
             <input type="hidden" name="code" value={b.code} />

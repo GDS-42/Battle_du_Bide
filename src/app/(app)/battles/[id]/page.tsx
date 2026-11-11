@@ -67,7 +67,7 @@ export default async function RingPage({ params, searchParams }: { params: Promi
   const feedRows = await recentFeed(id, 30);
   const { round: rNum, day: dNum } = roundOf(b, inBattle ? today : until ?? b.startDate);
   const inviteUrl = `${appUrl()}/b/${b.code}`;
-  const showInvite = bundle.members.length < b.maxPlayers && today <= addDays(b.startDate, 6);
+  const showInvite = bundle.members.length < b.maxPlayers && status === 'warmup';
 
   // Fin de battle
   let finale: React.ReactNode = null;
@@ -142,7 +142,7 @@ export default async function RingPage({ params, searchParams }: { params: Promi
 
         <div className="flex flex-col gap-5 px-4">
           {sp.erreur === 'createur' ? <p role="alert" className="text-sm text-[#FF8FA3]">Tu as ouvert ce ring : tu ne peux pas le quitter tant que d'autres joueurs y sont.</p> : null}
-          {(sp.invite || status === 'warmup') && showInvite ? <InviteBox url={inviteUrl} name={b.name} /> : null}
+          {(sp.invite || status === 'warmup') && showInvite ? <InviteBox url={inviteUrl} name={b.name} note="Inscriptions ouvertes jusqu'au premier combat. Sans adversaire, le départ est reporté au soir suivant." /> : null}
           {status === 'warmup' && b.createdBy === user.id ? (
             <StartDateBox battleId={id} startDate={b.startDate} fightTime={b.fightTime} today={today} tomorrow={addDays(today, 1)}
               maxDate={addDays(today, START_MAX_DAYS)} tonightOk={canStartTonight(b.fightTime, b.timezone, at)} error={sp.erreur === 'date'} />
@@ -169,7 +169,7 @@ export default async function RingPage({ params, searchParams }: { params: Promi
               {weighedToday(user.id) ? (
                 preview ? (
                   <p className="text-[15px]">
-                    {preview.attack.weighed ? <>Chargé : <b className="text-soleil">{fmt(preview.attack.total, 0)} PV</b> (jab {preview.attack.jab}{preview.attack.crochet ? `, crochet ${fmt(preview.attack.crochet, 0)}` : ', crochet bloqué'}{preview.attack.super ? ', super 15' : ''}).</> : 'Pesée faite après le combat : elle compte pour ta courbe.'}
+                    {preview.attack.weighed ? <>Chargé : <b className="text-soleil">{fmt(preview.attack.total, 0)} PV</b> (jab {preview.attack.jab}{preview.attack.crochet ? `, crochet ${fmt(preview.attack.crochet, 0)}` : ', crochet bloqué'}{preview.attack.super ? ', super 15' : ''}).</> : 'Pesée après l’heure du combat : pas de coup ce soir, mais ta série continue.'}
                   </p>
                 ) : <p className="text-[15px]">Pesée enregistrée : elle sert à fixer ton poids de départ.</p>
               ) : (

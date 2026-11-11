@@ -3,13 +3,14 @@ import { randomBytes } from 'node:crypto';
 import { and, asc, desc, eq, gte, inArray } from 'drizzle-orm';
 import { db } from './db';
 import { battleMembers, battles, feed, reactions, supers, users, weighIns, type Battle, type User } from './db/schema';
-import { battleEndDate, playerDayPreview, simulateBattle } from './engine/battle';
+import { battleEndDate, buildSides, playerDayPreview, simulateBattle } from './engine/battle';
 import { BOSS_ID, BOSS_NAME } from './engine/rules';
 import { bmi, kFromBmi } from './engine/silhouette';
 import type { BattleState, EngineInput } from './engine/types';
 import type { FighterConfig, FighterRender } from './fighter/types';
 import { PRESETS } from './fighter/presets';
-import { addDays, dayDiff, localDate, localTime, prettyDate, zonedInstant } from './time';
+import { sendOnce } from './push';
+import { addDays, dayDiff, localDate, localTime, now, prettyDate, zonedInstant } from './time';
 
 export type BattleStatus = 'warmup' | 'active' | 'finished';
 
@@ -56,14 +57,44 @@ export interface Bundle {
   supers: (typeof supers.$inferSelect)[];
 }
 
+/**
+ * Au moment du premier combat, la battle démarre pour de bon s'il y a au moins deux camps.
+ * Sinon (organisateur seul sur le ring), le départ est reporté au prochain soir : personne
+ * n'affronte Le Bide faute d'adversaire, et aucun combat joué n'est réécrit quand un rival arrive.
+ * Renvoie la battle à jour. Idempotent ; appelé à chaque chargement d'une battle.
+ */
+export async function settleStart(battle: Battle, members?: { userId: string; team: number | null }[]): Promise<Battle> {
+  if (battle.started) return battle;
+  const at = now();
+  if (at.getTime() < zonedInstant(battle.startDate, battle.fightTime, battle.timezone).getTime()) return battle;
+  members ??= await db.select({ userId: battleMembers.userId, team: battleMembers.team }).from(battleMembers).where(eq(battleMembers.battleId, battle.id));
+  const camps = buildSides({ format: battle.format, startDate: battle.startDate, rounds: battle.rounds, members }).filter((s) => !s.isBoss).length;
+  if (camps >= 2) {
+    await db.update(battles).set({ started: true }).where(eq(battles.id, battle.id));
+    return { ...battle, started: true };
+  }
+  const today = localDate(at, battle.timezone);
+  const next = at.getTime() < zonedInstant(today, battle.fightTime, battle.timezone).getTime() ? today : addDays(today, 1);
+  await db.update(battles).set({ startDate: next }).where(and(eq(battles.id, battle.id), eq(battles.started, false)));
+  // Un seul message dans le fil et une seule notification, même si le report se répète chaque soir.
+  const text = 'Pas encore d’adversaire : le premier combat est reporté tant que personne n’a relevé le défi.';
+  const [already] = await db.select({ id: feed.id }).from(feed).where(and(eq(feed.battleId, battle.id), eq(feed.text, text))).limit(1);
+  if (!already) await db.insert(feed).values({ battleId: battle.id, kind: 'system', text });
+  await sendOnce(battle.createdBy, `report:${battle.id}`, {
+    title: `🥊 ${battle.name}`, body: 'Personne en face : le combat est reporté. Envoie ton lien d’invitation !', url: `/battles/${battle.id}`, tag: `start-${battle.id}`
+  });
+  return { ...battle, startDate: next };
+}
+
 export async function loadBundle(battleId: string): Promise<Bundle | null> {
-  const [battle] = await db.select().from(battles).where(eq(battles.id, battleId)).limit(1);
-  if (!battle) return null;
+  const [row] = await db.select().from(battles).where(eq(battles.id, battleId)).limit(1);
+  if (!row) return null;
   const rows = await db.select({ m: battleMembers, u: users }).from(battleMembers)
     .innerJoin(users, eq(users.id, battleMembers.userId))
     .where(eq(battleMembers.battleId, battleId))
     .orderBy(asc(battleMembers.joinedAt));
   const members = rows.map((r) => ({ userId: r.u.id, team: r.m.team, joinedAt: r.m.joinedAt, user: r.u }));
+  const battle = await settleStart(row, members);
   const ids = members.map((m) => m.userId);
   const wi = ids.length
     ? await db.select().from(weighIns).where(and(inArray(weighIns.userId, ids), gte(weighIns.date, addDays(battle.startDate, -21)))).orderBy(asc(weighIns.date))
@@ -72,14 +103,19 @@ export async function loadBundle(battleId: string): Promise<Bundle | null> {
   return { battle, members, weighIns: wi, supers: sp };
 }
 
-/** Entrée du moteur : une pesée ne compte pour un combat que si elle a été faite avant l'heure du combat. */
+/**
+ * Entrée du moteur. Une pesée faite après l'heure du combat est marquée « tardive » : elle ne donne
+ * pas de coup ce soir-là (le combat déjà révélé ne change pas), mais compte pour la série et la tendance.
+ */
 export function engineInput(bundle: Bundle): EngineInput {
   const b = bundle.battle;
+  const end = battleEndDate(b);
   return {
     battle: { format: b.format, startDate: b.startDate, rounds: b.rounds, members: bundle.members.map((m) => ({ userId: m.userId, team: m.team })) },
-    weighIns: bundle.weighIns
-      .filter((w) => w.date < b.startDate || w.createdAt.getTime() < zonedInstant(w.date, b.fightTime, b.timezone).getTime())
-      .map((w) => ({ userId: w.userId, date: w.date, weight: w.weight })),
+    weighIns: bundle.weighIns.map((w) => ({
+      userId: w.userId, date: w.date, weight: w.weight,
+      late: w.date >= b.startDate && w.date <= end && w.createdAt.getTime() >= zonedInstant(w.date, b.fightTime, b.timezone).getTime()
+    })),
     supers: bundle.supers.map((s) => ({ userId: s.userId, date: s.date }))
   };
 }
@@ -128,7 +164,7 @@ export async function userBattles(userId: string) {
     .innerJoin(battles, eq(battles.id, battleMembers.battleId))
     .where(eq(battleMembers.userId, userId))
     .orderBy(desc(battles.startDate));
-  return rows.map((r) => r.b);
+  return Promise.all(rows.map((r) => settleStart(r.b)));
 }
 
 export async function isMember(battleId: string, userId: string): Promise<boolean> {

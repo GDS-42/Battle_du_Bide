@@ -31,9 +31,13 @@ const T = {
     bon: ['{X} déclenche son SUPER « {S} » ! +15 PV !'],
     trash: ['SUPER ! « {S} » ! {X} ne fait pas dans la dentelle : +15 PV !']
   },
+  late: {
+    bon: ['{X} s’est pesé après la cloche : pas de coup ce soir, mais la série tient.', 'Pesée tardive pour {X} : le coup attendra demain, la série continue.'],
+    trash: ['{X} arrive après la cloche. Le coup reste au vestiaire, la série survit.', '{X} se pèse en retard : pas de coup ce soir. Demain, on met un réveil ?']
+  },
   boss: {
-    bon: ['Le Bide frappe comme une horloge : 10 PV.'],
-    trash: ['Le Bide ne rate jamais un soir : 10 PV, et il en redemande.']
+    bon: ['Le Bide frappe comme la moyenne du ring : {N}.', 'Le Bide ne rate jamais un soir : {N}.'],
+    trash: ['Le Bide cogne comme tes rivaux : {N}, et il en redemande.', 'Le Bide ne prend jamais de jour de repos : {N}.']
   },
   team: {
     bon: ['Attaque combinée de {X} : +2 PV !'],
@@ -64,10 +68,13 @@ function line(kind: keyof typeof T, tone: Tone, seed: string, vars: Record<strin
 }
 
 function sideLines(side: string, att: SideAttack, name: string, tone: Tone, seed: string, superName?: string): string[] {
-  if (side === BOSS_ID) return [line('boss', tone, seed, {})];
+  if (side === BOSS_ID) return [line('boss', tone, seed, { N: pv(att.total) })];
   const out: string[] = [];
   const weighedAny = Object.values(att.members).some((m) => m.weighed);
-  if (!weighedAny) return [line('absent', tone, seed + 'abs', { X: name })];
+  if (!weighedAny) {
+    const late = Object.values(att.members).some((m) => m.late);
+    return [line(late ? 'late' : 'absent', tone, seed + 'abs', { X: name })];
+  }
   if (att.crochet > 0) {
     const p = Math.max(...Object.values(att.members).map((m) => m.crochetPct));
     out.push(line('crochet', tone, seed + 'cr', { X: name, P: pct(p), N: pv(att.jab + att.crochet) }));

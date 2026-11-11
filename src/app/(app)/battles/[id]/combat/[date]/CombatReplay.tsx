@@ -12,7 +12,7 @@ export interface SideView {
   sub: string;
   boss: boolean;
   fighters: { key: string; cfg: FighterRender }[];
-  attack: { total: number; jab: number; crochet: number; super: number; teamBonus: number; weighed: boolean; blocked: boolean; garde: boolean; combo: number };
+  attack: { total: number; jab: number; crochet: number; super: number; teamBonus: number; weighed: boolean; late: boolean; blocked: boolean; garde: boolean; combo: number };
 }
 export interface Scene {
   key: string;
@@ -34,7 +34,7 @@ const r = (n: number) => Math.max(0, Math.round(n));
 function hitOf(s: SideView): { text: string; sub?: string; sound: SoundName; color: string; big: boolean } {
   const a = s.attack;
   if (s.boss) return { text: 'BIDE!', sub: `${r(a.total)} PV`, sound: 'jab', color: '#B98BFF', big: false };
-  if (!a.weighed) return { text: 'ABSENT', sub: 'pas de pesée', sound: 'bloque', color: '#CDB8F0', big: false };
+  if (!a.weighed) return { text: a.late ? 'TROP TARD' : 'ABSENT', sub: a.late ? 'pesée après la cloche' : 'pas de pesée', sound: 'bloque', color: '#CDB8F0', big: false };
   if (a.super > 0) return { text: 'SUPER!', sub: `${r(a.total)} PV`, sound: 'superCoup', color: '#2BFFB0', big: true };
   if (a.crochet > 0) return { text: 'CROCHET', sub: `${r(a.total)} PV`, sound: 'crochet', color: '#FFD23D', big: true };
   return { text: 'JAB', sub: `${r(a.total)} PV${a.blocked ? ' · crochet bloqué' : ''}`, sound: 'jab', color: '#FFF4E3', big: false };
@@ -96,7 +96,7 @@ export function CombatReplay({ battleId, title, round, day, when, dateLabel, sce
   ];
   const progress = !started ? 0 : step === 0 ? 8 : step === 1 ? 40 : step === 2 ? 72 : 100;
   const actor = step === 1 ? s.a : s.b;
-  const actorLabel = actor.boss ? 'LE BIDE FRAPPE' : !actor.attack.weighed ? `${actor.name.toUpperCase()} A SÉCHÉ` : `${hit?.text.replace('!', '')} DE ${actor.name.toUpperCase()}${actor.attack.combo > 1 ? ` · COMBO ×${actor.attack.combo}` : ''}`;
+  const actorLabel = actor.boss ? 'LE BIDE FRAPPE' : !actor.attack.weighed ? `${actor.name.toUpperCase()} ${actor.attack.late ? 'EN RETARD' : 'A SÉCHÉ'}` : `${hit?.text.replace('!', '')} DE ${actor.name.toUpperCase()}${actor.attack.combo > 1 ? ` · COMBO ×${actor.attack.combo}` : ''}`;
   const banner = step === 0 ? `ROUND ${round} · JOUR ${day}` : hit ? actorLabel : s.ko ? 'K.O. !' : lastOfRound ? 'FIN DU ROUND' : 'FIN DU COMBAT';
 
   return (
