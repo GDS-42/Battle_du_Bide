@@ -39,6 +39,7 @@ Déploiement sur vos serveurs : **[guide Coolify](docs/04-deploiement-coolify.md
 - [Direction artistique](docs/02-direction-artistique.md) : palette, typographie, composants, générateur de combattant, sons. [Canevas de design](https://claude.ai/artifact/LkTsuFTThcf2AUkyQ8k4Gx).
 - [Architecture technique](docs/03-architecture.md) : stack, moteur de jeu, données, sécurité, tâche planifiée, développement local.
 - [Déploiement sur Coolify](docs/04-deploiement-coolify.md) : pas à pas, variables, sauvegardes, dépannage.
+- [Les moteurs psychologiques du jeu](docs/05-moteurs-psychologiques.md) : pour chaque mécanique, le ressort sur lequel elle s'appuie (psychologie, économie comportementale, neurosciences, sociologie), son niveau de preuve, ses limites et la bibliographie.
 - [Synthèse des recherches](docs/00-recherche.md) : sciences comportementales, gamification, concurrents, formes de jeu.
 
 ## Stack

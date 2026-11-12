@@ -3,7 +3,7 @@
 > **« Que le meilleur perde ! »**
 > Chaque matin, ta pesée charge ton coup. À 21 h, les combattants montent sur le ring.
 
-Statut : **concept validé (phase 1)**. C'est le cahier des charges des phases 2 (design) et 3 (code). Les fondements scientifiques sont dans [00-recherche.md](00-recherche.md).
+Statut : **concept validé (phase 1)**. C'est le cahier des charges des phases 2 (design) et 3 (code). Les fondements scientifiques sont dans [00-recherche.md](00-recherche.md) et [05-moteurs-psychologiques.md](05-moteurs-psychologiques.md).
 
 ---
 
@@ -45,20 +45,20 @@ C'est un jeu de combat **original**, dans la tradition des jeux d'arcade de vers
 
 ## 2. Les principes fondateurs
 
-Chaque mécanique s'appuie sur un résultat de recherche (détails dans [00-recherche.md](00-recherche.md)).
+Chaque mécanique s'appuie sur un résultat de recherche. Le détail par étude est dans [00-recherche.md](00-recherche.md) ; le détail par mécanique, avec les ressorts psychologiques, leur niveau de preuve, leurs limites et la bibliographie, est dans [05-moteurs-psychologiques.md](05-moteurs-psychologiques.md).
 
 | Principe | Ce que dit la recherche | Ce que ça donne dans le jeu |
 |---|---|---|
 | **La rivalité est le moteur** | La compétition fait mieux que le soutien et la collaboration, et c'est la seule à rester efficace après le jeu (STEP UP, 2019). | Duels, même au sein d'un groupe. |
 | **La pesée quotidienne fait maigrir, le jeu la fait tenir** | Une balance et une courbe : −6,6 % contre −0,4 % (Steinberg, 2013). Des points seuls ne suffisent pas (LOSE IT, 2018). | Se peser rapporte toujours un coup. La pesée est l'action centrale. |
-| **Perdre motive plus que gagner** | La même récompense, présentée comme une perte possible plutôt qu'un gain, double presque l'effet (Patel, 2016). | Une **barre de vie à défendre**. |
+| **Perdre motive plus que gagner** | Une somme avancée, qu'on perd à chaque jour manqué : objectif tenu 45 % des jours, contre 30 % sans récompense. La même somme présentée comme un gain ne fait pas mieux que rien (Patel, 2016). | Une **barre de vie à défendre**. |
 | **Chaque round est un nouveau départ** | Effet « nouveau départ » (Dai, Milkman & Riis, 2014). | Rounds de 7 jours, vie remise à fond au début de chaque round. L'organisateur peut faire démarrer la battle un lundi pour en profiter à plein. |
-| **Une habitude met environ 66 jours à se former** | Rater un jour ne la casse pas (Lally, 2010). | Battle de **8 semaines** par défaut. |
+| **Une habitude met environ 66 jours à se former** | C'est une médiane, de 18 à 254 jours selon les personnes. Rater un jour ne la casse pas (Lally, 2010). | Battle de **8 semaines** par défaut. |
 | **Une série cassée fait décrocher** | La réparer limite ce décrochage (Silverman & Barasch, 2023). | Les **gardes** sauvent la série. |
-| **La nouveauté s'use en 4 semaines environ** | Pokémon Go ; méta-analyse Mazeas, 2022. | Des rebondissements : rounds, KO, transformations, ceinture, revanche. |
+| **La nouveauté s'use en 4 à 6 semaines** | Pokémon Go (Howe, 2016) ; méta-analyse Mazeas, 2022. | Des rebondissements : rounds, KO, transformations, ceinture, revanche. |
 | **L'effet s'arrête avec le jeu** | Le poids revient après la fin des incitations (Volpp, 2008 ; John, 2011). | La **ceinture se défend** après la battle. |
 | **Cagnotte partagée entre ceux qui réussissent** | −4,8 kg, contre −1,7 kg avec une récompense individuelle (Kullgren, 2013). | Mode de cagnotte « objectif commun ». |
-| **Les équipes renforcent** | L'influence des coéquipiers augmente d'environ 20 % les chances de perdre 5 % (Leahey, 2012). | Mode équipes dès la V1. |
+| **Les équipes renforcent** | Sentir l'influence de ses coéquipiers va de pair avec une perte d'au moins 5 % (rapport de cotes de 1,20 ; Leahey, 2012). | Mode équipes dès la V1. |
 
 ---
 
@@ -264,7 +264,7 @@ Texte libre : *« Le perdant paie le resto »*, *« Le dernier fait la vaisselle
 | Mode | Règle |
 |---|---|
 | 🏆 **Le vainqueur rafle tout** | Le champion empoche la cagnotte. |
-| 🎯 **Objectif commun** (recommandé) | La battle fixe un objectif, par exemple −5 % du poids de départ. **La cagnotte est partagée entre tous ceux qui l'atteignent**, et ceux qui le ratent paient. Si personne ne l'atteint, la cagnotte est **reportée sur la revanche**. C'est le mécanisme le plus efficace testé (Kullgren, 2013). |
+| 🎯 **Objectif commun** (recommandé) | La battle fixe un objectif, par exemple −5 % du poids de départ. **La cagnotte est partagée entre tous ceux qui l'atteignent**, et ceux qui le ratent paient. Si personne ne l'atteint, la cagnotte est **reportée sur la revanche**. C'est le mécanisme qui a donné la plus forte perte dans l'essai de Kullgren (2013). |
 
 ---
 
