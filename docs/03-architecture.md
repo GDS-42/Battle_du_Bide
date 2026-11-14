@@ -53,8 +53,8 @@ src/
     notify.ts, push.ts          tâche planifiée et notifications
     auth.ts, mail.ts            sessions et liens magiques
     time.ts                     dates locales par fuseau (sans dépendance)
-    sound.ts                    bruitages synthétisés en couches (Web Audio), limiteur et réverbération ; joue aussi les sons de la salle
-    crowd-files.ts              liste des sons de la salle (fichiers de public/son/v1) ; pur et testé
+    sound.ts                    bruitages synthétisés en couches (Web Audio), limiteur et réverbération ; joue aussi les vrais sons (salle, coups)
+    sound-files.ts              liste des vrais sons (salle et coups, fichiers de public/son/v1) ; pur et testé
 drizzle/                        migrations SQL
 design/                         sources du canevas de DA et atelier du combattant
 scripts/                        migrate, seed-demo, vapid
@@ -93,7 +93,7 @@ Les pesées appartiennent au **joueur**, pas à la battle : une même pesée com
 - [`src/components/bd/engine.ts`](../src/components/bd/engine.ts) joue ces séquences. Il n'est **chargé qu'au clic** sur « Lancer le combat » et ne touche au navigateur qu'à l'intérieur de `createStage()` : il ne peut donc pas faire échouer l'affichage de la page. Il prévient le replay au début de chaque séquence et à l'instant où un coup porte ; barres de vie et commentaire restent rendus par React.
 - **Tout défaut ramène au replay sobre**, celui d'avant, resté en place dans `CombatReplay.tsx` : dessin introuvable ou trop long à charger, moteur qui ne se charge pas, joueur qui a demandé moins de mouvement.
 - Les textes saisis par les joueurs (nom du camp, coup spécial) ne sont jamais interprétés comme du HTML : React les échappe, et le moteur les pose par `textContent`.
-- **La salle** : les sons du public sont de vrais fichiers audio (`public/son/v1/`, cache longue durée comme les dessins). `prepareCrowd()` (`src/lib/sound.ts`) les télécharge et les décode au lancement du combat, sans jamais le retarder de plus d'une seconde et demie. Le moteur déclenche ensuite les réactions (`crowd`) et allume ou éteint le fond (`bed`) ; un son pas encore prêt, ou absent, est simplement sauté.
+- **Les vrais sons (salle et coups)** sont des fichiers audio (`public/son/v1/`, cache longue durée comme les dessins). `prepareSounds()` (`src/lib/sound.ts`) les télécharge et les décode au lancement du combat, sans jamais le retarder de plus d'une seconde et demie. Pour la salle, le moteur déclenche les réactions (`crowd`) et allume ou éteint le fond (`bed`) ; une réaction pas encore prête, ou absente, est simplement sautée. Pour les coups, `play('jab')`, `play('crochet')`, `play('ko')`, `play('thud')` et la cloche jouent le fichier s'il est chargé, sinon leur version fabriquée par le code.
 - Les styles sont dans `src/app/bd.css`, tous sous la classe `.bdx` et préfixés `bdx-` : ils ne peuvent pas toucher le reste du jeu.
 
 ## 5. Sécurité et confidentialité

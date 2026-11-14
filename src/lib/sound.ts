@@ -3,9 +3,10 @@
 // Chaque son superpose plusieurs couches (l'attaque, le corps, le souffle). Tous passent par un bus commun,
 // avec un limiteur, et envoient une part réglable dans une petite réverbération de salle fabriquée sur place.
 // Point de départ : design/canvas/Sons.dc.html.
-// La salle du ring (fond de foule et réactions du public) n'est pas fabriquée : ce sont de vrais sons, chargés
-// depuis public/son/v1 (voir crowd-files.ts) et joués à travers le même bus.
-import { CROWD_BASE, CROWD_FILES, CROWD_LOOP, type CrowdName } from './crowd-files';
+// Deux familles ne sont pas fabriquées : la salle du ring (fond de foule, réactions du public) et les coups (poings,
+// chute, cloche). Ce sont de vrais sons, chargés depuis public/son/v1 (voir sound-files.ts) et joués à travers le
+// même bus. Tant qu'un coup n'est pas chargé, sa version fabriquée, plus bas, sert de repli.
+import { CROWD_FILES, CROWD_LOOP, HIT_FILES, SOUND_BASE, type CrowdName, type HitName } from './sound-files';
 
 export type { CrowdName };
 
@@ -161,6 +162,35 @@ function vibrato(target: AudioParam, t: number, end: number, vib: [number, numbe
   lfo.start(t); lfo.stop(end);
 }
 
+/** Les vrais sons déjà chargés (salle et coups), par nom : une ou plusieurs prises. */
+const samples = new Map<string, AudioBuffer[]>();
+const lastTake = new Map<string, number>();
+/** Choisit une prise : jamais la même deux fois de suite quand il y en a plusieurs. */
+function take(name: string, takes: AudioBuffer[]): AudioBuffer {
+  let i = Math.floor(Math.random() * takes.length);
+  if (takes.length > 1 && i === lastTake.get(name)) i = (i + 1) % takes.length;
+  lastTake.set(name, i);
+  return takes[i];
+}
+/** Volume de chaque coup enregistré, réglé à la mesure pour retrouver la hiérarchie des coups fabriqués. */
+const HIT_GAIN: Record<HitName, number> = { jab: 2.1, crochet: 2, ko: 2.2, thud: 0.85, cloche: 1 };
+/**
+ * Joue un vrai coup à l'instant `at`, s'il est chargé. Renvoie false sinon : l'appelant joue alors la version fabriquée.
+ * La hauteur varie un peu d'une fois à l'autre (sauf la cloche, qui doit rester juste). `drive` sature le coup :
+ * du grain et de la tenue pour les coups lourds.
+ */
+function hit(name: HitName, at: number, level = 1, send = 0.15, drive = 0): boolean {
+  const takes = samples.get(name);
+  if (!takes?.length) return false;
+  const c = ac(), src = c.createBufferSource(), g = c.createGain();
+  src.buffer = take(name, takes);
+  if (name !== 'cloche') src.playbackRate.value = 0.94 + Math.random() * 0.12;
+  g.gain.value = HIT_GAIN[name] * level;
+  src.connect(g); g.connect(mix(send, drive));
+  src.start(at);
+  return true;
+}
+
 /** Une note : un oscillateur dont la hauteur glisse de f0 à f1 (f1 = 0 : hauteur fixe). */
 function tone(type: OscillatorType, f0: number, f1: number, t: number, dur: number, peak: number, o: Opt = {}) {
   const c = ac(), osc = c.createOscillator();
@@ -228,6 +258,10 @@ function bell(t: number, f: number, level = 1) {
  * L'impact du super : claque, explosion, grondement, grave, accord de puissance et retombée d'étincelles.
  * Comme pour tous les coups, le médium compte autant que le grave : un téléphone ne restitue presque rien sous 200 Hz.
  */
+/** Un coup de cloche : la vraie cloche du ring si elle est chargée, sinon la cloche fabriquée. */
+function ring(t: number, level = 1) {
+  if (!hit('cloche', t, level, 0.3)) bell(t, 880, level);
+}
 function blast(t: number) {
   const v = mix(0.4), d = mix(0.3, 3.5);
   noise(t, 0.03, 2.5, 'bandpass', 2400, 800, 0.7, { a: 0.001, to: v });
@@ -258,15 +292,25 @@ const SOUNDS: Record<SoundName, () => void> = {
   },
   // Jab : la claque du gant, la chair, un « toc » médium, le corps.
   jab: () => {
-    const t = now(), v = mix(0.14);
+    const t = now();
+    if (hit('jab', t)) return;
+    const v = mix(0.14);
     noise(t, 0.022, 2.5, 'bandpass', 2600, 1300, 0.9, { a: 0.001, to: v });
     noise(t, 0.1, 4, 'lowpass', 2600, 600, 1, { to: v });
     tone('triangle', 430, 150, t, 0.08, 1.4, { a: 0.002, to: v });
     thump(t, 190, 60, 0.11, 0.7, v);
   },
   // Crochet : le même coup en plus lourd, saturé, avec la salle qui gronde derrière.
+  // Avec le vrai coup : son claquement, posé sur un grave fabriqué qui lui donne du poids.
   crochet: () => {
-    const t = now(), v = mix(0.26), d = mix(0.2, 3);
+    const t = now();
+    if (hit('crochet', t, 1, 0.22, 2.5)) {
+      const d = mix(0.15, 3);
+      thump(t, 150, 40, 0.3, 0.45, d);
+      noise(t, 0.14, 1.3, 'lowpass', 3000, 400, 1, { to: d }); // un peu de chair sous le claquement, pour la tenue
+      return;
+    }
+    const v = mix(0.26), d = mix(0.2, 3);
     noise(t, 0.028, 2.5, 'bandpass', 2200, 900, 0.8, { a: 0.001, to: v });
     noise(t, 0.17, 2.6, 'lowpass', 3400, 320, 1.2, { to: d });
     tone('triangle', 380, 110, t, 0.12, 1.2, { a: 0.002, to: d });
@@ -291,17 +335,27 @@ const SOUNDS: Record<SoundName, () => void> = {
     blast(t + 0.5);
   },
   // K.O. : l'impact, un grave qui n'en finit pas de tomber, un « pwaaah » qui s'effondre, puis trois coups de cloche.
+  // Avec le vrai coup : l'impact enregistré et un grave fabriqué, sans le « pwaaah ».
   ko: () => {
-    const t = now(), v = mix(0.35), d = mix(0.3, 3.5);
-    noise(t, 0.03, 2.5, 'bandpass', 2400, 800, 0.7, { a: 0.001, to: v });
-    noise(t, 0.27, 2.4, 'lowpass', 3600, 240, 1, { to: d });
-    noise(t, 0.3, 1.3, 'bandpass', 800, 260, 0.8, { to: d });
-    tone('triangle', 340, 80, t, 0.22, 1.2, { a: 0.002, to: d });
-    thump(t, 130, 26, 1.2, 0.75, d);
-    pad([220], t + 0.14, 0.85, 0.24, { cut: [1800, 220], q: 6, glide: 0.25, to: v });
-    bell(t + 0.9, 880, 0.9); bell(t + 1.22, 880, 0.9); bell(t + 1.54, 880);
+    const t = now();
+    if (hit('ko', t, 1, 0.3, 2)) {
+      const d = mix(0.25, 3.5);
+      hit('crochet', t, 1.3, 0.25, 2.5); // un second claquement par-dessus : c'est le médium qui porte le coup sur un téléphone
+      thump(t, 130, 26, 1, 0.3, d);
+      noise(t, 0.24, 1.3, 'lowpass', 3600, 260, 1, { to: d });
+      noise(t, 0.28, 0.9, 'bandpass', 800, 260, 0.8, { to: d });
+    } else {
+      const v = mix(0.35), d = mix(0.3, 3.5);
+      noise(t, 0.03, 2.5, 'bandpass', 2400, 800, 0.7, { a: 0.001, to: v });
+      noise(t, 0.27, 2.4, 'lowpass', 3600, 240, 1, { to: d });
+      noise(t, 0.3, 1.3, 'bandpass', 800, 260, 0.8, { to: d });
+      tone('triangle', 340, 80, t, 0.22, 1.2, { a: 0.002, to: d });
+      thump(t, 130, 26, 1.2, 0.75, d);
+      pad([220], t + 0.14, 0.85, 0.24, { cut: [1800, 220], q: 6, glide: 0.25, to: v });
+    }
+    ring(t + 0.9, 0.9); ring(t + 1.22, 0.9); ring(t + 1.54);
   },
-  cloche: () => { const t = now(); bell(t, 880); bell(t + 0.32, 880); },
+  cloche: () => { const t = now(); ring(t); ring(t + 0.32); },
   // Ouverture du combat : cinq notes de cuivres sur une basse, un coup de caisse claire, et la cloche.
   combat: () => {
     const t = now(), v = mix(0.3);
@@ -310,7 +364,7 @@ const SOUNDS: Record<SoundName, () => void> = {
     });
     pad([98, 196], t + 0.42, 0.55, 0.14, { cut: [900, 400], to: v });
     noise(t + 0.42, 0.07, 0.28, 'highpass', 3800, 0, 1, { a: 0.001, to: v });
-    bell(t + 0.62, 880, 0.8);
+    ring(t + 0.62, 0.8);
   },
   // Coup de coude : un ressort de dessin animé, annoncé par un petit « pop ».
   coude: () => {
@@ -328,7 +382,9 @@ const SOUNDS: Record<SoundName, () => void> = {
   },
   // Chute sur le tapis.
   thud: () => {
-    const t = now(), v = mix(0.22);
+    const t = now();
+    if (hit('thud', t, 1, 0.2)) return;
+    const v = mix(0.22);
     thump(t, 120, 42, 0.2, 0.75, v);
     noise(t, 0.1, 3.8, 'lowpass', 1100, 300, 1, { to: v });
     tone('triangle', 330, 140, t, 0.09, 1.2, { a: 0.002, to: v });
@@ -431,10 +487,8 @@ export function buzz(ms: number | number[]) {
   try { if (soundOn()) navigator.vibrate?.(ms); } catch {}
 }
 
-// ---------- La salle du ring ----------
-const crowdBufs = new Map<CrowdName, AudioBuffer[]>();
-const lastTake = new Map<CrowdName, number>();
-let crowdJob: Promise<void> | null = null;
+// ---------- Les vrais sons : la salle du ring et les coups ----------
+let soundsJob: Promise<void> | null = null;
 let bed: { src: AudioBufferSourceNode; gain: GainNode; off: ReturnType<typeof setTimeout> | null } | null = null;
 let bedWanted = false;
 /** Volume de chaque son de la salle. Elle accompagne : elle reste quelques décibels sous les coups. */
@@ -449,41 +503,39 @@ function decode(c: AudioContext, data: ArrayBuffer): Promise<AudioBuffer> {
 }
 
 /**
- * Charge les sons de la salle, une seule fois : téléchargement puis décodage, tous en parallèle. Sans effet si le
- * son est coupé. Un fichier absent ou illisible est simplement ignoré (cette réaction restera muette) ; s'il en
- * manque, le prochain combat réessaiera. Le fond démarre dès qu'il est prêt, s'il a été demandé entre-temps.
+ * Charge les vrais sons (la salle et les coups), une seule fois : téléchargement puis décodage, tous en parallèle.
+ * Sans effet si le son est coupé. Un fichier absent ou illisible est simplement ignoré : une réaction de la salle
+ * reste alors muette, un coup garde sa version fabriquée. S'il en manque, le prochain combat réessaiera.
+ * Le fond démarre dès qu'il est prêt, s'il a été demandé entre-temps.
  */
-export function prepareCrowd(): Promise<void> {
+export function prepareSounds(): Promise<void> {
   if (typeof window === 'undefined' || !soundOn()) return Promise.resolve();
-  crowdJob ??= (async () => {
+  soundsJob ??= (async () => {
     const c = ac();
+    const files = [...Object.entries(CROWD_FILES), ...Object.entries(HIT_FILES)].flatMap(([name, list]) => list.map((file) => ({ name, file })));
     let missing = 0;
-    await Promise.all((Object.keys(CROWD_FILES) as CrowdName[]).flatMap((name) => CROWD_FILES[name].map(async (file) => {
+    await Promise.all(files.map(async ({ name, file }) => {
       try {
-        const res = await fetch(CROWD_BASE + file);
+        const res = await fetch(SOUND_BASE + file);
         if (!res.ok) throw new Error(String(res.status));
         const buf = await decode(c, await res.arrayBuffer());
-        crowdBufs.set(name, [...(crowdBufs.get(name) ?? []), buf]);
+        samples.set(name, [...(samples.get(name) ?? []), buf]);
         if (name === 'fond' && bedWanted) crowdBed(true);
       } catch { missing++; }
-    })));
-    if (missing) crowdJob = null;
+    }));
+    if (missing) soundsJob = null;
   })();
-  return crowdJob;
+  return soundsJob;
 }
 
 /** Joue une réaction de la salle, si elle est chargée (sinon rien : jamais d'attente pendant le combat). */
 export function cheer(name: CrowdName, level = 1) {
   if (typeof window === 'undefined' || !soundOn()) return;
   try {
-    const takes = crowdBufs.get(name);
+    const takes = samples.get(name);
     if (!takes?.length) return;
-    // plusieurs prises : jamais la même deux fois de suite
-    let i = Math.floor(Math.random() * takes.length);
-    if (takes.length > 1 && i === lastTake.get(name)) i = (i + 1) % takes.length;
-    lastTake.set(name, i);
     const c = ac(), src = c.createBufferSource(), g = c.createGain();
-    src.buffer = takes[i];
+    src.buffer = take(name, takes);
     src.playbackRate.value = 0.97 + Math.random() * 0.06; // et jamais tout à fait à la même hauteur
     g.gain.value = CROWD_GAIN[name] * level;
     src.connect(g); g.connect(mix(0.12));
@@ -505,8 +557,8 @@ export function crowdBed(on: boolean) {
       b.off = setTimeout(() => { try { b.src.stop(); } catch {} if (bed === b) bed = null; }, 700);
       return;
     }
-    const buf = crowdBufs.get('fond')?.[0];
-    if (!buf) return; // pas encore chargé : prepareCrowd le lancera
+    const buf = samples.get('fond')?.[0];
+    if (!buf) return; // pas encore chargé : prepareSounds le lancera
     const c = ac(), t = c.currentTime;
     if (bed) {
       if (bed.off) { clearTimeout(bed.off); bed.off = null; }

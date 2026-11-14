@@ -7,7 +7,7 @@ import { Burst, HpBar, Icon, RingScene } from '@/components/ui';
 import { assetsOf } from '@/lib/fighter/bd';
 import type { FighterRender } from '@/lib/fighter/types';
 import { actorsOf, toBeats, type Beat, type Scene, type SideView } from '@/lib/replay/model';
-import { buzz, cheer, crowdBed, play, prepareCrowd, primeAudio, setSoundOn, soundOn, type SoundName } from '@/lib/sound';
+import { buzz, cheer, crowdBed, play, prepareSounds, primeAudio, setSoundOn, soundOn, type SoundName } from '@/lib/sound';
 import { BdStage, type RestPose } from './BdStage';
 
 export type { Scene, SideView };
@@ -129,8 +129,8 @@ export function CombatReplay({ battleId, title, round, day, when, dateLabel, sce
         if (stale()) return;
         loaded.current = sc.key;
       }
-      // Les sons de la salle finissent de se préparer avant que l'animation démarre (jamais plus d'une seconde et demie d'attente).
-      await Promise.race([prepareCrowd(), new Promise((res) => setTimeout(res, 1500))]);
+      // Les vrais sons finissent de se charger avant que l'animation démarre (jamais plus d'une seconde et demie d'attente).
+      await Promise.race([prepareSounds(), new Promise((res) => setTimeout(res, 1500))]);
       if (stale()) return;
       setLive(true);
       introSeen.current.add(sc.key);
@@ -160,9 +160,9 @@ export function CombatReplay({ battleId, title, round, day, when, dateLabel, sce
     // Le moteur montre encore un autre combat : on l'arrête et on rend la scène aux dessins au repos.
     if (stage.current && loaded.current !== sc.key) { stage.current.rest({ koA: false, koB: false }); setLive(false); }
     if (sc.idle) { setStep(3); return; }
-    if (sober || reducedMotion()) { if (!sober) setSober(true); startSober(sc); return; }
     primeAudio(); // dans le geste du joueur : sans cela, les bruitages lancés plus tard par l'animation restent muets sur iPhone
-    void prepareCrowd(); // les sons de la salle se préparent pendant que les dessins se chargent
+    void prepareSounds(); // les vrais sons (coups, salle) se chargent pendant que le combat se prépare ; d'ici là, les sons fabriqués
+    if (sober || reducedMotion()) { if (!sober) setSober(true); startSober(sc); return; }
     void animate(sc, token.current);
   };
   const skip = () => {
@@ -175,7 +175,7 @@ export function CombatReplay({ battleId, title, round, day, when, dateLabel, sce
     setSound(v); setSoundOn(v); // couper le son éteint aussi le fond de foule
     if (!v) return;
     play('cloche', true);
-    if (anim && step < 3) { void prepareCrowd(); crowdBed(true); } // remis en plein combat animé : la salle revient
+    if (anim && step < 3) { void prepareSounds(); crowdBed(true); } // remis en plein combat animé : la salle revient
   };
 
   // Onglet masqué en plein combat animé : minuteries et animations se désynchronisent ; on passe au résultat.
