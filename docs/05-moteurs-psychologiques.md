@@ -4,6 +4,8 @@
 
 Ce document explique, mécanique par mécanique, sur quels ressorts psychologiques le jeu s'appuie et d'où ils viennent : psychologie cognitive et sociale, économie comportementale, neurosciences, sociologie, études du jeu. Il complète [00-recherche.md](00-recherche.md), qui classe les mêmes connaissances **par étude**, et [01-concept.md](01-concept.md), qui décrit les règles.
 
+Une version très courte, pour les joueurs, est dans l'app : la page « Pourquoi ces règles ? » ([`src/app/aide/ressorts/page.tsx`](../src/app/aide/ressorts/page.tsx)), accessible par un lien discret en bas du mode d'emploi. Elle reprend dix ressorts, leur niveau de preuve et leur source ; quand une règle change, les deux se mettent à jour ensemble.
+
 Il dit aussi ce que la recherche ne montre pas. Un jeu ne fait pas maigrir à lui seul : au mieux, il fait tenir la pesée quotidienne, qui est le comportement le mieux étayé de toute cette littérature.
 
 ---
@@ -66,7 +68,7 @@ Chaque famille de la partie 3 suit le même plan : **le mécanisme** (ce que dit
 | « Ton rival s'est pesé », coup de coude, liste de ceux qui se sont pesés | Norme descriptive, déclencheur social | Psychologie sociale | Cialdini, Reno & Kallgren, 1990 | 🟡 Plausible | [3.5](#35-les-autres) |
 | Flamme du ring : série commune, décor qui s'embellit par paliers | Objectif commun où chacun est indispensable, gradient de but | Psychologie sociale, comportement du consommateur | Hertel, Kerr & Messé, 2000 ; Patel et al., 2019 (STEP UP) ; Kivetz et al., 2006 | 🟠 Pari | [3.5](#35-les-autres) |
 | Gage, cagnotte déclarative | Dispositif d'engagement | Économie comportementale | Bryan, Karlan & Nelson, 2010 ; Kullgren et al., 2013 | 🟡 Plausible | [3.6](#36-lengagement) |
-| Combattant à la corpulence réelle, « Transformation ! » | Auto-modélisation, effet Protée, auto-efficacité | Psychologie des médias | Fox & Bailenson, 2009 ; Bandura, 1977 | 🟠 Pari | [3.7](#37-lidentité) |
+| « Transformation ! » (silhouettes avant/après) ; combattant à la corpulence réelle avec l'ancien dessin seulement | Auto-modélisation, effet Protée, auto-efficacité | Psychologie des médias | Fox & Bailenson, 2009 ; Bandura, 1977 | 🟠 Pari | [3.7](#37-lidentité) |
 | Badges sur trois axes, palmarès | Besoin de compétence | Psychologie de la motivation | Deci & Ryan, 2000 | 🟠 Pari | [3.8](#38-compétence-et-équité) |
 | Score en %, crochet relatif au round, Le Bide rééquilibré | Équité, défi à sa mesure | Psychologie de la motivation, économie | Locke & Latham, 2002 ; Brown, 2011 | 🟡 Plausible | [3.8](#38-compétence-et-équité) |
 | Combat du soir à heure fixe, replay commenté | Rituel partagé, jeu comme espace à part | Sociologie, études du jeu | Collins, 2004 ; Huizinga, 1938 ; Caillois, 1958 | 🟠 Pari | [3.9](#39-le-rituel-et-le-récit) |
@@ -239,7 +241,7 @@ S'engager devant les autres met aussi en jeu sa « face » : l'image de soi que 
 
 **Dans le jeu.**
 
-- **Le combattant a la corpulence réelle du joueur**, calculée par l'IMC, et s'affine à mesure que la tendance baisse. La forme « équilibrée » est atteinte vers un IMC de 23 ; au-delà, il ne s'affine plus.
+- **La silhouette suit la corpulence réelle du joueur**, calculée par l'IMC, et s'affine à mesure que la tendance baisse. La forme « équilibrée » est atteinte vers un IMC de 23 ; au-delà, elle ne s'affine plus. Avec les catcheurs masqués (look par défaut), cette silhouette n'apparaît que dans l'avant/après de la « Transformation ! », sur l'écran du joueur ; avec l'ancien dessin (repli), c'est le combattant lui-même qui la porte, à la vue de tous.
 - **« Transformation ! »** : franchir une silhouette clé est annoncé au joueur et dans le fil du ring. Une réussite vécue devient visible.
 - **Les gants dorés et la ceinture se portent** : le combattant affiche ce que le joueur a fait.
 - **Le palmarès** (pesées, série record, rounds gagnés) raconte une identité : quelqu'un qui se pèse tous les jours.
@@ -248,7 +250,7 @@ S'engager devant les autres met aussi en jeu sa « face » : l'image de soi que 
 
 - Ces expériences se déroulent en réalité virtuelle immersive et mesurent un effet à très court terme, comme l'exercice fait dans les minutes qui suivent. Aucune ne mesure une perte de poids, et ici le combattant est un petit personnage en 2D sur un téléphone.
 - **Avec le look « BD »** (combattants masqués dessinés, look par défaut), le combattant ne reproduit plus la corpulence du joueur : seules les deux silhouettes de la « Transformation ! » la montrent. Le pari de l'auto-modélisation repose alors sur ce moment, et non plus sur le combattant vu chaque jour ; aucune étude citée ici ne porte sur ce cas.
-- Un avatar qui reproduit la corpulence réelle peut aussi gêner. Le jeu l'assume : la silhouette est visible de tous les joueurs de la battle, même en mode pudique. Aucune étude citée ici ne dit si l'effet net est positif.
+- Un avatar qui reproduit la corpulence réelle peut aussi gêner. Avec l'ancien dessin, le jeu l'assumait : la silhouette était visible de tous les joueurs de la battle, même en mode pudique. Avec les catcheurs masqués, ce n'est plus le cas. Aucune étude citée ici ne dit si l'effet net est positif.
 
 ### 3.8 Compétence et équité
 
@@ -289,7 +291,7 @@ S'engager devant les autres met aussi en jeu sa « face » : l'image de soi que 
 **Dans le jeu.**
 
 - **Un rendez-vous** : le combat a lieu à heure fixe (21 h par défaut), pour tous les joueurs de la battle, et les résultats sont révélés en même temps.
-- **Un récit** : le replay animé, les barres de vie, le commentateur, les sons d'arcade, le K.O.
+- **Un récit** : le replay animé, les barres de vie, le commentateur, les bruitages, le K.O. Dans le combat animé, une salle réagit (acclamations, « oooh », ovation au K.O.) : c'est un pari de mise en scène, pour que le rendez-vous ait l'air d'un événement.
 - **Des pics et des fins soignés** : le bilan de chaque round avec ses exploits et son image à partager, puis la finale avec la ceinture.
 - **Des réponses** : les réactions sur le combat et le fil du ring donnent un écho aux bonnes nouvelles.
 
@@ -310,7 +312,7 @@ S'engager devant les autres met aussi en jeu sa « face » : l'image de soi que 
 **Dans le jeu.**
 
 - **« On chambre le joueur, jamais le corps »** : aucune vanne sur le physique dans les textes de l'app ni dans le commentateur, quel que soit le ton choisi (bon enfant ou trash talk).
-- **Le mode pudique est le réglage par défaut** : les autres voient des %, des PV et la silhouette, jamais les kilos. La courbe en kilos n'est visible que par le joueur, et l'image du bilan ne montre pas les kilos.
+- **Le mode pudique est le réglage par défaut** : les autres voient des %, des PV et le combattant masqué (la silhouette, avec l'ancien dessin), jamais les kilos. La courbe en kilos n'est visible que par le joueur, et l'image du bilan ne montre pas les kilos.
 - **Les notifications ne culpabilisent pas** : elles annoncent un coup à charger, un combat prêt ou une série en jeu, et chaque rappel programmé part au plus une fois par jour.
 
 **Limites.** Le trash talk entre amis reste une taquinerie tant que la relation le supporte, et l'app ne peut pas le vérifier. Le fil du ring est libre : l'app ne modère pas ce que les joueurs s'écrivent.
@@ -378,7 +380,7 @@ Les neurosciences ne justifient à elles seules aucune mécanique du jeu. Elles 
 **Il assume :**
 
 - **Le crochet n'est pas plafonné.** Perdre plus vite frappe plus fort. C'est un choix de jeu, pas une recommandation de santé : la recherche sur les concours de perte rapide incite plutôt à la prudence (Fothergill et al., 2016).
-- **Le combattant montre la corpulence réelle** à tous les joueurs de la battle.
+- **Avec l'ancien dessin, le combattant montre la corpulence réelle** à tous les joueurs de la battle. Avec les catcheurs masqués (look par défaut), il ne la montre plus.
 - **Le jeu ne filtre pas ses joueurs.** Les réserves sur la pesée fréquente chez les plus jeunes (Pacanowski et al., 2015) ne se traduisent par aucune règle dans l'app.
 - **La rivalité plutôt que l'entraide** comme moteur principal, parce que c'est elle qui tient le mieux dans les essais.
 

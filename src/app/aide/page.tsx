@@ -213,6 +213,7 @@ export default async function AidePage() {
         </Block>
 
         <Link href="/battles" className="btn btn-soleil w-full text-[22px]">C'EST PARTI</Link>
+        <Link href="/aide/ressorts" className="text-center text-[14px] text-lilas underline">Pourquoi ces règles ? Les ressorts du jeu, en bref</Link>
       </section>
     </main>
   );

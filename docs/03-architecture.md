@@ -28,6 +28,7 @@ src/
   app/
     page.tsx                    accueil
     connexion/, auth/verifier/  lien magique
+    aide/, aide/ressorts/       mode d'emploi public ; « Pourquoi ces règles ? » (les ressorts de motivation, en bref, avec leurs sources)
     combattant/                 studio : galerie → retouches → fiche ; avec le look « BD » : combattant et couleur → fiche
     look/[style]/               lien d'essai du look « BD » pour un seul appareil (cookie)
     b/[code]/                   page d'invitation (publique)
