@@ -548,7 +548,7 @@ export function createStage(root: HTMLElement, deps: StageDeps): Stage {
     swap(A, 'jab'); r.fire(r.spin(A, 0, 60));
     await Promise.all([r.move(A, dist, lift, 80, EASE.snap), r.squash(A, 1.1, 0.95, 80)]);
     const c = bPt(D, 'head');
-    sfx('jab'); crowd('he', 0.8); deps.buzz(30); r.fire(flinch(r, D));
+    sfx('jab'); deps.buzz(30); r.fire(flinch(r, D));
     flash(r, 90); sparks(r, c.x, c.y, 6); shake(r, 5, 200); hurt(r, D, dmg, A.side);
     r.fire(hitPanel(r, D, A, { text: 'PAF!', sub: `${dmg} PV`, ms: 430, color: CREAM }));
     await hitstop(r, 200);

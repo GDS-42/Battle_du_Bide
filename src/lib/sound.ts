@@ -3,10 +3,9 @@
 // Chaque son superpose plusieurs couches (l'attaque, le corps, le souffle). Tous passent par un bus commun,
 // avec un limiteur, et envoient une part réglable dans une petite réverbération de salle fabriquée sur place.
 // Point de départ : design/canvas/Sons.dc.html.
-// La foule du ring (fond et réactions) est fabriquée à part, dans crowd.ts, et rejouée ici.
-import type { CrowdName } from './crowd';
 
-export type { CrowdName };
+/** Sons de la salle : le fond, et les réactions du public. Aucun n'est fourni pour l'instant (voir prepareCrowd). */
+export type CrowdName = 'fond' | 'acclame' | 'ovation' | 'ooh' | 'decu' | 'huees' | 'applaud' | 'stupeur';
 
 export type SoundName = 'pesee' | 'charge' | 'jab' | 'crochet' | 'bloque' | 'superCoup' | 'ko' | 'cloche' | 'combat' | 'coude'
   // bruitages du combat animé (look « BD »)
@@ -432,35 +431,20 @@ export function buzz(ms: number | number[]) {
 
 // ---------- La foule du ring ----------
 const crowdBufs = new Map<CrowdName, AudioBuffer>();
-let crowdJob: Promise<void> | null = null;
 let bed: { src: AudioBufferSourceNode; gain: GainNode; off: ReturnType<typeof setTimeout> | null } | null = null;
 let bedWanted = false;
-/** Volume de chaque son de foule. Ils sont fabriqués à pleine échelle ; la salle doit rester sous les coups. */
-const CROWD_GAIN: Record<CrowdName, number> = { fond: 0.18, acclame: 0.43, ovation: 0.6, ooh: 0.42, decu: 0.31, huees: 0.4, applaud: 0.65, stupeur: 0.3, he: 0.22 };
+/** Volume de chaque son de la salle : elle doit rester sous les coups. */
+const CROWD_GAIN: Record<CrowdName, number> = { fond: 0.18, acclame: 0.43, ovation: 0.6, ooh: 0.42, decu: 0.31, huees: 0.4, applaud: 0.65, stupeur: 0.3 };
 
 /**
- * Fabrique les sons de foule, une seule fois. Le calcul est fait par petits lots (un son, puis on rend la main) :
- * l'écran ne se fige pas. Sans effet si le son est coupé. Le fond démarre dès qu'il est prêt, s'il a été demandé.
+ * Prépare les sons de la salle avant un combat. Il n'y en a pas pour l'instant : une première foule, faite de voix
+ * synthétiques, sonnait faux et a été retirée. Tant qu'aucun son n'est fourni, cheer() et crowdBed() restent muets.
  */
 export function prepareCrowd(): Promise<void> {
-  if (typeof window === 'undefined' || !soundOn()) return Promise.resolve();
-  crowdJob ??= (async () => {
-    const { CROWD_NAMES, CROWD_RATE, makeCrowd } = await import('./crowd');
-    const c = ac();
-    for (const name of CROWD_NAMES) {
-      if (!crowdBufs.has(name)) {
-        const clip = makeCrowd(name), buf = c.createBuffer(2, clip.left.length, CROWD_RATE);
-        buf.getChannelData(0).set(clip.left); buf.getChannelData(1).set(clip.right);
-        crowdBufs.set(name, buf);
-        if (name === 'fond' && bedWanted) crowdBed(true);
-      }
-      await new Promise((r) => setTimeout(r, 0));
-    }
-  })().catch(() => { crowdJob = null; });
-  return crowdJob;
+  return Promise.resolve();
 }
 
-/** Joue une réaction de la salle, si elle est déjà fabriquée (sinon rien : jamais d'attente pendant le combat). */
+/** Joue une réaction de la salle, si elle est prête (sinon rien : jamais d'attente pendant le combat). */
 export function cheer(name: CrowdName, level = 1) {
   if (typeof window === 'undefined' || !soundOn()) return;
   try {
@@ -490,7 +474,7 @@ export function crowdBed(on: boolean) {
       return;
     }
     const buf = crowdBufs.get('fond');
-    if (!buf) return; // pas encore fabriqué : prepareCrowd le lancera
+    if (!buf) return; // pas de fond disponible
     const c = ac(), t = c.currentTime;
     if (bed) {
       if (bed.off) { clearTimeout(bed.off); bed.off = null; }

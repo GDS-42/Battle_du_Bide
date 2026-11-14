@@ -54,7 +54,6 @@ src/
     auth.ts, mail.ts            sessions et liens magiques
     time.ts                     dates locales par fuseau (sans dépendance)
     sound.ts                    bruitages synthétisés en couches (Web Audio), limiteur et réverbération ; aucun fichier audio
-    crowd.ts                    la foule du ring, fabriquée (voix synthétiques, applaudissements) ; pur et testé, chargé à la demande
 drizzle/                        migrations SQL
 design/                         sources du canevas de DA et atelier du combattant
 scripts/                        migrate, seed-demo, vapid
@@ -93,7 +92,7 @@ Les pesées appartiennent au **joueur**, pas à la battle : une même pesée com
 - [`src/components/bd/engine.ts`](../src/components/bd/engine.ts) joue ces séquences. Il n'est **chargé qu'au clic** sur « Lancer le combat » et ne touche au navigateur qu'à l'intérieur de `createStage()` : il ne peut donc pas faire échouer l'affichage de la page. Il prévient le replay au début de chaque séquence et à l'instant où un coup porte ; barres de vie et commentaire restent rendus par React.
 - **Tout défaut ramène au replay sobre**, celui d'avant, resté en place dans `CombatReplay.tsx` : dessin introuvable ou trop long à charger, moteur qui ne se charge pas, joueur qui a demandé moins de mouvement.
 - Les textes saisis par les joueurs (nom du camp, coup spécial) ne sont jamais interprétés comme du HTML : React les échappe, et le moteur les pose par `textContent`.
-- **La foule** : `prepareCrowd()` (`src/lib/sound.ts`) fabrique les sons de foule une seule fois, au lancement du combat, par petits lots et avant que l'animation démarre. Le moteur déclenche ensuite les réactions (`crowd`) et allume ou éteint le fond (`bed`) ; une réaction pas encore prête est simplement sautée.
+- **La salle** : le moteur déclenche des réactions du public (`crowd`) et un fond de foule (`bed`) ; `src/lib/sound.ts` les joue s'ils existent. Aucun son de foule n'est fourni pour l'instant, donc tout cela reste muet.
 - Les styles sont dans `src/app/bd.css`, tous sous la classe `.bdx` et préfixés `bdx-` : ils ne peuvent pas toucher le reste du jeu.
 
 ## 5. Sécurité et confidentialité

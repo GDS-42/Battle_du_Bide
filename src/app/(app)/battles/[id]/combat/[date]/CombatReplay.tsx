@@ -129,8 +129,7 @@ export function CombatReplay({ battleId, title, round, day, when, dateLabel, sce
         if (stale()) return;
         loaded.current = sc.key;
       }
-      // La foule finit de se fabriquer avant que l'animation démarre (jamais plus d'une seconde et demie d'attente) :
-      // ce calcul ne tombe ainsi jamais au milieu d'un mouvement.
+      // Les sons de la salle finissent de se préparer avant que l'animation démarre (jamais plus d'une seconde et demie d'attente).
       await Promise.race([prepareCrowd(), new Promise((res) => setTimeout(res, 1500))]);
       if (stale()) return;
       setLive(true);
@@ -163,7 +162,7 @@ export function CombatReplay({ battleId, title, round, day, when, dateLabel, sce
     if (sc.idle) { setStep(3); return; }
     if (sober || reducedMotion()) { if (!sober) setSober(true); startSober(sc); return; }
     primeAudio(); // dans le geste du joueur : sans cela, les bruitages lancés plus tard par l'animation restent muets sur iPhone
-    void prepareCrowd(); // la foule se fabrique pendant que les dessins se chargent
+    void prepareCrowd(); // les sons de la salle se préparent pendant que les dessins se chargent
     void animate(sc, token.current);
   };
   const skip = () => {
