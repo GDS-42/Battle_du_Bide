@@ -4,7 +4,7 @@
 
 Ce document explique, mécanique par mécanique, sur quels ressorts psychologiques le jeu s'appuie et d'où ils viennent : psychologie cognitive et sociale, économie comportementale, neurosciences, sociologie, études du jeu. Il complète [00-recherche.md](00-recherche.md), qui classe les mêmes connaissances **par étude**, et [01-concept.md](01-concept.md), qui décrit les règles.
 
-Une version très courte, pour les joueurs, est dans l'app : la page « Pourquoi ces règles ? » ([`src/app/aide/ressorts/page.tsx`](../src/app/aide/ressorts/page.tsx)), accessible par un lien discret en bas du mode d'emploi. Elle reprend dix ressorts, leur niveau de preuve et leur source ; quand une règle change, les deux se mettent à jour ensemble.
+Une version très courte, pour les joueurs, est dans l'app : la page « Pourquoi ça marche ? » ([`src/app/aide/ressorts/page.tsx`](../src/app/aide/ressorts/page.tsx)), accessible par un lien discret en bas du mode d'emploi. Elle reprend dix ressorts, leur niveau de preuve et leur source ; quand une règle change, les deux se mettent à jour ensemble.
 
 Il dit aussi ce que la recherche ne montre pas. Un jeu ne fait pas maigrir à lui seul : au mieux, il fait tenir la pesée quotidienne, qui est le comportement le mieux étayé de toute cette littérature.
 
