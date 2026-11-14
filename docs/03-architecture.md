@@ -33,7 +33,7 @@ src/
     b/[code]/                   page d'invitation (publique)
     (app)/                      espace connecté, avec barre de navigation
       battles/                  liste, création, ring, replay du combat du soir, bilan de round et son image à partager
-    BdHome.tsx                  accueil du look « BD » (ring peint, catcheurs, le jeu en trois cases) ; `page.tsx` garde l'accueil d'origine en repli
+    BdHome.tsx                  accueil du look « BD » (affiche de combat : ring peint, catcheurs, devise) ; `page.tsx` garde l'accueil d'origine en repli
     bd.css                      styles du look « BD » : combat animé (`.bdx`) et accueil (`.bdh`)
       pesee/                    pesée du matin, puis « coup chargé »
       profil/                   combattant, réglages, export, suppression

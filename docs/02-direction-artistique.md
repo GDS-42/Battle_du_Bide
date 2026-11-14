@@ -89,7 +89,7 @@ La façon dont le jeu montre le combattant par défaut (le tracé du générateu
 
 En équipe, le second combattant se tient derrière le premier ; il encaisse, tombe ou lève les bras avec lui. Les barres de vie et le commentaire suivent l'animation : les points de vie baissent à l'instant où le coup porte. Un combat dure de 12 à 20 secondes ; « Passer » et « Rejouer » restent disponibles à tout moment.
 
-**L'accueil.** La page d'accueil est composée comme une affiche de combat : le ring peint, le titre, Le Bide bras levés au fond (l'adversaire de tout le monde), deux catcheurs qui se toisent devant lui, et la devise en bandeau au pied du ring. En dessous, le jeu est raconté en trois cases de BD (le matin, le soir, la semaine), puis les trois combattants sont présentés avec la palette de couleurs. Aucun script : tout est rendu par le serveur.
+**L'accueil.** La page d'accueil est composée comme une affiche de combat : le ring peint, le titre, Le Bide bras levés au fond (l'adversaire de tout le monde), deux catcheurs qui se toisent devant lui, et la devise en bandeau au pied du ring. En dessous, une seule phrase et les boutons : les explications sont dans « Comment ça marche ? ». Aucun script : tout est rendu par le serveur.
 
 Les images sont dans `public/bd/v1/`, leurs repères (taille, appui au sol, tête, main) dans [`src/lib/fighter/bd-sprites.ts`](../src/lib/fighter/bd-sprites.ts). Un fichier publié n'est jamais réécrit : un dessin modifié part dans `/bd/v2`. C'est le réglage par défaut (`DEFAULT_LOOK`, `src/lib/look.ts`). L'ancien dessin revient pour tous par `BDB_FIGHTER_STYLE=svg`, ou sur un seul appareil par le lien `/look/svg` (voir [le guide de déploiement](04-deploiement-coolify.md)).
 
