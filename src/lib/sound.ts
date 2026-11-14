@@ -1,5 +1,8 @@
 'use client';
-// Sons d'arcade synthétisés (Web Audio), portés de design/canvas/Sons.dc.html. Aucun fichier audio.
+// Bruitages d'arcade synthétisés en direct (Web Audio) : aucun fichier audio.
+// Chaque son superpose plusieurs couches (l'attaque, le corps, le souffle). Tous passent par un bus commun,
+// avec un limiteur, et envoient une part réglable dans une petite réverbération de salle fabriquée sur place.
+// Point de départ : design/canvas/Sons.dc.html.
 
 export type SoundName = 'pesee' | 'charge' | 'jab' | 'crochet' | 'bloque' | 'superCoup' | 'ko' | 'cloche' | 'combat' | 'coude'
   // bruitages du combat animé (look « BD »)
@@ -7,8 +10,10 @@ export type SoundName = 'pesee' | 'charge' | 'jab' | 'crochet' | 'bloque' | 'sup
 
 const KEY = 'bdb-sound';
 let ctx: AudioContext | null = null;
-let master: GainNode | null = null;
+let bus: AudioNode | null = null; // entrée du son direct
+let wet: AudioNode | null = null; // entrée de la réverbération
 let nb: AudioBuffer | null = null;
+const curves = new Map<number, Float32Array<ArrayBuffer>>();
 
 export function soundOn(): boolean {
   try { return localStorage.getItem(KEY) !== 'off'; } catch { return true; }
@@ -17,13 +22,62 @@ export function setSoundOn(on: boolean) {
   try { localStorage.setItem(KEY, on ? 'on' : 'off'); } catch {}
 }
 
+/** Courbe de saturation douce (tanh), normalisée : arrondit les crêtes au lieu de les couper net. */
+function curve(drive: number): Float32Array<ArrayBuffer> {
+  let c = curves.get(drive);
+  if (!c) {
+    const n = 1024, k = Math.tanh(drive);
+    c = new Float32Array(n);
+    for (let i = 0; i < n; i++) c[i] = Math.tanh(((i * 2) / (n - 1) - 1) * drive) / k;
+    curves.set(drive, c);
+  }
+  return c;
+}
+
+/** Réponse d'une petite salle : un bruit qui s'éteint en moins d'une seconde, un peu assourdi. */
+function room(c: BaseAudioContext): AudioBuffer {
+  const len = Math.floor(c.sampleRate * 0.85), buf = c.createBuffer(2, len, c.sampleRate);
+  for (let ch = 0; ch < 2; ch++) {
+    const d = buf.getChannelData(ch);
+    let lp = 0;
+    for (let i = 0; i < len; i++) {
+      lp += 0.42 * (Math.random() * 2 - 1 - lp);
+      d[i] = lp * Math.pow(1 - i / len, 2.6) * Math.min(1, i / 60);
+    }
+  }
+  return buf;
+}
+
 function ac(): AudioContext {
   if (!ctx) {
     const C = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    ctx = new C();
-    master = ctx.createGain();
-    master.gain.value = 0.6;
-    master.connect(ctx.destination);
+    const c = new C();
+    // Sortie : limiteur (les coups superposés ne saturent pas), puis un écrêtage doux en dernier filet.
+    const out = c.createGain();
+    out.gain.value = 0.8;
+    let tail: AudioNode = out;
+    try { const soft = c.createWaveShaper(); soft.curve = curve(1.4); out.connect(soft); tail = soft; } catch {}
+    tail.connect(c.destination);
+    let head: AudioNode = out;
+    try {
+      const lim = c.createDynamicsCompressor();
+      lim.threshold.value = -13; lim.knee.value = 9; lim.ratio.value = 7; lim.attack.value = 0.002; lim.release.value = 0.15;
+      lim.connect(out); head = lim;
+    } catch {}
+    const dry = c.createGain();
+    dry.gain.value = 0.6;
+    dry.connect(head);
+    bus = dry;
+    // Réverbération : si le navigateur ne sait pas faire, les sons restent simplement secs.
+    const send = c.createGain();
+    wet = send;
+    try {
+      const rev = c.createConvolver(), back = c.createGain();
+      rev.buffer = room(c);
+      back.gain.value = 0.5;
+      send.connect(rev); rev.connect(back); back.connect(head);
+    } catch {}
+    ctx = c;
   }
   if (ctx.state === 'suspended') void ctx.resume();
   return ctx;
@@ -31,95 +85,325 @@ function ac(): AudioContext {
 function noiseBuf(): AudioBuffer {
   const c = ac();
   if (!nb) {
-    const len = c.sampleRate * 1.5;
+    const len = Math.floor(c.sampleRate * 1.5);
     nb = c.createBuffer(1, len, c.sampleRate);
     const d = nb.getChannelData(0);
     for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
   }
   return nb;
 }
-function env(g: GainNode, t: number, a: number, peak: number, dec: number) {
-  g.gain.setValueAtTime(0.0001, t);
-  g.gain.exponentialRampToValueAtTime(peak, t + a);
-  g.gain.exponentialRampToValueAtTime(0.0001, t + a + dec);
+function now() { return ac().currentTime + 0.02; }
+
+/**
+ * Départ d'un son : une entrée reliée au bus, avec une part `send` vers la réverbération.
+ * `drive` > 0 fait d'abord passer le son par une saturation (du grain et du poids pour les gros coups).
+ */
+function mix(send = 0, drive = 0): AudioNode {
+  const c = ac(), input = c.createGain();
+  let node: AudioNode = input;
+  if (drive > 0) { const ws = c.createWaveShaper(); ws.curve = curve(drive); input.connect(ws); node = ws; }
+  node.connect(bus!);
+  if (send > 0) { const s = c.createGain(); s.gain.value = send; node.connect(s); s.connect(wet!); }
+  return input;
 }
-function tone(type: OscillatorType, f0: number, f1: number, t: number, dur: number, peak: number, dest?: AudioNode) {
-  const c = ac();
-  const o = c.createOscillator(), g = c.createGain();
-  o.type = type;
-  o.frequency.setValueAtTime(f0, t);
-  if (f1 && f1 !== f0) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
-  env(g, t, 0.005, peak, dur);
-  o.connect(g); g.connect(dest ?? master!);
-  o.start(t); o.stop(t + dur + 0.05);
+
+interface Opt {
+  /** Destination (un départ créé par mix) ; le bus sinon. */
+  to?: AudioNode;
+  /** Durée de l'attaque, en secondes. */
+  a?: number;
+  /** Étape intermédiaire de la hauteur : [fréquence, part de la durée]. */
+  mid?: [number, number];
+  /** Vibrato : [vitesse en Hz, profondeur en Hz]. */
+  vib?: [number, number];
+  /** Trémolo (battement du volume) : [vitesse en Hz, profondeur de 0 à 1]. */
+  trem?: [number, number];
 }
-function noise(t: number, dur: number, peak: number, type: BiquadFilterType, f0: number, f1: number, q = 1) {
-  const c = ac();
-  const s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
-  s.buffer = noiseBuf();
+
+/** Enveloppe : silence → crête en `a` secondes → silence en `d` secondes. */
+function env(g: AudioParam, t: number, a: number, peak: number, d: number) {
+  g.setValueAtTime(0.0001, t);
+  g.exponentialRampToValueAtTime(Math.max(0.0002, peak), t + a);
+  g.exponentialRampToValueAtTime(0.0001, t + a + d);
+}
+function sweep(p: AudioParam, f0: number, f1: number, t: number, dur: number, mid?: [number, number]) {
+  p.setValueAtTime(f0, t);
+  if (mid) p.exponentialRampToValueAtTime(mid[0], t + dur * mid[1]);
+  if (f1 && f1 !== f0) p.exponentialRampToValueAtTime(f1, t + dur);
+}
+/** Sortie d'une couche : son volume (enveloppe), un trémolo éventuel, puis sa destination. */
+function layer(src: AudioNode, t: number, dur: number, peak: number, o: Opt) {
+  const c = ac(), g = c.createGain(), a = o.a ?? 0.005;
+  env(g.gain, t, a, peak, dur);
+  src.connect(g);
+  let node: AudioNode = g;
+  if (o.trem) {
+    const am = c.createGain(), lfo = c.createOscillator(), depth = c.createGain();
+    am.gain.value = 1 - o.trem[1] / 2;
+    lfo.frequency.value = o.trem[0]; depth.gain.value = o.trem[1] / 2;
+    lfo.connect(depth); depth.connect(am.gain);
+    lfo.start(t); lfo.stop(t + a + dur + 0.1);
+    g.connect(am); node = am;
+  }
+  node.connect(o.to ?? bus!);
+  return t + a + dur + 0.08;
+}
+function vibrato(target: AudioParam, t: number, end: number, vib: [number, number]) {
+  const c = ac(), lfo = c.createOscillator(), depth = c.createGain();
+  lfo.frequency.value = vib[0]; depth.gain.value = vib[1];
+  lfo.connect(depth); depth.connect(target);
+  lfo.start(t); lfo.stop(end);
+}
+
+/** Une note : un oscillateur dont la hauteur glisse de f0 à f1 (f1 = 0 : hauteur fixe). */
+function tone(type: OscillatorType, f0: number, f1: number, t: number, dur: number, peak: number, o: Opt = {}) {
+  const c = ac(), osc = c.createOscillator();
+  osc.type = type;
+  sweep(osc.frequency, f0, f1, t, dur, o.mid);
+  const end = layer(osc, t, dur, peak, o);
+  if (o.vib) vibrato(osc.frequency, t, end, o.vib);
+  osc.start(t); osc.stop(end);
+}
+/** Un souffle : du bruit derrière un filtre dont la fréquence glisse de f0 à f1. */
+function noise(t: number, dur: number, peak: number, type: BiquadFilterType, f0: number, f1: number, q = 1, o: Opt = {}) {
+  const c = ac(), s = c.createBufferSource(), f = c.createBiquadFilter();
+  s.buffer = noiseBuf(); s.loop = true;
   f.type = type; f.Q.value = q;
-  f.frequency.setValueAtTime(f0, t);
-  if (f1) f.frequency.exponentialRampToValueAtTime(f1, t + dur);
-  env(g, t, 0.004, peak, dur);
-  s.connect(f); f.connect(g); g.connect(master!);
-  s.start(t); s.stop(t + dur + 0.05);
+  sweep(f.frequency, f0, f1, t, dur, o.mid);
+  s.connect(f);
+  const end = layer(f, t, dur, peak, o);
+  s.start(t, Math.random()); s.stop(end);
 }
-function crush(): WaveShaperNode {
-  const c = ac();
-  const ws = c.createWaveShaper(), n = 256, curve = new Float32Array(n);
-  for (let i = 0; i < n; i++) { const x = (i * 2) / n - 1; curve[i] = Math.tanh(x * 4); }
-  ws.curve = curve; ws.connect(master!);
-  return ws;
+/** Le corps d'un coup : un grave qui plonge très vite, comme une grosse caisse. */
+function thump(t: number, f0: number, f1: number, dur: number, peak: number, to?: AudioNode) {
+  const c = ac(), osc = c.createOscillator();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(f0, t);
+  osc.frequency.exponentialRampToValueAtTime(f1, t + dur * 0.55);
+  osc.start(t); osc.stop(layer(osc, t, dur, peak, { a: 0.002, to }));
 }
-function bell(t: number, base: number) {
-  const partials = [1, 1.51, 2.15, 2.94, 4.1];
-  partials.forEach((p, i) => tone('sine', base * p, 0, t, 1.6 - i * 0.22, 0.22 / (i + 1)));
+/**
+ * Une nappe : des dents de scie désaccordées deux à deux, derrière un filtre passe-bas dont l'ouverture
+ * glisse de cut[0] à cut[1]. `glide` multiplie la hauteur au fil de la note (montée ou effondrement).
+ */
+function pad(freqs: number[], t: number, dur: number, peak: number, o: Opt & { cut: [number, number]; q?: number; glide?: number }) {
+  const c = ac(), f = c.createBiquadFilter(), a = o.a ?? 0.02, end = t + a + dur + 0.08;
+  f.type = 'lowpass'; f.Q.value = o.q ?? 1;
+  sweep(f.frequency, o.cut[0], o.cut[1], t, a + dur);
+  for (const hz of freqs) for (const cents of [-8, 8]) {
+    const osc = c.createOscillator();
+    osc.type = 'sawtooth'; osc.detune.value = cents;
+    osc.frequency.setValueAtTime(hz, t);
+    if (o.glide && o.glide !== 1) osc.frequency.exponentialRampToValueAtTime(hz * o.glide, t + a + dur);
+    osc.connect(f); osc.start(t); osc.stop(end);
+  }
+  layer(f, t, dur, peak / Math.sqrt(freqs.length), { ...o, a });
 }
-function arp(notes: number[], t: number, step: number, type: OscillatorType = 'square', peak = 0.12) {
-  notes.forEach((n, i) => tone(type, n, 0, t + i * step, step * 1.6, peak));
+/** Une note claire et brève, comme un carillon : la fondamentale et deux harmoniques qui s'éteignent vite. */
+function chime(t: number, f: number, peak: number, to?: AudioNode) {
+  tone('sine', f, 0, t, 0.45, peak, { a: 0.003, to });
+  tone('sine', f * 2, 0, t, 0.28, peak * 0.34, { a: 0.003, to });
+  tone('sine', f * 3.01, 0, t, 0.18, peak * 0.13, { a: 0.003, to });
+}
+/**
+ * La cloche du ring : le coup du marteau, puis des partiels inharmoniques (ceux d'un métal frappé), chacun
+ * doublé d'un jumeau à peine désaccordé pour le chatoiement. Les aigus s'éteignent avant les graves.
+ */
+function bell(t: number, f: number, level = 1) {
+  const v = mix(0.4);
+  const partials: [number, number, number][] = [[1, 1, 1.5], [2, 0.5, 1.15], [2.76, 0.42, 0.9], [4.07, 0.24, 0.62], [5.4, 0.15, 0.45], [6.8, 0.08, 0.3]];
+  for (const [ratio, amp, decay] of partials) for (const off of [0.9985, 1.0015]) {
+    tone('sine', f * ratio * off, 0, t, decay, 0.085 * amp * level, { a: 0.002, to: v });
+  }
+  noise(t, 0.014, 0.3 * level, 'bandpass', 3400, 0, 1.2, { a: 0.001, to: v });
+  thump(t, 240, 150, 0.05, 0.12 * level, v);
+}
+/**
+ * L'impact du super : claque, explosion, grondement, grave, accord de puissance et retombée d'étincelles.
+ * Comme pour tous les coups, le médium compte autant que le grave : un téléphone ne restitue presque rien sous 200 Hz.
+ */
+function blast(t: number) {
+  const v = mix(0.4), d = mix(0.3, 3.5);
+  noise(t, 0.03, 2.5, 'bandpass', 2400, 800, 0.7, { a: 0.001, to: v });
+  noise(t, 0.5, 2, 'lowpass', 5000, 200, 1, { to: d });
+  noise(t, 0.35, 1.3, 'bandpass', 900, 300, 0.8, { to: d });
+  tone('triangle', 360, 90, t, 0.2, 1.1, { a: 0.002, to: d });
+  thump(t, 140, 30, 0.7, 0.75, d);
+  pad([98, 147, 196, 247], t, 0.5, 0.32, { cut: [2600, 500], q: 1.5, to: v });
+  [1568, 1319, 1047].forEach((n, i) => chime(t + 0.06 + i * 0.07, n, 0.09, v));
 }
 
 const SOUNDS: Record<SoundName, () => void> = {
-  pesee: () => { const t = now(); noise(t, 0.05, 0.5, 'lowpass', 1800, 0, 1); tone('sine', 140, 70, t, 0.12, 0.6); arp([988, 1319], t + 0.08, 0.07, 'square', 0.1); },
-  charge: () => { const t = now(); noise(t, 0.35, 0.15, 'bandpass', 400, 3200, 2); arp([523, 659, 784, 1047, 1319], t + 0.05, 0.06, 'square', 0.1); tone('triangle', 1568, 0, t + 0.38, 0.4, 0.12); },
-  jab: () => { const t = now(); noise(t, 0.08, 0.9, 'lowpass', 2400, 600, 1); tone('sine', 160, 60, t, 0.1, 0.8); },
-  crochet: () => { const t = now(); const d = crush(); noise(t, 0.16, 1, 'lowpass', 3000, 300, 1.2); tone('sine', 120, 38, t, 0.28, 1, d); tone('square', 90, 40, t, 0.12, 0.2); },
-  bloque: () => { const t = now(); tone('square', 700, 520, t, 0.07, 0.15); noise(t, 0.05, 0.4, 'highpass', 2500, 0, 1); tone('triangle', 330, 0, t + 0.02, 0.18, 0.18); },
-  superCoup: () => { const t = now(); const d = crush(); noise(t, 0.5, 0.35, 'bandpass', 300, 4000, 3); arp([392, 523, 659, 784], t, 0.08, 'sawtooth', 0.08); noise(t + 0.5, 0.3, 1, 'lowpass', 4000, 200, 1); tone('sine', 110, 30, t + 0.5, 0.6, 1, d); tone('square', 196, 0, t + 0.5, 0.5, 0.12); tone('square', 247, 0, t + 0.5, 0.5, 0.1); },
-  ko: () => { const t = now(); const d = crush(); noise(t, 0.25, 1, 'lowpass', 3500, 200, 1); tone('sine', 100, 25, t, 1.2, 1, d); tone('square', 440, 110, t + 0.15, 0.9, 0.12); bell(t + 0.9, 820); bell(t + 1.25, 820); bell(t + 1.6, 820); },
-  cloche: () => { const t = now(); bell(t, 820); bell(t + 0.32, 820); },
-  combat: () => { const t = now(); arp([392, 392, 523], t, 0.12, 'square', 0.12); arp([659, 784], t + 0.42, 0.14, 'square', 0.12); tone('triangle', 196, 0, t + 0.42, 0.5, 0.2); },
+  // La balance encaisse, puis deux notes claires.
+  pesee: () => {
+    const t = now(), v = mix(0.3);
+    thump(t, 150, 62, 0.14, 0.7, v);
+    noise(t, 0.05, 0.4, 'lowpass', 1800, 500, 1, { to: v });
+    noise(t + 0.01, 0.03, 0.18, 'bandpass', 3200, 0, 2, { a: 0.001, to: v });
+    chime(t + 0.09, 988, 0.2, v); chime(t + 0.19, 1319, 0.22, v);
+  },
+  // Le coup se charge : une nappe qui monte derrière un filtre qui s'ouvre, un souffle qui grimpe, puis l'étincelle.
+  charge: () => {
+    const t = now(), v = mix(0.25);
+    pad([196, 294], t, 0.42, 0.3, { cut: [300, 2600], q: 4, glide: 2, to: v });
+    noise(t, 0.42, 0.1, 'bandpass', 400, 4200, 2.5, { a: 0.12, to: v });
+    [523, 659, 784, 1047, 1319].forEach((n, i) => tone('triangle', n, 0, t + 0.05 + i * 0.06, 0.1, 0.13, { to: v }));
+    chime(t + 0.4, 1568, 0.15, v); chime(t + 0.46, 2093, 0.09, v);
+  },
+  // Jab : la claque du gant, la chair, un « toc » médium, le corps.
+  jab: () => {
+    const t = now(), v = mix(0.14);
+    noise(t, 0.022, 2.5, 'bandpass', 2600, 1300, 0.9, { a: 0.001, to: v });
+    noise(t, 0.1, 4, 'lowpass', 2600, 600, 1, { to: v });
+    tone('triangle', 430, 150, t, 0.08, 1.4, { a: 0.002, to: v });
+    thump(t, 190, 60, 0.11, 0.7, v);
+  },
+  // Crochet : le même coup en plus lourd, saturé, avec la salle qui gronde derrière.
+  crochet: () => {
+    const t = now(), v = mix(0.26), d = mix(0.2, 3);
+    noise(t, 0.028, 2.5, 'bandpass', 2200, 900, 0.8, { a: 0.001, to: v });
+    noise(t, 0.17, 2.6, 'lowpass', 3400, 320, 1.2, { to: d });
+    tone('triangle', 380, 110, t, 0.12, 1.2, { a: 0.002, to: d });
+    thump(t, 150, 40, 0.3, 0.75, d);
+    tone('square', 92, 40, t, 0.13, 0.2, { to: d });
+    noise(t + 0.03, 0.3, 0.5, 'bandpass', 420, 180, 1.5, { a: 0.03, to: v });
+  },
+  // Coup bloqué : un « toc » mat sur la garde.
+  bloque: () => {
+    const t = now(), v = mix(0.18);
+    noise(t, 0.03, 1.6, 'bandpass', 1500, 900, 2, { a: 0.001, to: v });
+    noise(t, 0.05, 0.4, 'highpass', 2800, 0, 1, { to: v });
+    tone('triangle', 560, 380, t, 0.07, 0.55, { to: v });
+    tone('sine', 320, 230, t + 0.015, 0.17, 0.5, { to: v });
+  },
+  // Super (replay sobre) : la montée, puis l'impact.
+  superCoup: () => {
+    const t = now(), v = mix(0.3);
+    pad([196, 294], t, 0.5, 0.15, { cut: [300, 3600], q: 5, glide: 3, to: v });
+    noise(t, 0.5, 0.3, 'bandpass', 300, 5000, 3, { a: 0.2, to: v });
+    [392, 523, 659, 784, 1047, 1319].forEach((n, i) => tone('sawtooth', n, 0, t + i * 0.075, 0.1, 0.07, { to: v }));
+    blast(t + 0.5);
+  },
+  // K.O. : l'impact, un grave qui n'en finit pas de tomber, un « pwaaah » qui s'effondre, puis trois coups de cloche.
+  ko: () => {
+    const t = now(), v = mix(0.35), d = mix(0.3, 3.5);
+    noise(t, 0.03, 2.5, 'bandpass', 2400, 800, 0.7, { a: 0.001, to: v });
+    noise(t, 0.27, 2.4, 'lowpass', 3600, 240, 1, { to: d });
+    noise(t, 0.3, 1.3, 'bandpass', 800, 260, 0.8, { to: d });
+    tone('triangle', 340, 80, t, 0.22, 1.2, { a: 0.002, to: d });
+    thump(t, 130, 26, 1.2, 0.75, d);
+    pad([220], t + 0.14, 0.85, 0.24, { cut: [1800, 220], q: 6, glide: 0.25, to: v });
+    bell(t + 0.9, 880, 0.9); bell(t + 1.22, 880, 0.9); bell(t + 1.54, 880);
+  },
+  cloche: () => { const t = now(); bell(t, 880); bell(t + 0.32, 880); },
+  // Ouverture du combat : cinq notes de cuivres sur une basse, un coup de caisse claire, et la cloche.
+  combat: () => {
+    const t = now(), v = mix(0.3);
+    ([[392, 0, 0.1], [392, 0.12, 0.1], [523, 0.24, 0.15], [659, 0.42, 0.12], [784, 0.56, 0.4]] as const).forEach(([f, at, dur]) => {
+      pad([f], t + at, dur, 0.21, { cut: [f * 1.2, f * 6], q: 2, a: 0.015, to: v });
+    });
+    pad([98, 196], t + 0.42, 0.55, 0.14, { cut: [900, 400], to: v });
+    noise(t + 0.42, 0.07, 0.28, 'highpass', 3800, 0, 1, { a: 0.001, to: v });
+    bell(t + 0.62, 880, 0.8);
+  },
+  // Coup de coude : un ressort de dessin animé, annoncé par un petit « pop ».
   coude: () => {
-    const t = now(), c = ac();
-    const o = c.createOscillator(), g = c.createGain(), lfo = c.createOscillator(), lg = c.createGain();
-    o.type = 'sine';
-    o.frequency.setValueAtTime(220, t);
-    o.frequency.exponentialRampToValueAtTime(520, t + 0.12);
-    o.frequency.exponentialRampToValueAtTime(260, t + 0.5);
-    lfo.frequency.value = 18; lg.gain.value = 40;
-    lfo.connect(lg); lg.connect(o.frequency);
-    env(g, t, 0.01, 0.5, 0.5);
-    o.connect(g); g.connect(master!);
-    o.start(t); lfo.start(t); o.stop(t + 0.6); lfo.stop(t + 0.6);
+    const t = now(), v = mix(0.2);
+    noise(t, 0.02, 0.2, 'bandpass', 1800, 0, 2, { a: 0.001, to: v });
+    tone('sine', 220, 260, t, 0.5, 0.5, { a: 0.01, mid: [520, 0.24], vib: [18, 40], to: v });
+    tone('triangle', 440, 520, t, 0.36, 0.1, { a: 0.01, mid: [1040, 0.24], vib: [18, 80], to: v });
   },
   // --- Combat animé ---
-  whoosh: () => { const t = now(); noise(t, 0.18, 0.45, 'bandpass', 300, 2600, 1.5); },
-  thud: () => { const t = now(); tone('sine', 95, 40, t, 0.18, 0.9); noise(t, 0.08, 0.5, 'lowpass', 900, 200, 1); },
-  boing: () => { const t = now(); tone('triangle', 150, 520, t, 0.12, 0.45); tone('triangle', 520, 210, t + 0.11, 0.3, 0.35); },
-  pop: () => { const t = now(); tone('square', 480, 980, t, 0.05, 0.2); noise(t, 0.04, 0.3, 'highpass', 2600, 0, 1); },
-  ting: () => { const t = now(); tone('sine', 1760, 0, t, 0.3, 0.16); tone('sine', 2637, 0, t + 0.05, 0.25, 0.1); },
-  fall: () => { const t = now(); tone('sine', 1500, 260, t, 0.5, 0.2); },
-  wind: () => { const t = now(); noise(t, 1.4, 0.16, 'bandpass', 380, 760, 2.5); },
-  zap: () => { const t = now(); for (let i = 0; i < 5; i++) { tone('sawtooth', 900 - i * 40, 220, t + i * 0.13, 0.1, 0.1); noise(t + i * 0.13, 0.06, 0.2, 'highpass', 3000, 0, 1); } },
-  slow: () => { const t = now(); tone('sine', 240, 62, t, 0.75, 0.5); noise(t, 0.7, 0.12, 'bandpass', 1400, 200, 2); },
-  cutin: () => { const t = now(); arp([523, 784, 1047, 1568], t, 0.05, 'sawtooth', 0.09); noise(t, 0.25, 0.25, 'bandpass', 500, 4200, 2); },
-  inflate: () => { const t = now(); tone('sine', 110, 330, t, 0.7, 0.3); noise(t, 0.7, 0.12, 'bandpass', 300, 1500, 2); },
-  pschitt: () => { const t = now(); noise(t, 0.5, 0.3, 'highpass', 5200, 1600, 1); tone('triangle', 420, 110, t, 0.5, 0.14); },
-  snore: () => { const t = now(); tone('sawtooth', 70, 95, t, 0.35, 0.07); noise(t, 0.35, 0.06, 'lowpass', 500, 300, 2); },
-  // l'impact du super sans sa montée (elle est jouée à part pendant la charge)
-  superImpact: () => { const t = now(); const d = crush(); noise(t, 0.3, 1, 'lowpass', 4000, 200, 1); tone('sine', 110, 30, t, 0.6, 1, d); tone('square', 196, 0, t, 0.5, 0.12); tone('square', 247, 0, t, 0.5, 0.1); }
+  // L'air fendu : un souffle qui monte puis retombe.
+  whoosh: () => {
+    const t = now(), v = mix(0.12);
+    noise(t, 0.2, 0.68, 'bandpass', 300, 900, 1.3, { a: 0.07, mid: [2800, 0.45], to: v });
+    noise(t, 0.16, 0.16, 'highpass', 5000, 0, 1, { a: 0.06, to: v });
+  },
+  // Chute sur le tapis.
+  thud: () => {
+    const t = now(), v = mix(0.22);
+    thump(t, 120, 42, 0.2, 0.75, v);
+    noise(t, 0.1, 3.8, 'lowpass', 1100, 300, 1, { to: v });
+    tone('triangle', 330, 140, t, 0.09, 1.2, { a: 0.002, to: v });
+    noise(t, 0.02, 1.2, 'bandpass', 1300, 0, 1, { a: 0.001, to: v });
+  },
+  // Ressort : la note bondit, retombe, et tremble tout du long.
+  boing: () => {
+    const t = now(), v = mix(0.2);
+    tone('sine', 170, 250, t, 0.5, 0.46, { mid: [440, 0.22], vib: [26, 46], to: v });
+    tone('triangle', 340, 500, t, 0.4, 0.24, { mid: [880, 0.22], vib: [26, 90], to: v });
+    noise(t, 0.02, 0.2, 'bandpass', 900, 0, 2, { a: 0.001, to: v });
+  },
+  // Bouchon qui saute.
+  pop: () => {
+    const t = now(), v = mix(0.2);
+    tone('sine', 320, 1250, t, 0.05, 1.3, { a: 0.002, to: v });
+    tone('triangle', 640, 2500, t, 0.04, 0.25, { a: 0.002, to: v });
+    noise(t, 0.03, 0.6, 'bandpass', 2400, 0, 1.2, { a: 0.001, to: v });
+  },
+  // Éclat : deux notes de carillon très aiguës, dans beaucoup de réverbération.
+  ting: () => { const t = now(), v = mix(0.45); chime(t, 2093, 0.2, v); chime(t + 0.06, 3136, 0.12, v); },
+  // Sifflement d'une chute, avec un léger vibrato.
+  fall: () => {
+    const t = now(), v = mix(0.25);
+    tone('sine', 1650, 270, t, 0.55, 0.2, { a: 0.03, vib: [9, 22], to: v });
+    tone('triangle', 825, 135, t, 0.55, 0.06, { a: 0.03, to: v });
+  },
+  // Vent : une rafale qui enfle et retombe, avec un sifflement lointain.
+  wind: () => {
+    const t = now(), v = mix(0.3);
+    noise(t, 1, 0.6, 'bandpass', 320, 420, 3, { a: 0.5, mid: [760, 0.4], to: v });
+    noise(t + 0.1, 0.9, 0.22, 'bandpass', 1100, 900, 5, { a: 0.5, mid: [1700, 0.45], to: v });
+    tone('sine', 600, 520, t + 0.2, 0.8, 0.05, { a: 0.4, vib: [5, 14], to: v });
+  },
+  // Éclairs : des salves serrées, de hauteur irrégulière, sur un bourdon électrique.
+  zap: () => {
+    const t = now(), v = mix(0.2);
+    tone('square', 196, 0, t, 0.95, 0.05, { a: 0.02, vib: [50, 24], to: v });
+    for (let i = 0; i < 8; i++) {
+      const at = t + i * 0.118 + Math.random() * 0.04;
+      tone('sawtooth', 900 + Math.random() * 900, 160 + Math.random() * 120, at, 0.08, 0.27, { a: 0.001, to: v });
+      noise(at, 0.045, 0.4, 'highpass', 3200, 0, 1, { a: 0.001, to: v });
+    }
+  },
+  // Ralenti : tout s'affaisse vers le grave.
+  slow: () => {
+    const t = now(), v = mix(0.35);
+    tone('sine', 250, 54, t, 0.75, 0.2, { a: 0.06, to: v });
+    pad([250], t, 0.75, 0.3, { cut: [1600, 300], q: 3, glide: 0.4, a: 0.08, to: v });
+    noise(t, 0.7, 0.3, 'bandpass', 1500, 300, 2, { a: 0.1, to: v });
+  },
+  // Annonce du super : une gerbe de notes, un « shing » métallique, un accord qui s'ouvre.
+  cutin: () => {
+    const t = now(), v = mix(0.38);
+    [523, 784, 1047, 1568].forEach((n, i) => tone('sawtooth', n, 0, t + i * 0.045, 0.09, 0.13, { to: v }));
+    noise(t, 0.3, 0.26, 'highpass', 5500, 0, 1, { a: 0.02, to: v });
+    pad([262, 330, 392, 523], t + 0.16, 0.5, 0.22, { cut: [900, 3200], q: 2, to: v });
+    chime(t + 0.2, 2093, 0.13, v);
+  },
+  // Le Bide gonfle : une montée, le caoutchouc qui couine, l'air qui entre.
+  inflate: () => {
+    const t = now(), v = mix(0.15);
+    tone('sine', 110, 340, t, 0.7, 0.24, { a: 0.05, to: v });
+    tone('triangle', 220, 700, t, 0.7, 0.3, { a: 0.1, vib: [31, 26], to: v });
+    noise(t, 0.7, 0.4, 'bandpass', 300, 1700, 2, { a: 0.15, to: v });
+  },
+  // « Pschitt » : un souffle aigu qui bat et s'épuise, sur un sifflet qui descend.
+  pschitt: () => {
+    const t = now(), v = mix(0.12);
+    noise(t, 0.5, 0.3, 'highpass', 6000, 1800, 1, { a: 0.01, trem: [34, 0.5], to: v });
+    tone('triangle', 520, 110, t, 0.5, 0.11, { vib: [14, 18], to: v });
+  },
+  // Ronflement : un grave qui racle, et le souffle.
+  snore: () => {
+    const t = now(), v = mix(0.1);
+    pad([88], t, 0.36, 0.26, { cut: [600, 1100], q: 3, glide: 1.3, a: 0.08, trem: [23, 0.8], to: v });
+    noise(t, 0.36, 0.9, 'bandpass', 700, 420, 2, { a: 0.1, trem: [23, 0.6], to: v });
+  },
+  // L'impact du super sans sa montée (elle est jouée à part pendant la charge).
+  superImpact: () => blast(now())
 };
-function now() { return ac().currentTime + 0.02; }
 
 /** Joue un son si le son est activé. Sans effet côté serveur ou si Web Audio est indisponible. */
 export function play(name: SoundName, force = false) {

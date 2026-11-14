@@ -110,3 +110,25 @@
 @keyframes bdx-pop { from { transform: skewX(-12deg) scale(.2); opacity: 0; } }
 
 @media (prefers-reduced-motion: reduce) { .bdx-idle, .bdx-cutin-lines { animation: none; } }
+
+/* ---------- Page d'accueil du look « BD » (src/app/BdHome.tsx) ---------- */
+.bdh-hero { position: relative; height: 540px; overflow: hidden; isolation: isolate; border-bottom: 5px solid var(--color-encre); background: var(--color-violet) url(/bd/v1/decor.jpg) 50% 100% / cover no-repeat; }
+/* Un voile sombre en haut du ciel : le titre reste lisible sur le décor peint. */
+.bdh-hero::before { content: ''; position: absolute; inset: 0 0 50% 0; background: linear-gradient(180deg, rgba(20, 10, 34, .78), rgba(20, 10, 34, 0)); }
+.bdh-boss, .bdh-rival { position: absolute; }
+.bdh-boss .bdx-idle, .bdh-rival .bdx-idle { transform-origin: 50% 94%; }
+/* Le Bide se tient au fond : plus haut sur le tapis, un peu dans l'ombre. */
+.bdh-boss { left: 50%; bottom: 84px; margin-left: -85px; filter: brightness(.74) saturate(.9); }
+.bdh-boss .bdx-idle { animation-duration: 2.6s; }
+.bdh-rival { bottom: 56px; }
+.bdh-rival.left { left: max(-6px, 50% - 208px); }
+.bdh-rival.right { right: max(-6px, 50% - 208px); }
+.bdh-rival.right .bdx-idle { animation-delay: -.8s; }
+.bdh-motto { position: absolute; left: -5%; right: -5%; bottom: 14px; z-index: 2; display: flex; justify-content: center; padding: 6px 0 7px; border-block: 4px solid var(--color-encre); background: var(--color-magenta); box-shadow: 0 6px 0 rgba(20, 10, 34, .45); transform: rotate(-2deg); }
+.bdh-motto span { font-family: var(--font-display); font-size: clamp(22px, 7.4vw, 30px); line-height: 1; white-space: nowrap; color: var(--color-soleil); text-shadow: 3px 3px 0 var(--color-encre); }
+/* Cases de la bande et cartes des combattants */
+.bdh-panel { position: relative; aspect-ratio: 1; box-shadow: 4px 4px 0 rgba(20, 10, 34, .6); }
+.bdh-panel .bdx-gp-txt { top: 4px; right: 6px; }
+.bdh-panel .bdx-gp-txt b { font-size: 22px; }
+.bdh-card { overflow: hidden; border: 3px solid var(--color-encre); border-radius: 14px; background: var(--color-violet); box-shadow: 0 4px 0 var(--color-encre); }
+.bdh-card-pic { display: flex; justify-content: center; padding-top: 8px; border-bottom: 3px solid var(--color-encre); background: var(--color-violet) url(/bd/v1/decor.jpg) 50% 78% / 330% auto no-repeat; }

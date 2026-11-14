@@ -33,7 +33,8 @@ src/
     b/[code]/                   page d'invitation (publique)
     (app)/                      espace connecté, avec barre de navigation
       battles/                  liste, création, ring, replay du combat du soir, bilan de round et son image à partager
-    bd.css                      styles du combat animé du look « BD », tous rangés sous `.bdx`
+    BdHome.tsx                  accueil du look « BD » (ring peint, catcheurs, le jeu en trois cases) ; `page.tsx` garde l'accueil d'origine en repli
+    bd.css                      styles du look « BD » : combat animé (`.bdx`) et accueil (`.bdh`)
       pesee/                    pesée du matin, puis « coup chargé »
       profil/                   combattant, réglages, export, suppression
     actions/                    server actions (auth, combattant, pesée, battle, profil)
@@ -52,7 +53,7 @@ src/
     notify.ts, push.ts          tâche planifiée et notifications
     auth.ts, mail.ts            sessions et liens magiques
     time.ts                     dates locales par fuseau (sans dépendance)
-    sound.ts                    sons d'arcade synthétisés (Web Audio)
+    sound.ts                    bruitages synthétisés en couches (Web Audio), limiteur et réverbération ; aucun fichier audio
 drizzle/                        migrations SQL
 design/                         sources du canevas de DA et atelier du combattant
 scripts/                        migrate, seed-demo, vapid
