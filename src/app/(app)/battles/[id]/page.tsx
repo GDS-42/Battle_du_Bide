@@ -7,6 +7,7 @@ import {
   roundOf, sideMembers, sideName, superState, warmupLabel
 } from '@/lib/battles';
 import { beltHeld, roundPairings } from '@/lib/engine/battle';
+import { FLAME_DECOR, ringFlame } from '@/lib/engine/flame';
 import { trendLabel } from '@/lib/engine/recap';
 import { BOSS_ID } from '@/lib/engine/rules';
 import { formatEuros, settleStakes } from '@/lib/engine/stakes';
@@ -26,6 +27,7 @@ import { Empty, Gauge, HpBar, Icon, RingScene, Ribbon, TopBar } from '@/componen
 
 export const metadata: Metadata = { title: 'Le ring' };
 const fmt = (n: number, d = 1) => n.toLocaleString('fr-FR', { minimumFractionDigits: d, maximumFractionDigits: d });
+const plural = (n: number, word: string) => `${n} ${word}${n > 1 ? 's' : ''}`;
 
 export default async function RingPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ invite?: string; erreur?: string }> }) {
   const { id } = await params;
@@ -37,7 +39,9 @@ export default async function RingPage({ params, searchParams }: { params: Promi
   if (!bundle.members.some((m) => m.userId === user.id)) redirect(`/b/${b.code}`);
 
   const at = now();
-  const { state, until, today } = computeState(bundle, at);
+  const { state, until, today, input } = computeState(bundle, at);
+  // Flamme du ring : jours d'affilée où tous les joueurs se sont pesés. Elle embellit le décor par paliers.
+  const flame = ringFlame(input, today);
   const status = battleStatus(b, at);
   const end = endDateOf(b);
   const pudique = b.privacy === 'pudique';
@@ -134,7 +138,7 @@ export default async function RingPage({ params, searchParams }: { params: Promi
                   <span><span className="text-soleil">{Math.round(Math.max(0, oppHp))}</span> {sideName(bundle, oppId)}</span>
                 </div>
               </div>
-              <RingScene height={250} className="border-b-[5px] border-encre">
+              <RingScene height={250} flame={flame.level} className="border-b-[5px] border-encre">
                 <div className="absolute inset-x-3 bottom-[30px] flex items-end justify-between">
                   <div className="flex items-end">{fighterOfSide(mySide.id, false, 130).map((f) => <Fighter key={f.key} cfg={f.cfg} />)}</div>
                   <div className="flex items-end">{fighterOfSide(oppId, true, 130).map((f) => <Fighter key={f.key} cfg={f.cfg} />)}</div>
@@ -212,6 +216,30 @@ export default async function RingPage({ params, searchParams }: { params: Promi
           {/* Les combattants aujourd'hui */}
           <section className="flex flex-col gap-2">
             <h2 className="label">{status === 'warmup' ? 'Sur le ring' : status === 'finished' ? 'Les combattants' : "Aujourd'hui"}</h2>
+            {today >= b.startDate ? (
+              <div className="card-line flex items-center gap-3 px-3 py-2.5">
+                <span className={`grid size-11 shrink-0 place-items-center rounded-full border-[3px] border-encre ${flame.days > 0 && status !== 'finished' ? 'bg-orange text-encre' : 'bg-violet-2 text-lilas'}`}>
+                  <Icon name="fire" size={24} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline justify-between gap-2 font-display text-[17px]">
+                    <span>Flamme du ring</span>
+                    {status === 'finished' ? <span className="text-soleil">record : {plural(flame.best, 'jour')}</span>
+                      : flame.days > 0 ? <span className="text-soleil">{plural(flame.days, 'jour')}</span>
+                      : <span className="text-lilas">éteinte</span>}
+                  </div>
+                  <p className="text-[13px] leading-snug text-lilas">
+                    {status === 'finished' ? 'La plus longue suite de jours où tout le ring s’est pesé.'
+                      : flame.missing === 0 ? 'Tout le ring s’est pesé aujourd’hui.'
+                      : flame.days > 0 ? `Encore ${plural(flame.missing, 'pesée')} aujourd’hui pour l’entretenir.`
+                      : `Elle ${flame.best > 0 ? 'se rallume' : 's’allume'} quand tout le ring se pèse le même jour : encore ${plural(flame.missing, 'pesée')} aujourd’hui.`}
+                    {status === 'finished' ? null
+                      : flame.next ? ` Prochain décor à ${flame.next} jours : ${FLAME_DECOR[flame.level]}.`
+                      : ' Le ring a tous ses décors.'}
+                  </p>
+                </div>
+              </div>
+            ) : null}
             {bundle.members.map((m) => {
               const p = state.players[m.userId];
               const done = weighedToday(m.userId);

@@ -22,6 +22,8 @@
   --animate-pop: pop 0.45s cubic-bezier(.2, 1.6, .4, 1);
   --animate-floatup: floatup 1.1s ease-out forwards;
   --animate-blink: blink 1.2s steps(2, start) infinite;
+  --animate-flicker: flicker 0.9s ease-in-out infinite;
+  --animate-twinkle: twinkle 2.6s ease-in-out infinite;
 }
 
 @keyframes shake {
@@ -40,6 +42,17 @@
   100% { transform: translateY(-42px); opacity: 0; }
 }
 @keyframes blink { to { visibility: hidden; } }
+/* Flamme du ring : braseros qui dansent, feu d'artifice qui scintille. */
+@keyframes flicker {
+  0%, 100% { transform: scale(1, 1) skewX(0deg); }
+  25% { transform: scale(0.93, 1.09) skewX(-4deg); }
+  50% { transform: scale(1.05, 0.94) skewX(0deg); }
+  75% { transform: scale(0.96, 1.07) skewX(4deg); }
+}
+@keyframes twinkle {
+  0%, 100% { transform: scale(0.82); opacity: 0.6; }
+  50% { transform: scale(1); opacity: 1; }
+}
 
 html, body { background: var(--color-nuit); color: var(--color-creme); }
 body { font-family: var(--font-sans); -webkit-tap-highlight-color: transparent; }

@@ -299,7 +299,7 @@ Entre deux battles, tous les joueurs s'allient contre **« Le Bide »**, le boss
 | **Provocations** | Message libre dans le fil du ring, avec quelques suggestions courtes adaptées au ton de la battle. |
 | **Commentaire de pesée** | Une ligne facultative : *« Raclette hier, soyez indulgents »*. |
 | **Coup de coude 👊** | Un rival ne s'est pas encore pesé ? Un tap lui envoie une notification. **Une fois par jour** et par personne. |
-| **Flamme du ring** | Série commune : nombre de jours consécutifs où **tous** les joueurs se sont pesés. À 7, 14 et 30 jours, le décor du ring s'améliore. |
+| **Flamme du ring** | Série commune : nombre de jours consécutifs où **tous** les joueurs se sont pesés. À 7, 14 et 30 jours, le décor du ring s'améliore : braseros allumés, puis fanions et projecteurs, puis cordes d'or et feu d'artifice. Un seul absent remet le compteur à zéro, mais **un décor gagné reste acquis**. Une pesée tardive entretient la flamme ; une garde non, car elle ne sauve que la série du joueur. |
 | **Mode pudique** (par défaut) | Les autres voient des **%**, des PV et la silhouette, **jamais les kilos**. Le mode **transparent**, où les kilos sont visibles, s'active par battle. |
 
 ### Le ton
@@ -312,19 +312,20 @@ Entre deux battles, tous les joueurs s'allient contre **« Le Bide »**, le boss
 
 ## 12. Les notifications
 
-**Au maximum 2 notifications programmées par jour**, plus quelques événements. Chaque type peut être coupé individuellement.
+**Trois rappels programmés**, chacun envoyé au plus une fois par jour, plus quelques événements. Un seul réglage, dans le profil, active ou coupe toutes les notifications.
 
 | Moment | Exemple |
 |---|---|
-| **Rappel du matin**, à l'heure choisie à l'inscription | *« ⚖️ Ton coup t'attend. Julie a déjà chargé le sien… »* |
-| **Ton rival vient de se peser** (adversaire du round ou coéquipier) | *« 🥊 Julie a chargé son coup. À toi, avant 21 h ! »* |
-| **21 h, le combat est prêt** | *« 🔔 Round 3, jour 4 : le combat est prêt ! »* |
-| Événement : coup de coude reçu | *« 👊 Julie te met un coup de coude. »* |
-| Événement : KO, ceinture, transformation | *« 💥 KO ! »*, *« 🏆 La ceinture est vacante ! »*, *« ✨ Ton combattant se transforme ! »* |
+| **Pesée du matin** : à l'heure de pesée choisie, si le joueur ne s'est pas encore pesé | *« Julie s'est déjà pesée. À toi de charger ton coup ! »* |
+| **Série en danger** : dans l'heure qui précède le combat, si le joueur ne s'est pas pesé et que son combo atteint 3 jours | *« Ton combo ×12 saute si tu ne te pèses pas avant 21 h. »* |
+| **Le combat est prêt** : à l'heure du combat, une fois par battle | *« Le combat de ce soir est prêt. Qui a frappé le plus fort ? »*, avec un message à part pour le dernier combat du round et pour la finale |
+| Événement : ton rival vient de se peser (adversaire du round ou coéquipier), une fois par jour et par battle | *« Julie a chargé son coup. À toi, avant 21 h ! »* |
+| Événement : coup de coude reçu | *« Julie te secoue : pèse-toi avant 21 h ! »* |
+| Événement : vie de la battle (arrivée d'un joueur, premier combat déplacé ou reporté, revanche) | *« Nouveau challenger ! »*, *« Revanche ! »* |
 
-- **À l'inscription**, le joueur choisit **quand** il se pèse (au réveil, après la douche, avant le café) et à quelle heure. C'est l'heure de son rappel.
-- Les messages **changent tous les jours**, pour éviter l'usure.
-- **Jamais culpabilisants.** Après plusieurs jours d'absence, on ralentit au lieu d'insister.
+- **À l'inscription**, le joueur choisit son heure de pesée, modifiable ensuite dans le profil. C'est l'heure de son rappel.
+- **Jamais culpabilisants** : un rappel annonce un coup à charger, un combat prêt ou une série en jeu, jamais un reproche.
+- Le réglage par type de notification, les messages renouvelés chaque jour et les rappels qui s'espacent après plusieurs jours d'absence sont prévus en [V2](#15-périmètre-v1--v2).
 
 ---
 
@@ -352,7 +353,7 @@ Lien d'invitation reçu sur Signal
  → Relever le défi : prénom + e-mail → lien magique (pas de mot de passe)
  → Créer son combattant : surnom, gabarit, style, couleurs, coup spécial
  → Taille + première pesée → la silhouette prend sa corpulence
- → Quand et à quelle heure tu te pèses ? (rappel)
+ → À quelle heure tu te pèses ? (rappel)
  → Installer l'app sur l'écran d'accueil + activer les notifications
  → « Tu es sur le ring. Premier combat demain. »
 ```
@@ -405,6 +406,7 @@ Lien d'invitation reçu sur Signal
 - **Raid de fin de saison** contre « Le Bide ».
 - **Cartes de partage** : image du KO, de la transformation ou du podium, pour Signal ou Instagram.
 - Badges complets et niveau de combattant toutes battles confondues.
+- **Notifications plus fines** : un réglage par type de notification, des messages renouvelés chaque jour, des rappels qui s'espacent après plusieurs jours d'absence, et des alertes d'événement (KO, ceinture, transformation).
 - Commentateur vocal.
 
 ---

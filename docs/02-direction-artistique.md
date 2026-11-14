@@ -33,6 +33,8 @@ Les jetons sont déclarés dans [`src/app/globals.css`](../src/app/globals.css) 
 
 Le **ciel** est un dégradé en bandes franches (violet → magenta → orange → soleil), recouvert d'une trame de points. La **ville** est une silhouette d'immeubles violets aux fenêtres jaunes. Le **ring** a des poteaux jaunes et trois cordes (magenta, crème, bleu).
 
+La **flamme du ring** embellit ce décor par paliers, qui se cumulent : braseros allumés sur les poteaux (7 jours), guirlande de fanions et faisceaux de projecteurs (14 jours), cordes d'or et feu d'artifice (30 jours).
+
 ## 3. Typographie
 
 - **Lilita One** (titres, boutons, chiffres de combat) : ronde, épaisse, arcade.
@@ -61,6 +63,6 @@ Le générateur de l'app ([`src/lib/fighter/gen.ts`](../src/lib/fighter/gen.ts))
 
 ## 6. Mouvement et son
 
-- **Animations** courtes : `pop` (apparition avec rebond), `shake` (tremblement d'écran sur les gros coups), `floatup` (dégâts qui s'envolent).
+- **Animations** courtes : `pop` (apparition avec rebond), `shake` (tremblement d'écran sur les gros coups), `floatup` (dégâts qui s'envolent), `flicker` (braseros qui dansent), `twinkle` (feu d'artifice qui scintille). Les deux dernières s'arrêtent si le joueur a demandé moins de mouvement.
 - **Sons** synthétisés en direct (Web Audio, aucun fichier) : pesée, coup chargé, jab, crochet, coup bloqué, super, K.O., cloche, ouverture du combat, coup de coude. Ils sont désactivables dans le profil.
 - **Vibrations** légères sur mobile pour les gros coups et le K.O.

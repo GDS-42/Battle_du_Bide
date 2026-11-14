@@ -134,6 +134,11 @@ export default function AidePage() {
         <Block icon="ring" title="Le combat du soir">
           <ul className="flex flex-col gap-2 text-[15px] leading-snug">
             <Bullet>Dans la journée, tu vois qui s'est pesé, mais les résultats restent secrets jusqu'au combat.</Bullet>
+            <Bullet>
+              <b className="text-soleil">Flamme du ring</b> : elle grandit chaque jour où tous les joueurs se pèsent. À {RULES.FLAME_TIERS[0]},{' '}
+              {RULES.FLAME_TIERS[1]} et {RULES.FLAME_TIERS[2]} jours d'affilée, le décor du ring s'embellit, et un décor gagné reste acquis.
+              Un seul absent, et le compteur repart de zéro : une pesée tardive l'entretient, une garde non.
+            </Bullet>
             <Bullet>À l'heure du combat, les coups du jour sont échangés. Chaque combat se revoit en replay.</Bullet>
             <Bullet>À la fin de chaque round, ton bilan t'attend, avec une image à partager (touche un round sur le ring).</Bullet>
             <Bullet>Au début de chaque round (tous les 7 jours), chaque camp repart avec {pv(RULES.HP)}.</Bullet>

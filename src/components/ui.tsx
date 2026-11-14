@@ -121,21 +121,93 @@ export function Skyline({ className = '' }: { className?: string }) {
   );
 }
 
-/** Décor de ring au coucher de soleil, avec cordes et sol. */
-export function RingScene({ height = 280, children, ropes = true, className = '' }: { height?: number; children?: React.ReactNode; ropes?: boolean; className?: string }) {
+const INK = '#140A22';
+const GOLD = 'linear-gradient(180deg,#FFE98A 0 40%,#FFD23D 40% 100%)';
+
+/** Brasero posé sur un poteau du ring (flamme du ring, palier 1). */
+function Brasero({ className }: { className: string }) {
+  return (
+    <svg viewBox="0 0 30 40" width="30" height="40" className={`absolute ${className}`} style={{ overflow: 'visible' }}>
+      <g className="animate-flicker motion-reduce:animate-none" style={{ transformBox: 'fill-box', transformOrigin: '50% 100%' }}>
+        <path d="M15 1C17 9 26 12 26 21C26 27 21 31 15 31C9 31 4 27 4 21C4 16 7.5 13.5 9.5 11C9.5 15 11.5 17 13.5 17C13 11 12.5 6.5 15 1Z" style={{ fill: '#F7893B', stroke: INK, strokeWidth: 2.5, strokeLinejoin: 'round' }} />
+        <path d="M15 14C16.5 18 20.5 19.5 20.5 23.5C20.5 27 18 29 15 29C12 29 9.5 27 9.5 24C9.5 21.5 11 20 12.3 19C12.6 21 13.5 22 14.5 22C14.2 19 14 16.5 15 14Z" style={{ fill: '#FFD23D' }} />
+      </g>
+      <path d="M2 29H28L24 38H6Z" style={{ fill: '#5A2A7A', stroke: INK, strokeWidth: 2.5, strokeLinejoin: 'round' }} />
+    </svg>
+  );
+}
+
+/** Guirlande de fanions tendue en haut du ring (palier 2). Les fanions suivent la courbe de la corde. */
+function Bunting() {
+  const SAG = 40, COLORS = ['#E8287C', '#2BB5FF', '#FFD23D', '#FFF4E3'];
+  return (
+    <div className="absolute inset-x-0 top-0 h-[44px]">
+      <svg viewBox="0 0 100 44" preserveAspectRatio="none" className="absolute inset-0 h-full w-full">
+        <path d={`M0 2Q50 ${2 + SAG} 100 2`} vectorEffect="non-scaling-stroke" style={{ fill: 'none', stroke: INK, strokeWidth: 2.5 }} />
+      </svg>
+      {[7, 18, 29, 40, 50, 60, 71, 82, 93].map((x, i) => (
+        <svg key={x} viewBox="0 0 16 18" width="16" height="18" className="absolute -ml-2" style={{ left: `${x}%`, top: Math.round(1 + SAG * (x / 100) * (1 - x / 100)) }}>
+          <path d="M1 1H15L8 16Z" style={{ fill: COLORS[i % COLORS.length], stroke: INK, strokeWidth: 2, strokeLinejoin: 'round' }} />
+        </svg>
+      ))}
+    </div>
+  );
+}
+
+/** Bouquet de feu d'artifice (palier 3). */
+function Firework({ color, size, className, delay = 0 }: { color: string; size: number; className: string; delay?: number }) {
+  const rays = Array.from({ length: 10 }, (_, i) => {
+    const a = (Math.PI * 2 * i) / 10 - Math.PI / 2;
+    return { c: Math.round(Math.cos(a) * 100) / 100, s: Math.round(Math.sin(a) * 100) / 100 };
+  });
+  return (
+    <svg viewBox="-32 -32 64 64" width={size} height={size} className={`absolute animate-twinkle motion-reduce:animate-none ${className}`} style={{ animationDelay: `${delay}s` }}>
+      {rays.map(({ c, s }, i) => (
+        <g key={i}>
+          <line x1={c * 9} y1={s * 9} x2={c * 20} y2={s * 20} style={{ stroke: INK, strokeWidth: 5.5, strokeLinecap: 'round' }} />
+          <line x1={c * 9} y1={s * 9} x2={c * 20} y2={s * 20} style={{ stroke: color, strokeWidth: 2.6, strokeLinecap: 'round' }} />
+          <circle cx={c * 27} cy={s * 27} r={2.6} style={{ fill: color, stroke: INK, strokeWidth: 1.6 }} />
+        </g>
+      ))}
+    </svg>
+  );
+}
+
+/**
+ * Décor de ring au coucher de soleil, avec cordes et sol. `flame` est le palier de la flamme du ring (0 à 3) :
+ * 1 allume les braseros, 2 ajoute les projecteurs et les fanions, 3 les cordes d'or et le feu d'artifice.
+ */
+export function RingScene({ height = 280, children, ropes = true, className = '', flame = 0 }: { height?: number; children?: React.ReactNode; ropes?: boolean; className?: string; flame?: number }) {
+  const gold = flame >= 3;
+  const ROPES: [string, number][] = [['bg-magenta', 168], ['bg-creme', 134], ['bg-neon', 100]];
   return (
     <div className={`sunset relative overflow-hidden ${className}`} style={{ height }}>
       <div className="halftone absolute inset-0" aria-hidden />
+      {flame >= 2 ? (
+        <div className="absolute inset-0" aria-hidden>
+          <div className="absolute inset-0 bg-creme/20" style={{ clipPath: 'polygon(3% 100%, 13% 100%, 80% 0, 54% 0)' }} />
+          <div className="absolute inset-0 bg-creme/20" style={{ clipPath: 'polygon(97% 100%, 87% 100%, 20% 0, 46% 0)' }} />
+        </div>
+      ) : null}
+      {flame >= 3 ? (
+        <div aria-hidden>
+          {/* Au centre du ciel : les combattants se tiennent de part et d'autre. */}
+          <Firework color="#FFD23D" size={58} className="left-[calc(50%-64px)] top-[42px]" />
+          <Firework color="#2BB5FF" size={44} className="left-[calc(50%+12px)] top-[56px]" delay={1.2} />
+        </div>
+      ) : null}
       <Skyline className="absolute inset-x-0 bottom-[40px] h-[150px] w-full" />
       {ropes ? (
         <div aria-hidden>
           <div className="absolute left-2 bottom-[46px] h-[140px] w-[14px] border-[3px] border-encre bg-soleil" />
           <div className="absolute right-2 bottom-[46px] h-[140px] w-[14px] border-[3px] border-encre bg-soleil" />
-          <div className="absolute inset-x-5 bottom-[168px] h-[7px] border-2 border-encre bg-magenta" />
-          <div className="absolute inset-x-5 bottom-[134px] h-[7px] border-2 border-encre bg-creme" />
-          <div className="absolute inset-x-5 bottom-[100px] h-[7px] border-2 border-encre bg-neon" />
+          {ROPES.map(([color, bottom]) => (
+            <div key={bottom} className={`absolute inset-x-5 h-[7px] border-2 border-encre ${gold ? '' : color}`} style={gold ? { bottom, background: GOLD } : { bottom }} />
+          ))}
+          {flame >= 1 ? <><Brasero className="bottom-[183px] left-0" /><Brasero className="bottom-[183px] right-0" /></> : null}
         </div>
       ) : null}
+      {flame >= 2 ? <div aria-hidden><Bunting /></div> : null}
       <div className="absolute inset-x-0 bottom-0 h-[52px] border-t-[5px] border-magenta bg-violet" aria-hidden />
       {children}
     </div>

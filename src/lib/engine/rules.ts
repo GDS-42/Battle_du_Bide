@@ -30,7 +30,9 @@ export const RULES = {
   TEAM_BONUS: 2,
   /** Défense de ceinture : écart de tendance toléré et pesées minimales sur 7 jours. */
   BELT_TOLERANCE: 0.01,
-  BELT_MIN_WEIGHINS: 5
+  BELT_MIN_WEIGHINS: 5,
+  /** Flamme du ring : jours d'affilée où tous les joueurs se sont pesés. À chaque palier, le décor du ring s'embellit. */
+  FLAME_TIERS: [7, 14, 30] as const
 } as const;
 
 export const BOSS_ID = 'boss';

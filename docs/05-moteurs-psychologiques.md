@@ -64,6 +64,7 @@ Chaque famille de la partie 3 suit le même plan : **le mécanisme** (ce que dit
 | Duel, y compris en tournoi | Comparaison sociale, rivalité, effet N | Psychologie sociale | Patel et al., 2019 (STEP UP) ; Garcia & Tor, 2009 | 🟢 Établi pour l'activité physique | [3.5](#35-les-autres) |
 | Équipes de 2, bonus si les deux se pèsent | Effet Köhler, appartenance au groupe | Psychologie sociale | Hertel, Kerr & Messé, 2000 ; Tajfel et al., 1971 | 🟡 Plausible | [3.5](#35-les-autres) |
 | « Ton rival s'est pesé », coup de coude, liste de ceux qui se sont pesés | Norme descriptive, déclencheur social | Psychologie sociale | Cialdini, Reno & Kallgren, 1990 | 🟡 Plausible | [3.5](#35-les-autres) |
+| Flamme du ring : série commune, décor qui s'embellit par paliers | Objectif commun où chacun est indispensable, gradient de but | Psychologie sociale, comportement du consommateur | Hertel, Kerr & Messé, 2000 ; Patel et al., 2019 (STEP UP) ; Kivetz et al., 2006 | 🟠 Pari | [3.5](#35-les-autres) |
 | Gage, cagnotte déclarative | Dispositif d'engagement | Économie comportementale | Bryan, Karlan & Nelson, 2010 ; Kullgren et al., 2013 | 🟡 Plausible | [3.6](#36-lengagement) |
 | Combattant à la corpulence réelle, « Transformation ! » | Auto-modélisation, effet Protée, auto-efficacité | Psychologie des médias | Fox & Bailenson, 2009 ; Bandura, 1977 | 🟠 Pari | [3.7](#37-lidentité) |
 | Badges sur trois axes, palmarès | Besoin de compétence | Psychologie de la motivation | Deci & Ryan, 2000 | 🟠 Pari | [3.8](#38-compétence-et-équité) |
@@ -187,6 +188,7 @@ Les essais de santé vont dans le même sens :
 - **Le duel est l'unité de base**, même en tournoi : chaque round oppose deux camps, et l'adversaire change au round suivant. Peu de concurrents, des affrontements répétés, des scores serrés : les ingrédients de la rivalité.
 - **Les équipes de 2** : le score est la moyenne des deux membres, avec 2 PV de bonus si les deux se sont pesés. Chacun est indispensable à l'autre.
 - **On voit qui s'est pesé.** Une notification part quand l'adversaire du round vient de se peser, et un coup de coude peut être envoyé une fois par jour à un rival en retard.
+- **La flamme du ring** : une série commune, qui compte les jours d'affilée où tous les joueurs se sont pesés, rivaux compris. Chacun y est indispensable, comme dans l'effet Köhler ou dans le bras « collaboration » de STEP UP. À 7, 14 et 30 jours, le décor du ring s'embellit : toujours un palier proche ([3.4](#34-lhabitude)). Un absent remet le compteur à zéro, mais le décor gagné reste acquis, et aucun message ne désigne celui qui a éteint la flamme.
 - **Le fil du ring et les réactions** donnent un public au combat.
 
 **Limites.**
@@ -194,6 +196,7 @@ Les essais de santé vont dans le même sens :
 - STEP UP et BE FIT mesurent des pas, pas du poids.
 - Dans l'étude de Feltz, la condition où le résultat dépend du plus faible n'a pas fait mieux que les autres conditions avec partenaire, et le chiffre de 24 % vient d'articles ultérieurs des mêmes auteurs.
 - L'essai de Wing & Jeffery n'a pas tiré au sort le fait de venir avec des amis.
+- **La flamme du ring est un pari.** L'effet Köhler a été observé entre coéquipiers, pas entre rivaux, et dans STEP UP le bras « collaboration » fait moins bien que la compétition, sans effet qui dure après l'arrêt. Une série commune a aussi un revers : celui qui la rompt peut se sentir fautif devant les autres. Le décor acquis et l'absence de message nominatif servent à l'amortir, sans garantie.
 - **La « contagion » de l'obésité n'est pas retenue.** L'étude célèbre qui associe l'obésité d'un ami à un risque accru de 57 % (Christakis & Fowler, 2007) est une association observationnelle, dont la méthode a été contestée (Cohen-Cole & Fletcher, 2008). Le jeu ne s'appuie pas dessus.
 - L'expérience de Triplett (1898), souvent citée comme la première preuve que la compétition fait aller plus vite, ne montre presque rien une fois réanalysée (Strube, 2005).
 - Se comparer à nettement plus fort que soi peut décourager : voir [3.8](#38-compétence-et-équité).
