@@ -3,9 +3,11 @@
 // Chaque son superpose plusieurs couches (l'attaque, le corps, le souffle). Tous passent par un bus commun,
 // avec un limiteur, et envoient une part réglable dans une petite réverbération de salle fabriquée sur place.
 // Point de départ : design/canvas/Sons.dc.html.
+// La salle du ring (fond de foule et réactions du public) n'est pas fabriquée : ce sont de vrais sons, chargés
+// depuis public/son/v1 (voir crowd-files.ts) et joués à travers le même bus.
+import { CROWD_BASE, CROWD_FILES, CROWD_LOOP, type CrowdName } from './crowd-files';
 
-/** Sons de la salle : le fond, et les réactions du public. Aucun n'est fourni pour l'instant (voir prepareCrowd). */
-export type CrowdName = 'fond' | 'acclame' | 'ovation' | 'ooh' | 'decu' | 'huees' | 'applaud' | 'stupeur';
+export type { CrowdName };
 
 export type SoundName = 'pesee' | 'charge' | 'jab' | 'crochet' | 'bloque' | 'superCoup' | 'ko' | 'cloche' | 'combat' | 'coude'
   // bruitages du combat animé (look « BD »)
@@ -429,37 +431,67 @@ export function buzz(ms: number | number[]) {
   try { if (soundOn()) navigator.vibrate?.(ms); } catch {}
 }
 
-// ---------- La foule du ring ----------
-const crowdBufs = new Map<CrowdName, AudioBuffer>();
+// ---------- La salle du ring ----------
+const crowdBufs = new Map<CrowdName, AudioBuffer[]>();
+const lastTake = new Map<CrowdName, number>();
+let crowdJob: Promise<void> | null = null;
 let bed: { src: AudioBufferSourceNode; gain: GainNode; off: ReturnType<typeof setTimeout> | null } | null = null;
 let bedWanted = false;
-/** Volume de chaque son de la salle : elle doit rester sous les coups. */
-const CROWD_GAIN: Record<CrowdName, number> = { fond: 0.18, acclame: 0.43, ovation: 0.6, ooh: 0.42, decu: 0.31, huees: 0.4, applaud: 0.65, stupeur: 0.3 };
+/** Volume de chaque son de la salle. Elle accompagne : elle reste quelques décibels sous les coups. */
+const CROWD_GAIN: Record<CrowdName, number> = { fond: 0.43, acclame: 0.49, ovation: 0.55, ooh: 0.46, decu: 0.39, applaud: 0.38 };
 
-/**
- * Prépare les sons de la salle avant un combat. Il n'y en a pas pour l'instant : une première foule, faite de voix
- * synthétiques, sonnait faux et a été retirée. Tant qu'aucun son n'est fourni, cheer() et crowdBed() restent muets.
- */
-export function prepareCrowd(): Promise<void> {
-  return Promise.resolve();
+/** Décode un fichier audio (forme à rappels, comprise par tous les navigateurs, anciens Safari compris). */
+function decode(c: AudioContext, data: ArrayBuffer): Promise<AudioBuffer> {
+  return new Promise((resolve, reject) => {
+    const p = c.decodeAudioData(data, resolve, reject) as Promise<AudioBuffer> | undefined;
+    if (p && typeof p.catch === 'function') p.catch(reject);
+  });
 }
 
-/** Joue une réaction de la salle, si elle est prête (sinon rien : jamais d'attente pendant le combat). */
+/**
+ * Charge les sons de la salle, une seule fois : téléchargement puis décodage, tous en parallèle. Sans effet si le
+ * son est coupé. Un fichier absent ou illisible est simplement ignoré (cette réaction restera muette) ; s'il en
+ * manque, le prochain combat réessaiera. Le fond démarre dès qu'il est prêt, s'il a été demandé entre-temps.
+ */
+export function prepareCrowd(): Promise<void> {
+  if (typeof window === 'undefined' || !soundOn()) return Promise.resolve();
+  crowdJob ??= (async () => {
+    const c = ac();
+    let missing = 0;
+    await Promise.all((Object.keys(CROWD_FILES) as CrowdName[]).flatMap((name) => CROWD_FILES[name].map(async (file) => {
+      try {
+        const res = await fetch(CROWD_BASE + file);
+        if (!res.ok) throw new Error(String(res.status));
+        const buf = await decode(c, await res.arrayBuffer());
+        crowdBufs.set(name, [...(crowdBufs.get(name) ?? []), buf]);
+        if (name === 'fond' && bedWanted) crowdBed(true);
+      } catch { missing++; }
+    })));
+    if (missing) crowdJob = null;
+  })();
+  return crowdJob;
+}
+
+/** Joue une réaction de la salle, si elle est chargée (sinon rien : jamais d'attente pendant le combat). */
 export function cheer(name: CrowdName, level = 1) {
   if (typeof window === 'undefined' || !soundOn()) return;
   try {
-    const buf = crowdBufs.get(name);
-    if (!buf) return;
+    const takes = crowdBufs.get(name);
+    if (!takes?.length) return;
+    // plusieurs prises : jamais la même deux fois de suite
+    let i = Math.floor(Math.random() * takes.length);
+    if (takes.length > 1 && i === lastTake.get(name)) i = (i + 1) % takes.length;
+    lastTake.set(name, i);
     const c = ac(), src = c.createBufferSource(), g = c.createGain();
-    src.buffer = buf;
-    src.playbackRate.value = 0.95 + Math.random() * 0.1; // jamais deux fois tout à fait la même salle
+    src.buffer = takes[i];
+    src.playbackRate.value = 0.97 + Math.random() * 0.06; // et jamais tout à fait à la même hauteur
     g.gain.value = CROWD_GAIN[name] * level;
-    src.connect(g); g.connect(mix(0.3));
+    src.connect(g); g.connect(mix(0.12));
     src.start(c.currentTime + 0.02);
   } catch {}
 }
 
-/** Le fond de foule : `true` le fait monter (en boucle), `false` l'éteint en fondu. */
+/** Le fond de salle : `true` le fait monter (en boucle), `false` l'éteint en fondu. */
 export function crowdBed(on: boolean) {
   if (typeof window === 'undefined') return;
   try {
@@ -473,8 +505,8 @@ export function crowdBed(on: boolean) {
       b.off = setTimeout(() => { try { b.src.stop(); } catch {} if (bed === b) bed = null; }, 700);
       return;
     }
-    const buf = crowdBufs.get('fond');
-    if (!buf) return; // pas de fond disponible
+    const buf = crowdBufs.get('fond')?.[0];
+    if (!buf) return; // pas encore chargé : prepareCrowd le lancera
     const c = ac(), t = c.currentTime;
     if (bed) {
       if (bed.off) { clearTimeout(bed.off); bed.off = null; }
@@ -482,10 +514,12 @@ export function crowdBed(on: boolean) {
       return;
     }
     const src = c.createBufferSource(), g = c.createGain();
-    src.buffer = buf; src.loop = true;
+    // On boucle à l'intérieur du fichier (voir CROWD_LOOP) ; si le décodage a rendu un son plus court, on s'adapte.
+    const end = Math.min(CROWD_LOOP.end, buf.duration - 0.05), start = Math.min(CROWD_LOOP.start, Math.max(0, end - 1));
+    src.buffer = buf; src.loop = true; src.loopStart = start; src.loopEnd = end;
     g.gain.setValueAtTime(0.0001, t); g.gain.setTargetAtTime(CROWD_GAIN.fond, t, 0.35);
-    src.connect(g); g.connect(mix(0.25));
-    src.start(t, Math.random() * buf.duration);
+    src.connect(g); g.connect(mix(0.08));
+    src.start(t, start + Math.random() * (end - start));
     bed = { src, gain: g, off: null };
   } catch {}
 }

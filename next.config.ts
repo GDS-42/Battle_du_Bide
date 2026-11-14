@@ -17,6 +17,11 @@ const nextConfig: NextConfig = {
         headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }]
       },
       {
+        // Sons de la salle : même règle que les dessins (/son/v1 figé, un son modifié part dans /son/v2).
+        source: '/son/:version/:file*',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }]
+      },
+      {
         source: '/sw.js',
         headers: [
           { key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' },

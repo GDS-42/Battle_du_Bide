@@ -13,7 +13,7 @@ export interface StageSide { lead: SpriteLook; partner?: SpriteLook | null }
 export interface StageDeps {
   play(name: SoundName): void;
   buzz(p: number | number[]): void;
-  /** Réaction de la salle (acclamation, « oooh », huées…), à un volume relatif. */
+  /** Réaction de la salle (acclamation, « oooh », déception, applaudissements…), à un volume relatif. */
   crowd?(name: CrowdName, level?: number): void;
   /** Fond de foule : allumé pendant le combat, éteint ensuite. */
   bed?(on: boolean): void;
@@ -472,7 +472,7 @@ export function createStage(root: HTMLElement, deps: StageDeps): Stage {
     await Promise.all([r.anim(hL, [{ transform: 'translateX(-105%)' }, { transform: 'translateX(0)' }], 190, { easing: EASE.snap }), r.anim(hR, [{ transform: 'translateX(105%)' }, { transform: 'translateX(0)' }], 190, { easing: EASE.snap }), r.anim(cut, [{ opacity: 0 }, { opacity: 1 }], 190)]);
     sfx('thud'); flash(r, 120); shake(r, 6, 240);
     await r.wait(220);
-    sfx('zap'); crowd('stupeur', 0.7); jitter(r, iL, 980, 2); jitter(r, iR, 980, 2);
+    sfx('zap'); jitter(r, iL, 980, 2); jitter(r, iR, 980, 2);
     await clash(r, eyeL, eyeR, 980);
     sfx('crochet'); crowd('ooh', 0.6); flash(r, 160); shake(r, 9, 320);
     const vs = slam(r, 'VS', 78);
@@ -604,7 +604,7 @@ export function createStage(root: HTMLElement, deps: StageDeps): Stage {
 
   /** Charge du super : aura, cri, panique en face, puis l'annonce du coup spécial. */
   async function superCharge(r: Run, A: Fighter, D: Fighter, move: string | null) {
-    const dark = darken(r, 0.62), au = aura(r, A); sfx('charge'); crowd('stupeur', 0.8);
+    const dark = darken(r, 0.62), au = aura(r, A); sfx('charge');
     swap(A, 'elan'); tremble(r, A, 1000, 2.5); rocks(r, A, 1000);
     r.fire(r.squash(A, 1.14, 1.14, 340, EASE.back));
     const g = bPt(A, 'top'); ono(r, { x: clampX(g.x, 96), y: 150 }, 'GRRAAAH !', { color: MINT, size: 26, ms: 950 });
@@ -659,7 +659,7 @@ export function createStage(root: HTMLElement, deps: StageDeps): Stage {
     r.fire(r.wait(500).then(() => zzz(r, A, 6)));
     r.fire(r.anim(D.idle, [{ transform: 'translateY(0)' }, { transform: 'translateY(-5px)' }, { transform: 'translateY(0)' }], 900, { duration: 300, iterations: 3, easing: 'ease-in-out', fill: 'none' }));
     await r.wait(900);
-    sfx('wind'); crowd('huees'); tumbleweed(r, A.dir);
+    sfx('wind'); crowd('decu'); tumbleweed(r, A.dir); // la salle soupire devant celui qui ne s'est pas pesé
     await r.wait(800);
     await gp(r, D, 'blase', 1100);
     sfx('boing'); await fall(r, D, 280, EASE.in);
@@ -672,7 +672,7 @@ export function createStage(root: HTMLElement, deps: StageDeps): Stage {
 
   /** Le Bide gonfle, charge ventre en avant, et aplatit son adversaire. `ko` : l'adversaire ne se relève pas. */
   async function sBide(r: Run, A: Fighter, D: Fighter, dmg: number, ko = false) {
-    sfx('inflate'); crowd('stupeur', 0.7);
+    sfx('inflate');
     r.fire(r.wait(250).then(() => gp(r, D, 'panique', 620)));
     await Promise.all([r.move(A, -12, 0, 700), r.squash(A, 1.2, 1.12, 700, 'ease-in')]);
     tremble(r, A, 320, 3); await r.wait(320);
@@ -707,7 +707,7 @@ export function createStage(root: HTMLElement, deps: StageDeps): Stage {
 
   /** Coup final : élan, uppercut, case d'impact, vol plané ; le vaincu voit des étoiles, le vainqueur prend la pose. */
   async function sKO(r: Run, A: Fighter, D: Fighter, dmg: number, cut: string | null | false) {
-    letterbox(true); sfx('charge'); crowd('stupeur', 0.8);
+    letterbox(true); sfx('charge');
     await windup(r, A, 280);
     tremble(r, A, 700); r.fire(gp(r, A, 'rage', 620)); r.fire(r.wait(140).then(() => gp(r, D, 'panique', 500)));
     await r.wait(860);
@@ -749,7 +749,7 @@ export function createStage(root: HTMLElement, deps: StageDeps): Stage {
 
   /** Double K.O. : les deux arment, se percutent au centre, et s'envolent chacun de leur côté. */
   async function sDoubleKO(r: Run, A: Fighter, B: Fighter) {
-    letterbox(true); sfx('charge'); crowd('stupeur', 0.8);
+    letterbox(true); sfx('charge');
     await Promise.all([windup(r, A, 280), windup(r, B, 280)]);
     tremble(r, A, 700); tremble(r, B, 700); r.fire(gp(r, A, 'rage', 620)); r.fire(gp(r, B, 'rage', 620));
     await r.wait(860);
