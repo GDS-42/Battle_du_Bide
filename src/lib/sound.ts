@@ -3,6 +3,10 @@
 // Chaque son superpose plusieurs couches (l'attaque, le corps, le souffle). Tous passent par un bus commun,
 // avec un limiteur, et envoient une part réglable dans une petite réverbération de salle fabriquée sur place.
 // Point de départ : design/canvas/Sons.dc.html.
+// La foule du ring (fond et réactions) est fabriquée à part, dans crowd.ts, et rejouée ici.
+import type { CrowdName } from './crowd';
+
+export type { CrowdName };
 
 export type SoundName = 'pesee' | 'charge' | 'jab' | 'crochet' | 'bloque' | 'superCoup' | 'ko' | 'cloche' | 'combat' | 'coude'
   // bruitages du combat animé (look « BD »)
@@ -20,6 +24,7 @@ export function soundOn(): boolean {
 }
 export function setSoundOn(on: boolean) {
   try { localStorage.setItem(KEY, on ? 'on' : 'off'); } catch {}
+  if (!on) crowdBed(false);
 }
 
 /** Courbe de saturation douce (tanh), normalisée : arrondit les crêtes au lieu de les couper net. */
@@ -423,4 +428,80 @@ export function primeAudio() {
 /** Vibration courte sur mobile (si permis). */
 export function buzz(ms: number | number[]) {
   try { if (soundOn()) navigator.vibrate?.(ms); } catch {}
+}
+
+// ---------- La foule du ring ----------
+const crowdBufs = new Map<CrowdName, AudioBuffer>();
+let crowdJob: Promise<void> | null = null;
+let bed: { src: AudioBufferSourceNode; gain: GainNode; off: ReturnType<typeof setTimeout> | null } | null = null;
+let bedWanted = false;
+/** Volume de chaque son de foule. Ils sont fabriqués à pleine échelle ; la salle doit rester sous les coups. */
+const CROWD_GAIN: Record<CrowdName, number> = { fond: 0.18, acclame: 0.43, ovation: 0.6, ooh: 0.42, decu: 0.31, huees: 0.4, applaud: 0.65, stupeur: 0.3, he: 0.22 };
+
+/**
+ * Fabrique les sons de foule, une seule fois. Le calcul est fait par petits lots (un son, puis on rend la main) :
+ * l'écran ne se fige pas. Sans effet si le son est coupé. Le fond démarre dès qu'il est prêt, s'il a été demandé.
+ */
+export function prepareCrowd(): Promise<void> {
+  if (typeof window === 'undefined' || !soundOn()) return Promise.resolve();
+  crowdJob ??= (async () => {
+    const { CROWD_NAMES, CROWD_RATE, makeCrowd } = await import('./crowd');
+    const c = ac();
+    for (const name of CROWD_NAMES) {
+      if (!crowdBufs.has(name)) {
+        const clip = makeCrowd(name), buf = c.createBuffer(2, clip.left.length, CROWD_RATE);
+        buf.getChannelData(0).set(clip.left); buf.getChannelData(1).set(clip.right);
+        crowdBufs.set(name, buf);
+        if (name === 'fond' && bedWanted) crowdBed(true);
+      }
+      await new Promise((r) => setTimeout(r, 0));
+    }
+  })().catch(() => { crowdJob = null; });
+  return crowdJob;
+}
+
+/** Joue une réaction de la salle, si elle est déjà fabriquée (sinon rien : jamais d'attente pendant le combat). */
+export function cheer(name: CrowdName, level = 1) {
+  if (typeof window === 'undefined' || !soundOn()) return;
+  try {
+    const buf = crowdBufs.get(name);
+    if (!buf) return;
+    const c = ac(), src = c.createBufferSource(), g = c.createGain();
+    src.buffer = buf;
+    src.playbackRate.value = 0.95 + Math.random() * 0.1; // jamais deux fois tout à fait la même salle
+    g.gain.value = CROWD_GAIN[name] * level;
+    src.connect(g); g.connect(mix(0.3));
+    src.start(c.currentTime + 0.02);
+  } catch {}
+}
+
+/** Le fond de foule : `true` le fait monter (en boucle), `false` l'éteint en fondu. */
+export function crowdBed(on: boolean) {
+  if (typeof window === 'undefined') return;
+  try {
+    bedWanted = on && soundOn();
+    if (!bedWanted) {
+      const b = bed;
+      if (!b || !ctx) return;
+      const t = ctx.currentTime;
+      b.gain.gain.cancelScheduledValues(t); b.gain.gain.setValueAtTime(Math.max(0.0001, b.gain.gain.value), t); b.gain.gain.setTargetAtTime(0.0001, t, 0.12);
+      if (b.off) clearTimeout(b.off);
+      b.off = setTimeout(() => { try { b.src.stop(); } catch {} if (bed === b) bed = null; }, 700);
+      return;
+    }
+    const buf = crowdBufs.get('fond');
+    if (!buf) return; // pas encore fabriqué : prepareCrowd le lancera
+    const c = ac(), t = c.currentTime;
+    if (bed) {
+      if (bed.off) { clearTimeout(bed.off); bed.off = null; }
+      bed.gain.gain.cancelScheduledValues(t); bed.gain.gain.setValueAtTime(Math.max(0.0001, bed.gain.gain.value), t); bed.gain.gain.setTargetAtTime(CROWD_GAIN.fond, t, 0.25);
+      return;
+    }
+    const src = c.createBufferSource(), g = c.createGain();
+    src.buffer = buf; src.loop = true;
+    g.gain.setValueAtTime(0.0001, t); g.gain.setTargetAtTime(CROWD_GAIN.fond, t, 0.35);
+    src.connect(g); g.connect(mix(0.25));
+    src.start(t, Math.random() * buf.duration);
+    bed = { src, gain: g, off: null };
+  } catch {}
 }

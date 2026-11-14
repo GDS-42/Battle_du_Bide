@@ -7,10 +7,17 @@ import { assetsOf, BD_BOSS, BD_CAST, faceFor, faceUrl, poseFor, spriteUrl, tintH
 import { SPRITES, type FaceMeta, type PoseMeta } from '@/lib/fighter/bd-sprites';
 import type { SpriteLook } from '@/lib/fighter/types';
 import type { Beat } from '@/lib/replay/model';
-import type { SoundName } from '@/lib/sound';
+import type { CrowdName, SoundName } from '@/lib/sound';
 
 export interface StageSide { lead: SpriteLook; partner?: SpriteLook | null }
-export interface StageDeps { play(name: SoundName): void; buzz(p: number | number[]): void }
+export interface StageDeps {
+  play(name: SoundName): void;
+  buzz(p: number | number[]): void;
+  /** Réaction de la salle (acclamation, « oooh », huées…), à un volume relatif. */
+  crowd?(name: CrowdName, level?: number): void;
+  /** Fond de foule : allumé pendant le combat, éteint ensuite. */
+  bed?(on: boolean): void;
+}
 export interface StageCallbacks { onBeat(index: number, beat: Beat): void; onImpact(by: 'a' | 'b'): void }
 export interface Stage {
   /** Monte les deux camps et attend que leurs dessins soient prêts. Rejette si un dessin manque. */
@@ -77,6 +84,7 @@ export function createStage(root: HTMLElement, deps: StageDeps): Stage {
   root.append(cam, bars);
   const fxB = cam.children[0] as HTMLElement, actors = cam.children[1] as HTMLElement, fxF = cam.children[2] as HTMLElement;
   const sfx = (n: SoundName) => deps.play(n);
+  const crowd = (n: CrowdName, level = 1) => deps.crowd?.(n, level);
   const letterbox = (on: boolean) => bars.classList.toggle('on', on);
   const W = () => root.clientWidth, H = () => root.clientHeight;
   const floorY = () => H() - GROUND - 8;
@@ -464,9 +472,9 @@ export function createStage(root: HTMLElement, deps: StageDeps): Stage {
     await Promise.all([r.anim(hL, [{ transform: 'translateX(-105%)' }, { transform: 'translateX(0)' }], 190, { easing: EASE.snap }), r.anim(hR, [{ transform: 'translateX(105%)' }, { transform: 'translateX(0)' }], 190, { easing: EASE.snap }), r.anim(cut, [{ opacity: 0 }, { opacity: 1 }], 190)]);
     sfx('thud'); flash(r, 120); shake(r, 6, 240);
     await r.wait(220);
-    sfx('zap'); jitter(r, iL, 980, 2); jitter(r, iR, 980, 2);
+    sfx('zap'); crowd('stupeur', 0.7); jitter(r, iL, 980, 2); jitter(r, iR, 980, 2);
     await clash(r, eyeL, eyeR, 980);
-    sfx('crochet'); flash(r, 160); shake(r, 9, 320);
+    sfx('crochet'); crowd('ooh', 0.6); flash(r, 160); shake(r, 9, 320);
     const vs = slam(r, 'VS', 78);
     await r.wait(820);
     gone(r, vs, r.anim(vs, [{ opacity: 1, transform: 'scale(1) rotate(-6deg)' }, { opacity: 0, transform: 'scale(1.7) rotate(-6deg)' }], 200));
@@ -524,12 +532,12 @@ export function createStage(root: HTMLElement, deps: StageDeps): Stage {
       dust(r, bPt(F, 'feet', 'garde').x, floorY(), 5); sfx('thud');
       await pop(r, F, 'garde', 1.14, 0.86, 260);
     };
-    speedLines(r, 1, 500);
+    speedLines(r, 1, 500); crowd('acclame', 0.6); // la salle salue l'entrée des deux camps
     await Promise.all([enter(A), r.wait(170).then(() => enter(B))]);
     letterbox(true);
     await Promise.all([r.spin(A, -7, 240), r.spin(B, -7, 240), r.move(A, 12, 0, 240), r.move(B, 12, 0, 240)]);
     await duel(r, A, B);
-    letterbox(false); sfx('combat');
+    letterbox(false); sfx('combat'); crowd('acclame', 0.85);
     await Promise.all([recover(r, A, 300), recover(r, B, 300)]);
   }
 
@@ -540,7 +548,7 @@ export function createStage(root: HTMLElement, deps: StageDeps): Stage {
     swap(A, 'jab'); r.fire(r.spin(A, 0, 60));
     await Promise.all([r.move(A, dist, lift, 80, EASE.snap), r.squash(A, 1.1, 0.95, 80)]);
     const c = bPt(D, 'head');
-    sfx('jab'); deps.buzz(30); r.fire(flinch(r, D));
+    sfx('jab'); crowd('he', 0.8); deps.buzz(30); r.fire(flinch(r, D));
     flash(r, 90); sparks(r, c.x, c.y, 6); shake(r, 5, 200); hurt(r, D, dmg, A.side);
     r.fire(hitPanel(r, D, A, { text: 'PAF!', sub: `${dmg} PV`, ms: 430, color: CREAM }));
     await hitstop(r, 200);
@@ -561,7 +569,7 @@ export function createStage(root: HTMLElement, deps: StageDeps): Stage {
     swap(A, 'jab'); r.fire(r.spin(A, -10, 70));
     await Promise.all([r.move(A, dist, lift, 100, EASE.snap), r.squash(A, 1.24, 0.96, 100)]);
     const c = bPt(D, 'head');
-    sfx('crochet'); deps.buzz(60); swap(D, 'touche'); r.fire(r.squash(D, 0.88, 1.08, 60));
+    sfx('crochet'); crowd('ooh'); deps.buzz(60); swap(D, 'touche'); r.fire(r.squash(D, 0.88, 1.08, 60));
     negative(r, 90); focus(r, c.x, c.y, 460); sparks(r, c.x, c.y, 10); shake(r, 12, 440); hurt(r, D, dmg, A.side);
     r.fire(hitPanel(r, D, A, { text: 'BOUM!', sub: `${dmg} PV`, big: true, ms: 520, color: SUN }));
     await hitstop(r, 640);
@@ -570,6 +578,7 @@ export function createStage(root: HTMLElement, deps: StageDeps): Stage {
     r.fire(r.wait(320).then(() => { swap(A, 'garde'); return Promise.all([r.move(A, 0, 0, 320), r.spin(A, 0, 200)]); }));
     await fly(r, D);
     await land(r, D);
+    crowd('applaud', 0.8);
     const o = orbit(bPt(D, 'top'));
     r.fire(gp(r, D, 'sonne', 850)); r.fire(r.wait(180).then(() => gp(r, A, 'rire', 700)));
     await r.wait(1100); o.remove();
@@ -581,7 +590,7 @@ export function createStage(root: HTMLElement, deps: StageDeps): Stage {
     sfx('charge'); await windup(r, A, 300);
     tremble(r, A, 520); r.fire(gp(r, A, 'rage', 400));
     await r.wait(640);
-    sfx('pschitt');
+    sfx('pschitt'); crowd('decu', 0.9);
     const g = bPt(A, 'hand');
     dust(r, g.x, g.y, 4, 0.6); ono(r, { x: clampX(g.x, 60), y: Math.max(150, g.y + 40) }, 'pschitt…', { color: LILAS, size: 20, ms: 1000, rot: 4 });
     swap(A, 'dodo');
@@ -595,7 +604,7 @@ export function createStage(root: HTMLElement, deps: StageDeps): Stage {
 
   /** Charge du super : aura, cri, panique en face, puis l'annonce du coup spécial. */
   async function superCharge(r: Run, A: Fighter, D: Fighter, move: string | null) {
-    const dark = darken(r, 0.62), au = aura(r, A); sfx('charge');
+    const dark = darken(r, 0.62), au = aura(r, A); sfx('charge'); crowd('stupeur', 0.8);
     swap(A, 'elan'); tremble(r, A, 1000, 2.5); rocks(r, A, 1000);
     r.fire(r.squash(A, 1.14, 1.14, 340, EASE.back));
     const g = bPt(A, 'top'); ono(r, { x: clampX(g.x, 96), y: 150 }, 'GRRAAAH !', { color: MINT, size: 26, ms: 950 });
@@ -619,7 +628,7 @@ export function createStage(root: HTMLElement, deps: StageDeps): Stage {
     // coup final : un poing d'énergie géant
     A.el.style.opacity = '';
     const b = await fist(r, A, bPt(A, 'hand'), bPt(D, 'head'));
-    sfx('superImpact'); deps.buzz([40, 60, 90]); negative(r, 100); explosion(r, b.x, b.y); focus(r, b.x, b.y, 520); shake(r, 16, 520);
+    sfx('superImpact'); crowd('acclame'); deps.buzz([40, 60, 90]); negative(r, 100); explosion(r, b.x, b.y); focus(r, b.x, b.y, 520); shake(r, 16, 520);
     hurt(r, D, dmg, A.side);
     r.fire(r.wait(120).then(() => hitPanel(r, D, A, { text: 'SUPER!', sub: `${dmg} PV`, big: true, ms: 520, color: MINT })));
     await hitstop(r, 760);
@@ -631,9 +640,9 @@ export function createStage(root: HTMLElement, deps: StageDeps): Stage {
     await r.wait(520);
     sfx('fall'); swap(D, 'touche'); D.ang = 180; D.rot.style.transform = 'rotate(180deg)'; D.fig.classList.add('burnt');
     await r.path(D, [[-22, 14]], 320, EASE.in);
-    sfx('thud'); shake(r, 10, 300); dust(r, bPt(D, 'head').x, floorY(), 8, 1.8);
+    sfx('thud'); crowd('ooh', 0.8); shake(r, 10, 300); dust(r, bPt(D, 'head').x, floorY(), 8, 1.8);
     await r.anim(D.rot, [{ transform: 'rotate(180deg)' }, { transform: 'rotate(172deg)' }, { transform: 'rotate(188deg)' }, { transform: 'rotate(176deg)' }, { transform: 'rotate(180deg)' }], 620, { easing: 'linear' });
-    sfx('pop');
+    sfx('pop'); crowd('applaud', 0.7);
     r.fire(r.spin(D, 360, 380, EASE.out));
     await r.path(D, [[-16, 70], [-6, 0]], 380, EASE.out);
     upright(D); swap(D, 'dodo');
@@ -650,7 +659,7 @@ export function createStage(root: HTMLElement, deps: StageDeps): Stage {
     r.fire(r.wait(500).then(() => zzz(r, A, 6)));
     r.fire(r.anim(D.idle, [{ transform: 'translateY(0)' }, { transform: 'translateY(-5px)' }, { transform: 'translateY(0)' }], 900, { duration: 300, iterations: 3, easing: 'ease-in-out', fill: 'none' }));
     await r.wait(900);
-    sfx('wind'); tumbleweed(r, A.dir);
+    sfx('wind'); crowd('huees'); tumbleweed(r, A.dir);
     await r.wait(800);
     await gp(r, D, 'blase', 1100);
     sfx('boing'); await fall(r, D, 280, EASE.in);
@@ -663,7 +672,7 @@ export function createStage(root: HTMLElement, deps: StageDeps): Stage {
 
   /** Le Bide gonfle, charge ventre en avant, et aplatit son adversaire. `ko` : l'adversaire ne se relève pas. */
   async function sBide(r: Run, A: Fighter, D: Fighter, dmg: number, ko = false) {
-    sfx('inflate');
+    sfx('inflate'); crowd('stupeur', 0.7);
     r.fire(r.wait(250).then(() => gp(r, D, 'panique', 620)));
     await Promise.all([r.move(A, -12, 0, 700), r.squash(A, 1.2, 1.12, 700, 'ease-in')]);
     tremble(r, A, 320, 3); await r.wait(320);
@@ -672,7 +681,7 @@ export function createStage(root: HTMLElement, deps: StageDeps): Stage {
     swap(A, 'bide');
     await Promise.all([r.move(A, dist, 10, 110, EASE.snap), r.squash(A, 1.26, 1.04, 110)]);
     const hd = bPt(D, 'head'), c = { x: hd.x, y: hd.y + 56 };
-    sfx('boing'); sfx('crochet'); deps.buzz(60); swap(D, 'touche');
+    sfx('boing'); sfx('crochet'); crowd('ooh'); deps.buzz(60); swap(D, 'touche');
     flash(r, 110); burst(r, c.x - A.dir * 30, 64, ko ? 'K.O.' : 'BIDE!', ko ? '' : `${dmg} PV`, '#B98BFF', 0.95); sparks(r, c.x, c.y, 8); shake(r, 10, 360); hurt(r, D, dmg, A.side);
     r.fire(Promise.all([r.squash(D, 0.16, 1.1, 90), r.move(D, -24, 0, 90)]));
     await hitstop(r, 170);
@@ -684,12 +693,13 @@ export function createStage(root: HTMLElement, deps: StageDeps): Stage {
     sfx('pop');
     if (ko) {
       setSq(D, 1, 1); await land(r, D, true);
+      crowd('ovation');
       orbit(bPt(D, 'top')); partnerPose(D, 'ko'); partnerPose(A, 'victoire');
       r.fire(gp(r, D, 'sonne', 1400));
       await r.wait(1500);
       return;
     }
-    swap(D, 'garde'); r.fire(r.wait(120).then(() => gp(r, D, 'sonne', 700)));
+    swap(D, 'garde'); crowd('applaud', 0.6); r.fire(r.wait(120).then(() => gp(r, D, 'sonne', 700)));
     await r.squash(D, 1.18, 0.88, 90); await r.squash(D, 1, 1, 200, EASE.back);
     await r.wait(820);
     await Promise.all([recover(r, D), recover(r, A)]);
@@ -697,7 +707,7 @@ export function createStage(root: HTMLElement, deps: StageDeps): Stage {
 
   /** Coup final : élan, uppercut, case d'impact, vol plané ; le vaincu voit des étoiles, le vainqueur prend la pose. */
   async function sKO(r: Run, A: Fighter, D: Fighter, dmg: number, cut: string | null | false) {
-    letterbox(true); sfx('charge');
+    letterbox(true); sfx('charge'); crowd('stupeur', 0.8);
     await windup(r, A, 280);
     tremble(r, A, 700); r.fire(gp(r, A, 'rage', 620)); r.fire(r.wait(140).then(() => gp(r, D, 'panique', 500)));
     await r.wait(860);
@@ -711,7 +721,8 @@ export function createStage(root: HTMLElement, deps: StageDeps): Stage {
     sfx('whoosh'); swap(A, 'uppercut'); upright(A); setSq(A, 1.14, 0.8);
     await Promise.all([r.move(A, near, 30, 80, EASE.snap), r.squash(A, 0.92, 1.16, 80)]);
     const c = bPt(D, 'head');
-    sfx('ko'); deps.buzz([80, 60, 160]); swap(D, 'touche'); r.fire(r.squash(D, 0.88, 1.08, 60));
+    sfx('ko'); crowd('acclame'); r.fire(r.wait(350).then(() => crowd('ooh', 0.9))); // la clameur, puis le « oooh » pendant qu'il s'envole
+    deps.buzz([80, 60, 160]); swap(D, 'touche'); r.fire(r.squash(D, 0.88, 1.08, 60));
     flash(r, 140); sparks(r, c.x, c.y, 12, CREAM); shake(r, 14, 500);
     hurt(r, D, dmg, A.side);
     r.fire(hitPanel(r, D, A, { text: 'K.O.', big: true, ms: 760, color: SUN }));
@@ -721,6 +732,7 @@ export function createStage(root: HTMLElement, deps: StageDeps): Stage {
     r.fire((async () => { await Promise.all([r.path(A, [[near, 44], [near, 0]], 360, 'ease-in-out'), r.squash(A, 1, 1, 200)]); await r.move(A, 0, 0, 340); })());
     await fly(r, D, 176, 760, 540);
     await land(r, D, true);
+    crowd('ovation'); // il est au tapis : la salle se lève
     orbit(bPt(D, 'top')); partnerPose(D, 'ko'); partnerPose(A, 'victoire');
     // pose de victoire : bras levés, petits sauts, et le vaincu qui voit des étoiles
     letterbox(false);
@@ -737,7 +749,7 @@ export function createStage(root: HTMLElement, deps: StageDeps): Stage {
 
   /** Double K.O. : les deux arment, se percutent au centre, et s'envolent chacun de leur côté. */
   async function sDoubleKO(r: Run, A: Fighter, B: Fighter) {
-    letterbox(true); sfx('charge');
+    letterbox(true); sfx('charge'); crowd('stupeur', 0.8);
     await Promise.all([windup(r, A, 280), windup(r, B, 280)]);
     tremble(r, A, 700); tremble(r, B, 700); r.fire(gp(r, A, 'rage', 620)); r.fire(gp(r, B, 'rage', 620));
     await r.wait(860);
@@ -746,7 +758,7 @@ export function createStage(root: HTMLElement, deps: StageDeps): Stage {
     for (const F of [A, B]) { swap(F, 'uppercut'); upright(F); setSq(F, 1.14, 0.8); }
     await Promise.all([r.move(A, near, 26, 90, EASE.snap), r.move(B, near, 26, 90, EASE.snap), r.squash(A, 0.92, 1.16, 90), r.squash(B, 0.92, 1.16, 90)]);
     const c = { x: W() / 2, y: Math.min(bPt(A, 'head').y, bPt(B, 'head').y) };
-    sfx('ko'); deps.buzz([80, 60, 160]); negative(r, 110); focus(r, c.x, c.y, 620); sparks(r, c.x, c.y, 16, CREAM); shake(r, 16, 520);
+    sfx('ko'); crowd('ooh'); deps.buzz([80, 60, 160]); negative(r, 110); focus(r, c.x, c.y, 620); sparks(r, c.x, c.y, 16, CREAM); shake(r, 16, 520);
     CB.onImpact('a'); CB.onImpact('b');
     const txt = slam(r, 'DOUBLE K.O.', 44);
     await hitstop(r, 700);
@@ -754,6 +766,7 @@ export function createStage(root: HTMLElement, deps: StageDeps): Stage {
     for (const F of [A, B]) r.fire(r.squash(F, 1, 1, 140));
     await Promise.all([fly(r, A, 150, 700, 540), fly(r, B, 150, 700, 540)]);
     await Promise.all([land(r, A, true), land(r, B, true)]);
+    crowd('acclame', 0.8); crowd('applaud', 0.7);
     orbit(bPt(A, 'top')); orbit(bPt(B, 'top')); partnerPose(A, 'ko'); partnerPose(B, 'ko');
     letterbox(false);
     r.fire(gp(r, A, 'sonne', 1400)); r.fire(gp(r, B, 'sonne', 1400));
@@ -811,19 +824,22 @@ export function createStage(root: HTMLElement, deps: StageDeps): Stage {
       CB = cb;
       setRest({ koA: false, koB: false });
       const r = new Run();
+      deps.bed?.(true);
       try {
         for (let i = 0; i < beats.length; i++) {
           cb.onBeat(i, beats[i]);
           await runBeat(r, beats[i]);
           if (i < beats.length - 1) await r.wait(300);
         }
+        // La salle se calme un peu après la fin, sauf si un autre combat a été lancé entre-temps.
+        setTimeout(() => { if (r.alive) deps.bed?.(false); }, 2800);
         return 'done';
       } catch (e) {
         if (e === ABORT) return 'aborted';
         throw e;
       }
     },
-    rest(end) { stopAll(); setRest(end); },
-    destroy() { dead = true; stopAll(); root.replaceChildren(); L = R = null; }
+    rest(end) { stopAll(); deps.bed?.(false); setRest(end); },
+    destroy() { dead = true; stopAll(); deps.bed?.(false); root.replaceChildren(); L = R = null; }
   };
 }

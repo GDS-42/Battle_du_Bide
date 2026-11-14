@@ -7,7 +7,7 @@ import { Burst, HpBar, Icon, RingScene } from '@/components/ui';
 import { assetsOf } from '@/lib/fighter/bd';
 import type { FighterRender } from '@/lib/fighter/types';
 import { actorsOf, toBeats, type Beat, type Scene, type SideView } from '@/lib/replay/model';
-import { buzz, play, primeAudio, setSoundOn, soundOn, type SoundName } from '@/lib/sound';
+import { buzz, cheer, crowdBed, play, prepareCrowd, primeAudio, setSoundOn, soundOn, type SoundName } from '@/lib/sound';
 import { BdStage, type RestPose } from './BdStage';
 
 export type { Scene, SideView };
@@ -121,7 +121,7 @@ export function CombatReplay({ battleId, title, round, day, when, dateLabel, sce
         const { createStage } = await import('@/components/bd/engine');
         if (stale()) return;
         if (!engineRoot.current) throw new Error('scène absente');
-        stage.current ??= createStage(engineRoot.current, { play, buzz });
+        stage.current ??= createStage(engineRoot.current, { play, buzz, crowd: cheer, bed: crowdBed });
       }
       if (loaded.current !== sc.key) {
         loaded.current = null;
@@ -129,6 +129,10 @@ export function CombatReplay({ battleId, title, round, day, when, dateLabel, sce
         if (stale()) return;
         loaded.current = sc.key;
       }
+      // La foule finit de se fabriquer avant que l'animation démarre (jamais plus d'une seconde et demie d'attente) :
+      // ce calcul ne tombe ainsi jamais au milieu d'un mouvement.
+      await Promise.race([prepareCrowd(), new Promise((res) => setTimeout(res, 1500))]);
+      if (stale()) return;
       setLive(true);
       introSeen.current.add(sc.key);
       const label = (beat: Beat) => (beat.kind === 'intro' ? `${sc.a.name} VS ${sc.b.name}`.toUpperCase() : beat.kind === 'doubleKo' ? 'DOUBLE K.O. !' : labelOf(sc[beat.by]));
@@ -140,7 +144,7 @@ export function CombatReplay({ battleId, title, round, day, when, dateLabel, sce
       // Un K.O. sans coup final animé (vainqueur absent) : on couche quand même le vaincu.
       if (sc.ko && !beats.some((x) => x.kind === 'ko' || x.kind === 'doubleKo')) stage.current.rest(endOf(sc));
       setStep(3);
-      if (!sc.ko) play('cloche');
+      if (!sc.ko) { play('cloche'); cheer('applaud', 0.8); }
     } catch (err) {
       if (stale()) return;
       console.warn('Combat animé indisponible : replay sobre.', err);
@@ -159,6 +163,7 @@ export function CombatReplay({ battleId, title, round, day, when, dateLabel, sce
     if (sc.idle) { setStep(3); return; }
     if (sober || reducedMotion()) { if (!sober) setSober(true); startSober(sc); return; }
     primeAudio(); // dans le geste du joueur : sans cela, les bruitages lancés plus tard par l'animation restent muets sur iPhone
+    void prepareCrowd(); // la foule se fabrique pendant que les dessins se chargent
     void animate(sc, token.current);
   };
   const skip = () => {
@@ -166,7 +171,13 @@ export function CombatReplay({ battleId, title, round, day, when, dateLabel, sce
     if (stage.current && loaded.current === s.key) stage.current.rest(endOf(s));
     setStarted(true); setStep(3); setAnim(null);
   };
-  const toggleSound = () => { const v = !sound; setSound(v); setSoundOn(v); if (v) play('cloche', true); };
+  const toggleSound = () => {
+    const v = !sound;
+    setSound(v); setSoundOn(v); // couper le son éteint aussi le fond de foule
+    if (!v) return;
+    play('cloche', true);
+    if (anim && step < 3) { void prepareCrowd(); crowdBed(true); } // remis en plein combat animé : la salle revient
+  };
 
   // Onglet masqué en plein combat animé : minuteries et animations se désynchronisent ; on passe au résultat.
   const onHide = useRef(() => {});
