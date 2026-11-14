@@ -1,0 +1,112 @@
+/* Combat animé du look « BD » (src/components/bd/). Tout est rangé sous .bdx et préfixé bdx- :
+   rien ici ne peut toucher le reste du jeu, et rien du reste du jeu ne porte ces noms. */
+
+.bdx { position: relative; height: 320px; overflow: hidden; background: var(--color-violet) url(/bd/v1/decor.jpg) 50% 100% / cover no-repeat; font-family: var(--font-sans); isolation: isolate; }
+.bdx-rest, .bdx-engine { position: absolute; inset: 0; }
+/* Le moteur recouvre la scène au repos dès qu'il a chargé ses dessins. */
+.bdx-engine { visibility: hidden; pointer-events: none; }
+.bdx-engine.live { visibility: visible; }
+.bdx-cam, .bdx-layer { position: absolute; inset: 0; }
+.bdx-cam { background: var(--color-violet) url(/bd/v1/decor.jpg) 50% 100% / cover no-repeat; }
+.bdx-cam.neg { filter: invert(1) hue-rotate(180deg) contrast(1.25); }
+
+/* ---------- Combattants ---------- */
+.bdx-fighter { position: absolute; bottom: 38px; width: 150px; height: 200px; }
+.bdx-fighter.left { left: 4%; }
+.bdx-fighter.right { right: 4%; }
+/* En équipe : le premier avance d'un pas, le second se tient derrière lui, plus petit et un peu dans l'ombre. */
+.bdx-fighter.duo.left { left: 10%; }
+.bdx-fighter.duo.right { right: 10%; }
+.bdx-partner { transform: scale(.75); transform-origin: 50% 100%; filter: brightness(.82); }
+.bdx-partner.left { left: calc(10% - 68px); }
+.bdx-partner.right { right: calc(10% - 68px); }
+/* Petit téléphone : les deux équipes se serrent moins au centre. */
+@media (max-width: 359px) {
+  .bdx-fighter.duo.left { left: 5%; }
+  .bdx-fighter.duo.right { right: 5%; }
+  .bdx-partner.left { left: calc(5% - 58px); }
+  .bdx-partner.right { right: calc(5% - 58px); }
+}
+.bdx-mv, .bdx-rot, .bdx-sq, .bdx-idle, .bdx-flip { width: 100%; height: 100%; }
+.bdx-mv, .bdx-sq, .bdx-idle { transform-origin: 50% 100%; }
+.bdx-rot { transform-origin: 50% 55%; }
+.bdx-fighter.right .bdx-flip { transform: scaleX(-1); }
+.bdx-idle { animation: bdx-breathe 1.9s ease-in-out infinite; }
+.bdx-fighter.right .bdx-idle { animation-delay: -.8s; }
+.bdx-engine.frozen .bdx-idle { animation-play-state: paused; }
+@keyframes bdx-breathe { 0%, 100% { transform: scale(1, 1); } 50% { transform: scale(1.012, .985); } }
+.bdx-fig { position: absolute; inset: 0; }
+.bdx-pose { position: absolute; display: block; visibility: hidden; }
+.bdx-pose.on { visibility: visible; }
+.bdx-pose img, .bdx-gp-img img { display: block; width: 100%; height: 100%; max-width: none; user-select: none; -webkit-user-drag: none; }
+.bdx-fig.burnt .bdx-pose { filter: grayscale(1) brightness(.46) contrast(1.35); }
+.bdx-shade { position: absolute; left: 50%; bottom: 3px; width: 116px; height: 18px; margin-left: -58px; border-radius: 50%; background: radial-gradient(closest-side, rgba(20, 10, 34, .5), rgba(20, 10, 34, 0)); }
+.bdx-ghost { opacity: .5; filter: brightness(0) invert(1); }
+.bdx-ghost .bdx-idle { animation: none; }
+.bdx-ghost .bdx-shade { display: none; }
+
+/* ---------- Gros plans d'expression : des cases de BD qui claquent à l'écran ---------- */
+.bdx-fx { position: absolute; }
+.bdx-gp { border: 4px solid var(--color-encre); border-radius: 7px; overflow: hidden; background: var(--c2); box-shadow: 5px 5px 0 rgba(20, 10, 34, .6); z-index: 3; }
+.bdx-gp-rays { position: absolute; inset: -40%; background: radial-gradient(circle, var(--c1) 0 22%, transparent 60%), repeating-conic-gradient(from 0deg, var(--c1) 0 7deg, var(--c2) 7deg 15deg); }
+.bdx-gp-img { position: absolute; display: block; }
+.bdx-gp-txt { position: absolute; top: 6px; right: 8px; text-align: right; line-height: .95; transform: rotate(4deg); transform-origin: 100% 0; }
+.bdx-hit.r .bdx-gp-txt { right: auto; left: 8px; text-align: left; transform: rotate(-4deg); transform-origin: 0 0; }
+.bdx-gp-txt b { display: block; font-style: italic; font-weight: 900; font-size: 25px; color: var(--color-magenta); -webkit-text-stroke: 2.5px var(--color-encre); paint-order: stroke fill; white-space: nowrap; }
+.bdx-gp-txt i { display: inline-block; margin-top: 3px; padding: 0 6px; border: 2.5px solid var(--color-encre); background: var(--color-soleil); font-family: var(--font-display); font-style: normal; font-size: 14px; color: var(--color-encre); }
+.bdx-hit.big .bdx-gp-txt b { font-size: 46px; -webkit-text-stroke-width: 3.5px; }
+.bdx-hit.big .bdx-gp-txt i { font-size: 19px; }
+.bdx-duel { left: 0; right: 0; z-index: 3; }
+.bdx-duel-h { position: absolute; inset: 0; overflow: hidden; border-block: 4px solid var(--color-encre); background: var(--c2); }
+.bdx-duel-h.l { clip-path: polygon(0 0, 57% 0, 43% 100%, 0 100%); }
+.bdx-duel-h.r { clip-path: polygon(57% 0, 100% 0, 100% 100%, 43% 100%); }
+.bdx-duel-cut { position: absolute; inset: 0; background: var(--color-encre); clip-path: polygon(56.2% 0, 57.8% 0, 43.8% 100%, 42.2% 100%); }
+.bdx-bolts { z-index: 4; }
+
+/* ---------- Effets ---------- */
+.bdx-flash { inset: 0; background: #fff; }
+.bdx-dark { inset: 0; background: var(--color-encre); }
+.bdx-burst { width: 150px; height: 122px; margin: -61px 0 0 -75px; display: grid; place-items: center; }
+.bdx-burst svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.bdx-bt { position: relative; transform: rotate(-6deg); text-align: center; line-height: 1; }
+.bdx-bt b { display: block; font-style: italic; font-weight: 900; font-size: 27px; color: var(--color-magenta); -webkit-text-stroke: 2px var(--color-encre); paint-order: stroke fill; white-space: nowrap; }
+.bdx-bt i { display: block; margin-top: 3px; font-family: var(--font-display); font-style: normal; font-size: 15px; color: var(--color-encre); }
+.bdx-ono { font-style: italic; font-weight: 900; line-height: .9; white-space: nowrap; -webkit-text-stroke: 3px var(--color-encre); paint-order: stroke fill; transform-origin: 50% 50%; }
+.bdx-dmg { font-style: italic; font-weight: 900; font-size: 30px; line-height: 1; color: var(--color-soleil); -webkit-text-stroke: 2px var(--color-encre); paint-order: stroke fill; margin-left: -20px; }
+.bdx-line { height: 3px; border-radius: 2px; background: var(--color-creme); }
+.bdx-puff { border-radius: 50%; background: var(--color-creme); border: 2.5px solid var(--color-encre); }
+.bdx-ring-x { border-radius: 50%; margin: -70px 0 0 -70px; width: 140px; height: 140px; border: 4px solid var(--color-encre); }
+.bdx-extrude { font-weight: 900; font-style: italic; line-height: .95; text-align: center; color: var(--color-soleil); -webkit-text-stroke: 3px var(--color-encre); paint-order: stroke fill; text-shadow: 2px 2px 0 #2A1548, 4px 4px 0 #2A1548, 6px 6px 0 #2A1548, 8px 8px 0 #140A22; }
+.bdx-center { inset: 0; display: grid; place-items: center; z-index: 5; }
+.bdx-aura { width: 230px; height: 280px; transform-origin: 50% 100%; }
+.bdx-aura svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; transform-origin: 50% 100%; }
+.bdx-aura .f1 { animation: bdx-lick .22s ease-in-out infinite alternate; }
+.bdx-aura .f2 { animation: bdx-lick .17s ease-in-out infinite alternate-reverse; }
+@keyframes bdx-lick { from { transform: scale(1, 1) skewX(-2deg); } to { transform: scale(.94, 1.1) skewX(3deg); } }
+.bdx-cutin { left: -6%; right: -6%; top: 26%; height: 116px; background: var(--color-magenta); border-block: 4px solid var(--color-encre); overflow: hidden; box-shadow: 0 8px 0 rgba(20, 10, 34, .55); z-index: 4; }
+.bdx-cutin-lines { position: absolute; inset: 0 -200px; background: repeating-linear-gradient(180deg, transparent 0 7px, rgba(255, 244, 227, .5) 7px 9px, transparent 9px 21px, rgba(20, 10, 34, .35) 21px 23px, transparent 23px 34px); animation: bdx-streak .25s linear infinite; }
+.bdx-cutin.from-r .bdx-cutin-lines { animation-direction: reverse; }
+@keyframes bdx-streak { to { transform: translateX(-200px); } }
+.bdx-cutin-face { position: absolute; top: 60px; left: 96px; width: 0; height: 0; }
+.bdx-cutin.from-r .bdx-cutin-face { left: auto; right: 96px; }
+.bdx-cutin-txt { position: absolute; right: 9%; top: 50%; max-width: 58%; transform: translateY(-50%) rotate(-4deg); text-align: right; font-style: italic; font-weight: 900; font-size: clamp(19px, 5.6vw, 25px); line-height: .98; color: var(--color-soleil); -webkit-text-stroke: 2.5px var(--color-encre); paint-order: stroke fill; overflow-wrap: anywhere; }
+.bdx-cutin.from-r .bdx-cutin-txt { right: auto; left: 9%; text-align: left; }
+.bdx-orbit { width: 70px; height: 26px; margin: -13px 0 0 -35px; }
+.bdx-orbit i { position: absolute; left: 50%; top: 50%; width: 16px; height: 16px; margin: -8px; animation: bdx-orbit 1s linear infinite; }
+.bdx-orbit i:nth-child(2) { animation-delay: -.33s; }
+.bdx-orbit i:nth-child(3) { animation-delay: -.66s; }
+@keyframes bdx-orbit { 0% { transform: translate(-30px, 0) scale(.8); } 25% { transform: translate(0, 9px) scale(1.15); } 50% { transform: translate(30px, 0) scale(.8); } 75% { transform: translate(0, -9px) scale(.6); opacity: .6; } 100% { transform: translate(-30px, 0) scale(.8); } }
+
+/* Bandes de cinéma pendant les moments forts. */
+.bdx-bars::before, .bdx-bars::after { content: ''; position: absolute; left: 0; right: 0; height: 30px; background: var(--color-encre); transition: transform .22s ease-out; z-index: 6; }
+.bdx-bars::before { top: 0; transform: translateY(-100%); }
+.bdx-bars::after { bottom: 0; transform: translateY(100%); }
+.bdx-bars.on::before, .bdx-bars.on::after { transform: none; }
+
+/* Bandeau du commentateur, en bas du ring (les cases de gros plan occupent le haut). */
+.bdx-banner { position: absolute; z-index: 7; bottom: 9px; left: 0; right: 0; display: flex; justify-content: center; pointer-events: none; }
+.bdx-banner > div { max-width: 94%; transform: skewX(-12deg); border: 3px solid var(--color-encre); background: var(--color-rouge); padding: 1px 12px; box-shadow: 4px 4px 0 var(--color-encre); animation: bdx-pop .45s cubic-bezier(.2, 1.6, .4, 1); }
+.bdx-banner span { display: block; transform: skewX(12deg); font-family: var(--font-display); font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@keyframes bdx-pop { from { transform: skewX(-12deg) scale(.2); opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) { .bdx-idle, .bdx-cutin-lines { animation: none; } }

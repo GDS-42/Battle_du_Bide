@@ -1,7 +1,9 @@
 'use client';
 // Sons d'arcade synthétisés (Web Audio), portés de design/canvas/Sons.dc.html. Aucun fichier audio.
 
-export type SoundName = 'pesee' | 'charge' | 'jab' | 'crochet' | 'bloque' | 'superCoup' | 'ko' | 'cloche' | 'combat' | 'coude';
+export type SoundName = 'pesee' | 'charge' | 'jab' | 'crochet' | 'bloque' | 'superCoup' | 'ko' | 'cloche' | 'combat' | 'coude'
+  // bruitages du combat animé (look « BD »)
+  | 'whoosh' | 'thud' | 'boing' | 'pop' | 'ting' | 'fall' | 'wind' | 'zap' | 'slow' | 'cutin' | 'inflate' | 'pschitt' | 'snore' | 'superImpact';
 
 const KEY = 'bdb-sound';
 let ctx: AudioContext | null = null;
@@ -99,7 +101,23 @@ const SOUNDS: Record<SoundName, () => void> = {
     env(g, t, 0.01, 0.5, 0.5);
     o.connect(g); g.connect(master!);
     o.start(t); lfo.start(t); o.stop(t + 0.6); lfo.stop(t + 0.6);
-  }
+  },
+  // --- Combat animé ---
+  whoosh: () => { const t = now(); noise(t, 0.18, 0.45, 'bandpass', 300, 2600, 1.5); },
+  thud: () => { const t = now(); tone('sine', 95, 40, t, 0.18, 0.9); noise(t, 0.08, 0.5, 'lowpass', 900, 200, 1); },
+  boing: () => { const t = now(); tone('triangle', 150, 520, t, 0.12, 0.45); tone('triangle', 520, 210, t + 0.11, 0.3, 0.35); },
+  pop: () => { const t = now(); tone('square', 480, 980, t, 0.05, 0.2); noise(t, 0.04, 0.3, 'highpass', 2600, 0, 1); },
+  ting: () => { const t = now(); tone('sine', 1760, 0, t, 0.3, 0.16); tone('sine', 2637, 0, t + 0.05, 0.25, 0.1); },
+  fall: () => { const t = now(); tone('sine', 1500, 260, t, 0.5, 0.2); },
+  wind: () => { const t = now(); noise(t, 1.4, 0.16, 'bandpass', 380, 760, 2.5); },
+  zap: () => { const t = now(); for (let i = 0; i < 5; i++) { tone('sawtooth', 900 - i * 40, 220, t + i * 0.13, 0.1, 0.1); noise(t + i * 0.13, 0.06, 0.2, 'highpass', 3000, 0, 1); } },
+  slow: () => { const t = now(); tone('sine', 240, 62, t, 0.75, 0.5); noise(t, 0.7, 0.12, 'bandpass', 1400, 200, 2); },
+  cutin: () => { const t = now(); arp([523, 784, 1047, 1568], t, 0.05, 'sawtooth', 0.09); noise(t, 0.25, 0.25, 'bandpass', 500, 4200, 2); },
+  inflate: () => { const t = now(); tone('sine', 110, 330, t, 0.7, 0.3); noise(t, 0.7, 0.12, 'bandpass', 300, 1500, 2); },
+  pschitt: () => { const t = now(); noise(t, 0.5, 0.3, 'highpass', 5200, 1600, 1); tone('triangle', 420, 110, t, 0.5, 0.14); },
+  snore: () => { const t = now(); tone('sawtooth', 70, 95, t, 0.35, 0.07); noise(t, 0.35, 0.06, 'lowpass', 500, 300, 2); },
+  // l'impact du super sans sa montée (elle est jouée à part pendant la charge)
+  superImpact: () => { const t = now(); const d = crush(); noise(t, 0.3, 1, 'lowpass', 4000, 200, 1); tone('sine', 110, 30, t, 0.6, 1, d); tone('square', 196, 0, t, 0.5, 0.12); tone('square', 247, 0, t, 0.5, 0.1); }
 };
 function now() { return ac().currentTime + 0.02; }
 
@@ -107,6 +125,15 @@ function now() { return ac().currentTime + 0.02; }
 export function play(name: SoundName, force = false) {
   if (typeof window === 'undefined' || (!force && !soundOn())) return;
   try { SOUNDS[name](); } catch {}
+}
+
+/**
+ * À appeler dans le geste de l'utilisateur (clic), avant tout chargement : sur iPhone, le son ne peut démarrer
+ * que là. Sans effet si le son est coupé.
+ */
+export function primeAudio() {
+  if (typeof window === 'undefined' || !soundOn()) return;
+  try { ac(); } catch {}
 }
 
 /** Vibration courte sur mobile (si permis). */

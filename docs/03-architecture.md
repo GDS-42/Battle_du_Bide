@@ -33,15 +33,18 @@ src/
     b/[code]/                   page d'invitation (publique)
     (app)/                      espace connecté, avec barre de navigation
       battles/                  liste, création, ring, replay du combat du soir, bilan de round et son image à partager
+    bd.css                      styles du combat animé du look « BD », tous rangés sous `.bdx`
       pesee/                    pesée du matin, puis « coup chargé »
       profil/                   combattant, réglages, export, suppression
     actions/                    server actions (auth, combattant, pesée, battle, profil)
     api/                        push, export, photos/[id], health, cron/tick
     icons/[size]/, manifest.ts  PWA
   components/                   Fighter (tracé SVG, ou dessin BdFighter selon le look), ui (rubans, barres de vie…), WeightChart (courbe de pesées)…
+    bd/engine.ts                moteur du combat animé (look « BD »), chargé au clic sur « Lancer le combat »
   lib/
     engine/                     moteur de jeu PUR (aucune dépendance à la base)
     fighter/                    générateur de combattant et presets ; look « BD » (bd.ts : choix, palette, fusion ; bd-sprites.ts : repères des dessins)
+    replay/model.ts             le combat du soir traduit en suite de séquences d'animation (pur, testé)
     look.ts                     quel dessin afficher pour cette requête (réglage du code, variable d'environnement, cookie d'essai)
     db/                         schéma Drizzle, connexion, migrations
     battles.ts, weighin.ts      chargement des données, règles d'écriture
@@ -81,6 +84,14 @@ Tables principales ([`schema.ts`](../src/lib/db/schema.ts)) : `users` (profil, c
 Les pesées appartiennent au **joueur**, pas à la battle : une même pesée compte dans toutes ses battles en cours.
 
 **Le look « BD » n'a demandé aucune migration.** Le combattant dessiné et sa couleur sont deux clés facultatives du JSON `users.fighter`. Tant qu'un joueur n'a rien choisi, ils sont déduits à l'affichage de son ancien personnage (`resolveLook`, pur et testé), sans rien écrire. Le studio des combattants dessinés n'envoie que ce choix ; le serveur le fusionne dans le réglage enregistré (`mergeLook`), sans retirer aucune clé : le tracé d'origine reste disponible à tout moment. Le dessin à afficher est décidé côté serveur (`src/lib/look.ts`) puis transmis aux composants.
+
+**Le combat animé du look « BD »** s'ajoute au replay sans le remplacer :
+
+- Le serveur prépare le même combat qu'avant. [`src/lib/replay/model.ts`](../src/lib/replay/model.ts) le traduit en une suite de séquences (`toBeats`) : face-à-face, coup de chaque camp, coup final. C'est une fonction pure, testée.
+- [`src/components/bd/engine.ts`](../src/components/bd/engine.ts) joue ces séquences. Il n'est **chargé qu'au clic** sur « Lancer le combat » et ne touche au navigateur qu'à l'intérieur de `createStage()` : il ne peut donc pas faire échouer l'affichage de la page. Il prévient le replay au début de chaque séquence et à l'instant où un coup porte ; barres de vie et commentaire restent rendus par React.
+- **Tout défaut ramène au replay sobre**, celui d'avant, resté en place dans `CombatReplay.tsx` : dessin introuvable ou trop long à charger, moteur qui ne se charge pas, joueur qui a demandé moins de mouvement.
+- Les textes saisis par les joueurs (nom du camp, coup spécial) ne sont jamais interprétés comme du HTML : React les échappe, et le moteur les pose par `textContent`.
+- Les styles sont dans `src/app/bd.css`, tous sous la classe `.bdx` et préfixés `bdx-` : ils ne peuvent pas toucher le reste du jeu.
 
 ## 5. Sécurité et confidentialité
 

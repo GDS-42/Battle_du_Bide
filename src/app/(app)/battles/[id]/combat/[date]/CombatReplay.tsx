@@ -1,31 +1,19 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toggleReaction } from '@/app/actions/battle';
+import type { Stage, StageSide } from '@/components/bd/engine';
 import { Fighter } from '@/components/Fighter';
 import { Burst, HpBar, Icon, RingScene } from '@/components/ui';
+import { assetsOf } from '@/lib/fighter/bd';
 import type { FighterRender } from '@/lib/fighter/types';
-import { buzz, play, setSoundOn, soundOn, type SoundName } from '@/lib/sound';
+import { actorsOf, toBeats, type Beat, type Scene, type SideView } from '@/lib/replay/model';
+import { buzz, play, primeAudio, setSoundOn, soundOn, type SoundName } from '@/lib/sound';
+import { BdStage, type RestPose } from './BdStage';
 
-export interface SideView {
-  id: string;
-  name: string;
-  sub: string;
-  boss: boolean;
-  fighters: { key: string; cfg: FighterRender }[];
-  attack: { total: number; jab: number; crochet: number; super: number; teamBonus: number; weighed: boolean; late: boolean; blocked: boolean; garde: boolean; combo: number };
-}
-export interface Scene {
-  key: string;
-  mine: boolean;
-  idle: boolean;
-  a: SideView;
-  b: SideView;
-  hpBefore: { a: number; b: number };
-  hpAfter: { a: number; b: number };
-  ko: 'a' | 'b' | 'both' | null;
-  lines: { a: string[]; b: string[]; end: string | null };
-}
+export type { Scene, SideView };
 interface Reaction { key: string; label: string; icon: string; count: number; mine: boolean }
+/** Avancement d'un combat animé : qui a déjà agi, quels coups ont porté, quelle séquence est en cours. */
+interface Anim { said: ('a' | 'b')[]; landed: { a: boolean; b: boolean }; beat: number; count: number; label: string }
 
 // Étapes : 0 = prêt, 1 = A frappe, 2 = B réplique, 3 = bilan
 const STEP_MS = [0, 1900, 1900, 0];
@@ -39,22 +27,68 @@ function hitOf(s: SideView): { text: string; sub?: string; sound: SoundName; col
   if (a.crochet > 0) return { text: 'CROCHET', sub: `${r(a.total)} PV`, sound: 'crochet', color: '#FFD23D', big: true };
   return { text: 'JAB', sub: `${r(a.total)} PV${a.blocked ? ' · crochet bloqué' : ''}`, sound: 'jab', color: '#FFF4E3', big: false };
 }
+/** Bandeau du ring quand un camp agit. */
+function labelOf(s: SideView): string {
+  if (s.boss) return 'LE BIDE FRAPPE';
+  if (!s.attack.weighed) return `${s.name.toUpperCase()} ${s.attack.late ? 'EN RETARD' : 'A SÉCHÉ'}`;
+  return `${hitOf(s).text.replace('!', '')} DE ${s.name.toUpperCase()}${s.attack.combo > 1 ? ` · COMBO ×${s.attack.combo}` : ''}`;
+}
+/** Les dessins d'un camp pour le combat animé ; null si l'un d'eux manque (le replay sobre prend alors le relais). */
+function stageSide(v: SideView): StageSide | null {
+  const lead = v.fighters[0]?.cfg.sprite;
+  return lead ? { lead, partner: v.fighters[1]?.cfg.sprite ?? null } : null;
+}
+const endOf = (sc: Scene) => ({ koA: sc.ko === 'a' || sc.ko === 'both', koB: sc.ko === 'b' || sc.ko === 'both' });
+const reducedMotion = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-export function CombatReplay({ battleId, title, round, day, when, dateLabel, scenes, reactions, target, lastOfRound, recapHref }: {
+/**
+ * Replay du combat du soir. Deux mises en scène :
+ * - le replay sobre (étapes 0 à 3, minuteries) : le seul jusqu'ici, inchangé ;
+ * - le combat animé du look « BD » (`bd`), joué par un moteur chargé au clic. Au moindre défaut (dessin manquant,
+ *   moteur qui ne se charge pas, mouvement réduit demandé), le replay sobre reprend la main.
+ */
+export function CombatReplay({ battleId, title, round, day, when, dateLabel, scenes, reactions, target, lastOfRound, recapHref, bd = false }: {
   battleId: string; title: string; round: number; day: number; when: string; dateLabel: string;
-  scenes: Scene[]; reactions: Reaction[]; target: string; lastOfRound: boolean; recapHref: string | null;
+  scenes: Scene[]; reactions: Reaction[]; target: string; lastOfRound: boolean; recapHref: string | null; bd?: boolean;
 }) {
   const [idx, setIdx] = useState(0);
   const [step, setStep] = useState(0);
   const [started, setStarted] = useState(false);
   const [sound, setSound] = useState(true);
   const [shake, setShake] = useState(0);
+  // Combat animé : `sober` = replay sobre ; `live` = le moteur tient la scène ; `anim` = avancement de l'animation en cours.
+  const [sober, setSober] = useState(() => !bd || !scenes.every((sc) => stageSide(sc.a) && stageSide(sc.b)));
+  const [live, setLive] = useState(false);
+  const [anim, setAnim] = useState<Anim | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const engineRoot = useRef<HTMLDivElement | null>(null);
+  const stage = useRef<Stage | null>(null);
+  const loaded = useRef<string | null>(null); // combat dont les dessins sont montés dans le moteur
+  const token = useRef(0); // toute nouvelle action invalide l'animation en cours
+  const introSeen = useRef(new Set<string>());
   const s = scenes[idx];
 
   useEffect(() => { setSound(soundOn()); }, []);
+  useEffect(() => { if (reducedMotion()) setSober(true); }, []);
+  // Les dessins du premier combat se chargent pendant que le joueur lit l'écran : le combat démarre sans attendre.
+  // De simples images, pas le moteur ; rien en mode sobre ni quand le téléphone économise les données.
+  useEffect(() => {
+    const first = scenes[0];
+    if (sober || !first || first.idle || reducedMotion()) return;
+    if ((navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData) return;
+    const urls = new Set<string>();
+    for (const side of [first.a, first.b]) {
+      const v = stageSide(side);
+      if (!v) return;
+      for (const u of assetsOf(v.lead)) urls.add(u);
+      if (v.partner) for (const u of assetsOf(v.partner, ['garde', 'touche', 'ko', 'victoire'])) urls.add(u);
+    }
+    const keep = [...urls].map((u) => { const im = new Image(); im.decoding = 'async'; im.src = u; return im; });
+    return () => { for (const im of keep) im.src = ''; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const clear = () => { if (timer.current) clearTimeout(timer.current); timer.current = null; };
-  useEffect(() => clear, []);
+  useEffect(() => () => { clear(); token.current++; stage.current?.destroy(); stage.current = null; }, []);
 
   const runStep = useCallback((n: number, sc: Scene) => {
     setStep(n);
@@ -70,34 +104,113 @@ export function CombatReplay({ battleId, title, round, day, when, dateLabel, sce
     timer.current = setTimeout(() => runStep(n + 1, sc), STEP_MS[n] || 1100);
   }, []);
 
-  const start = (i = idx) => {
-    clear();
-    const sc = scenes[i];
-    setIdx(i); setStarted(true); setStep(0);
-    if (sc.idle) { setStep(3); return; }
+  const startSober = (sc: Scene) => {
     play('combat');
     timer.current = setTimeout(() => runStep(1, sc), 1100);
   };
-  const skip = () => { clear(); setStarted(true); setStep(3); };
+
+  /** Joue le combat animé. `my` : numéro de cette lecture ; si une autre action survient, elle s'efface sans rien toucher. */
+  const animate = async (sc: Scene, my: number) => {
+    const stale = () => my !== token.current;
+    const beats = toBeats(sc, !introSeen.current.has(sc.key));
+    setAnim({ said: [], landed: { a: false, b: false }, beat: 0, count: beats.length, label: 'ÇA SE PRÉPARE…' });
+    try {
+      const a = stageSide(sc.a), b = stageSide(sc.b);
+      if (!a || !b) throw new Error('dessins indisponibles');
+      if (!stage.current) {
+        const { createStage } = await import('@/components/bd/engine');
+        if (stale()) return;
+        if (!engineRoot.current) throw new Error('scène absente');
+        stage.current ??= createStage(engineRoot.current, { play, buzz });
+      }
+      if (loaded.current !== sc.key) {
+        loaded.current = null;
+        await stage.current.load(a, b);
+        if (stale()) return;
+        loaded.current = sc.key;
+      }
+      setLive(true);
+      introSeen.current.add(sc.key);
+      const label = (beat: Beat) => (beat.kind === 'intro' ? `${sc.a.name} VS ${sc.b.name}`.toUpperCase() : beat.kind === 'doubleKo' ? 'DOUBLE K.O. !' : labelOf(sc[beat.by]));
+      const end = await stage.current.play(beats, {
+        onBeat: (n, beat) => { if (!stale()) setAnim((v) => v && { ...v, beat: n, label: label(beat), said: [...v.said, ...actorsOf(beat).filter((c) => !v.said.includes(c))] }); },
+        onImpact: (by) => { if (!stale()) setAnim((v) => v && { ...v, landed: { ...v.landed, [by]: true } }); }
+      });
+      if (stale() || end !== 'done') return;
+      // Un K.O. sans coup final animé (vainqueur absent) : on couche quand même le vaincu.
+      if (sc.ko && !beats.some((x) => x.kind === 'ko' || x.kind === 'doubleKo')) stage.current.rest(endOf(sc));
+      setStep(3);
+      if (!sc.ko) play('cloche');
+    } catch (err) {
+      if (stale()) return;
+      console.warn('Combat animé indisponible : replay sobre.', err);
+      stage.current?.destroy(); stage.current = null; loaded.current = null;
+      setLive(false); setSober(true); setAnim(null);
+      startSober(sc);
+    }
+  };
+
+  const start = (i = idx) => {
+    clear(); token.current++;
+    const sc = scenes[i];
+    setIdx(i); setStarted(true); setStep(0); setAnim(null);
+    // Le moteur montre encore un autre combat : on l'arrête et on rend la scène aux dessins au repos.
+    if (stage.current && loaded.current !== sc.key) { stage.current.rest({ koA: false, koB: false }); setLive(false); }
+    if (sc.idle) { setStep(3); return; }
+    if (sober || reducedMotion()) { if (!sober) setSober(true); startSober(sc); return; }
+    primeAudio(); // dans le geste du joueur : sans cela, les bruitages lancés plus tard par l'animation restent muets sur iPhone
+    void animate(sc, token.current);
+  };
+  const skip = () => {
+    clear(); token.current++;
+    if (stage.current && loaded.current === s.key) stage.current.rest(endOf(s));
+    setStarted(true); setStep(3); setAnim(null);
+  };
   const toggleSound = () => { const v = !sound; setSound(v); setSoundOn(v); if (v) play('cloche', true); };
 
-  // PV affichés selon l'étape
-  const hpA = step >= 2 ? s.hpAfter.a : s.hpBefore.a;
-  const hpB = step >= 1 ? s.hpAfter.b : s.hpBefore.b;
-  const lostA = step >= 2 ? s.hpBefore.a - s.hpAfter.a : 0;
-  const lostB = step >= 1 ? s.hpBefore.b - s.hpAfter.b : 0;
+  // Onglet masqué en plein combat animé : minuteries et animations se désynchronisent ; on passe au résultat.
+  const onHide = useRef(() => {});
+  useEffect(() => { onHide.current = () => { if (document.hidden && anim && step < 3) skip(); }; });
+  useEffect(() => {
+    const f = () => onHide.current();
+    document.addEventListener('visibilitychange', f);
+    return () => document.removeEventListener('visibilitychange', f);
+  }, []);
+
+  // Ce qui est déjà révélé : par étape dans le replay sobre, par séquence jouée dans le combat animé.
+  const animated = !sober && step < 3 && anim !== null;
+  const order: ('a' | 'b')[] = s.ko === 'b' ? ['b', 'a'] : ['a', 'b']; // ordre des coups du combat animé (le futur vaincu frappe d'abord)
+  const hitB = animated ? anim.landed.a : step >= 1; // le coup de A a porté
+  const hitA = animated ? anim.landed.b : step >= 2; // le coup de B a porté
+  const said: ('a' | 'b')[] = animated ? anim.said : sober ? (step >= 2 ? ['a', 'b'] : step >= 1 ? ['a'] : []) : step >= 3 ? order : [];
+  const hpA = hitA ? s.hpAfter.a : s.hpBefore.a;
+  const hpB = hitB ? s.hpAfter.b : s.hpBefore.b;
+  const lostA = hitA ? s.hpBefore.a - s.hpAfter.a : 0;
+  const lostB = hitB ? s.hpBefore.b - s.hpAfter.b : 0;
   const poseA: FighterRender['pose'] = step === 1 ? 'punch' : step === 2 ? 'hurt' : step === 3 && (s.ko === 'a' || s.ko === 'both') ? 'hurt' : 'guard';
   const poseB: FighterRender['pose'] = step === 2 ? 'punch' : step === 1 ? 'hurt' : step === 3 && (s.ko === 'b' || s.ko === 'both') ? 'hurt' : 'guard';
   const hit = step === 1 ? hitOf(s.a) : step === 2 ? hitOf(s.b) : null;
   const shown = [
-    ...(step >= 1 ? s.lines.a.map((t) => ({ t, c: 'a' })) : []),
-    ...(step >= 2 ? s.lines.b.map((t) => ({ t, c: 'b' })) : []),
+    ...said.flatMap((c) => s.lines[c].map((t) => ({ t, c: c as string }))),
     ...(step >= 3 && s.lines.end ? [{ t: s.lines.end, c: 'end' }] : [])
   ];
-  const progress = !started ? 0 : step === 0 ? 8 : step === 1 ? 40 : step === 2 ? 72 : 100;
-  const actor = step === 1 ? s.a : s.b;
-  const actorLabel = actor.boss ? 'LE BIDE FRAPPE' : !actor.attack.weighed ? `${actor.name.toUpperCase()} ${actor.attack.late ? 'EN RETARD' : 'A SÉCHÉ'}` : `${hit?.text.replace('!', '')} DE ${actor.name.toUpperCase()}${actor.attack.combo > 1 ? ` · COMBO ×${actor.attack.combo}` : ''}`;
-  const banner = step === 0 ? `ROUND ${round} · JOUR ${day}` : hit ? actorLabel : s.ko ? 'K.O. !' : lastOfRound ? 'FIN DU ROUND' : 'FIN DU COMBAT';
+  const progress = !started ? 0 : animated ? Math.round(8 + (84 * (anim.beat + 0.5)) / Math.max(1, anim.count)) : step === 0 ? 8 : step === 1 ? 40 : step === 2 ? 72 : 100;
+  const endBanner = s.ko ? 'K.O. !' : lastOfRound ? 'FIN DU ROUND' : 'FIN DU COMBAT';
+  const banner = step === 0 ? `ROUND ${round} · JOUR ${day}` : hit ? labelOf(step === 1 ? s.a : s.b) : endBanner;
+  // Combat animé : bandeau et poses de repos (le moteur anime le reste)
+  const bdBanner = step >= 3 ? (s.ko === 'both' ? 'DOUBLE K.O. !' : endBanner) : animated ? anim.label : `ROUND ${round} · JOUR ${day}`;
+  const restOf = (me: 'a' | 'b'): RestPose => (step < 3 || !s.ko ? 'garde' : s.ko === me || s.ko === 'both' ? 'ko' : 'victoire');
+  const startOverlay = !started ? (
+    <div className="absolute inset-0 z-30 grid place-items-center bg-encre/55 px-6 text-center">
+      <div className="flex flex-col items-center gap-3">
+        <div className="font-display text-[22px] text-soleil">{s.idle ? 'Ce duel est déjà plié' : 'Le combat est prêt'}</div>
+        <button type="button" onClick={() => start()} className="btn btn-soleil min-h-14 px-6 text-[22px]">
+          <Icon name="play" size={22} /> {s.idle ? 'VOIR LE RÉSULTAT' : 'LANCER LE COMBAT'}
+        </button>
+        <span className="text-[13px] text-lilas">{dateLabel}</span>
+      </div>
+    </div>
+  ) : null;
 
   return (
     <div className="flex flex-col">
@@ -130,6 +243,7 @@ export function CombatReplay({ battleId, title, round, day, when, dateLabel, sce
         </div>
       </header>
 
+      {sober ? (
       <div key={shake} className={shake ? 'animate-shake' : ''}>
         <RingScene height={320}>
           <div className="absolute inset-x-0 top-3.5 z-20 flex justify-center">
@@ -153,19 +267,14 @@ export function CombatReplay({ battleId, title, round, day, when, dateLabel, sce
               <div className="animate-pop extrude text-[72px]">K.O.</div>
             </div>
           ) : null}
-          {!started ? (
-            <div className="absolute inset-0 z-30 grid place-items-center bg-encre/55 px-6 text-center">
-              <div className="flex flex-col items-center gap-3">
-                <div className="font-display text-[22px] text-soleil">{s.idle ? 'Ce duel est déjà plié' : 'Le combat est prêt'}</div>
-                <button type="button" onClick={() => start()} className="btn btn-soleil min-h-14 px-6 text-[22px]">
-                  <Icon name="play" size={22} /> {s.idle ? 'VOIR LE RÉSULTAT' : 'LANCER LE COMBAT'}
-                </button>
-                <span className="text-[13px] text-lilas">{dateLabel}</span>
-              </div>
-            </div>
-          ) : null}
+          {startOverlay}
         </RingScene>
       </div>
+      ) : (
+        <BdStage engineRef={engineRoot} live={live} a={s.a} b={s.b} poseA={restOf('a')} poseB={restOf('b')} banner={bdBanner}>
+          {startOverlay}
+        </BdStage>
+      )}
 
       <div className="mx-3.5 mt-3 flex items-center gap-3">
         <button type="button" onClick={() => start()} className="grid size-11 shrink-0 place-items-center rounded-full border-[3px] border-encre bg-soleil text-encre shadow-[0_4px_0_#140A22]" aria-label="Rejouer le combat">

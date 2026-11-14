@@ -73,10 +73,27 @@ Une seconde façon de montrer le combattant : des catcheurs **masqués**, dessin
 - **Corpulence** : le dessin ne change pas avec le poids. La « Transformation ! » est montrée par deux silhouettes unies (avant → après), tracées par le générateur à partir du poids réel.
 - **Repli** : les silhouettes « fantôme » et tout combattant sans dessin gardent le tracé du générateur.
 
+**Le combat animé.** Avec ce look, le replay du soir devient un petit dessin animé, sur un décor peint (les toits au coucher du soleil). C'est de l'**animation limitée** : les poses dessinées s'échangent d'un coup, avec élans, arrêts sur image, traits de vitesse et poussière ; aux moments forts, le visage passe en **gros plan dans une case de BD** (rage de celui qui frappe, panique puis tête déformée de celui qui encaisse, rire du vainqueur).
+
+| Ce soir-là | Séquence |
+|---|---|
+| Premier visionnage | Entrée des deux camps, face-à-face en gros plan, éclairs entre les regards, « VS » |
+| Jab | Élan court, coup, case « PAF! » |
+| Crochet | Poing armé, cri, coup, grande case « BOUM! », vol plané, étoiles, relevé |
+| Crochet bloqué | Le coup armé fait « pschitt… », rire d'en face, puis le jab |
+| Super | Aura, annonce du coup spécial du joueur sur un bandeau, rafale, poing d'énergie, adversaire calciné |
+| Absent ou en retard | Il dort debout, un buisson traverse le ring, l'adversaire en tombe à la renverse |
+| Le Bide | Il gonfle, charge ventre en avant, aplatit l'adversaire comme une crêpe |
+| K.O. | Coup final en uppercut (ou coup de bide), vol plané, pose de victoire. Le vaincu frappe **avant** : il ne se relève pas pour répliquer |
+| Double K.O. | Les deux se percutent au centre et s'envolent chacun de leur côté |
+
+En équipe, le second combattant se tient derrière le premier ; il encaisse, tombe ou lève les bras avec lui. Les barres de vie et le commentaire suivent l'animation : les points de vie baissent à l'instant où le coup porte. Un combat dure de 12 à 20 secondes ; « Passer » et « Rejouer » restent disponibles à tout moment.
+
 Les images sont dans `public/bd/v1/`, leurs repères (taille, appui au sol, tête, main) dans [`src/lib/fighter/bd-sprites.ts`](../src/lib/fighter/bd-sprites.ts). Un fichier publié n'est jamais réécrit : un dessin modifié part dans `/bd/v2`. Le look s'allume pour tous par `BDB_FIGHTER_STYLE=bd`, ou pour un seul appareil par le lien `/look/bd` (voir [le guide de déploiement](04-deploiement-coolify.md)).
 
 ## 6. Mouvement et son
 
 - **Animations** courtes : `pop` (apparition avec rebond), `shake` (tremblement d'écran sur les gros coups), `floatup` (dégâts qui s'envolent), `flicker` (braseros qui dansent), `twinkle` (feu d'artifice qui scintille). Les deux dernières s'arrêtent si le joueur a demandé moins de mouvement.
-- **Sons** synthétisés en direct (Web Audio, aucun fichier) : pesée, coup chargé, jab, crochet, coup bloqué, super, K.O., cloche, ouverture du combat, coup de coude. Ils sont désactivables dans le profil.
+- **Combat animé du look « BD »** (§5.1) : il n'est joué que si le joueur n'a pas demandé moins de mouvement. Sinon, le replay sobre (étapes fixes, sans déplacement) le remplace.
+- **Sons** synthétisés en direct (Web Audio, aucun fichier) : pesée, coup chargé, jab, crochet, coup bloqué, super, K.O., cloche, ouverture du combat, coup de coude ; et pour le combat animé : sifflement d'un coup, chute, rebond, éclairs du face-à-face, ralenti, annonce du super, gonflement du Bide, « pschitt », ronflement, vent. Ils sont désactivables dans le profil.
 - **Vibrations** légères sur mobile pour les gros coups et le K.O.

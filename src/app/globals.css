@@ -2,6 +2,7 @@
 @import '@fontsource/lilita-one/400.css';
 @import '@fontsource-variable/rubik/wght.css';
 @import '@fontsource-variable/rubik/wght-italic.css';
+@import './bd.css';
 
 @theme {
   --color-nuit: #1C0E33;

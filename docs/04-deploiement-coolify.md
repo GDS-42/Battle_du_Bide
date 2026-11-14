@@ -64,7 +64,7 @@ Poussez sur la branche suivie, puis *Redeploy* dans Coolify (ou activez le dépl
 
 ## Dessin des combattants (look « BD »)
 
-Les combattants masqués dessinés sont livrés avec l'app. Le réglage par défaut est dans le code (`DEFAULT_LOOK`, `src/lib/look.ts`).
+Les combattants masqués dessinés sont livrés avec l'app, avec leur studio (choix du combattant et de sa couleur) et leur replay en combat animé. Le réglage par défaut est dans le code (`DEFAULT_LOOK`, `src/lib/look.ts`).
 
 - **Essayer sur un seul appareil**, sans rien changer pour les autres joueurs : ouvrir `https://bide.example.com/look/bd`. Pour revenir au réglage général : `/look/auto`. C'est un simple cookie ; rien n'est écrit en base.
 - **Allumer ou éteindre pour tout le monde sans toucher au code** : variable `BDB_FIGHTER_STYLE`, avec `bd` (combattants dessinés) ou `svg` (tracés par le code), puis redéployer. Laissée vide, le réglage du code s'applique.

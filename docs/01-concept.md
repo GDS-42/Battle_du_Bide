@@ -217,7 +217,7 @@ tendance_du_jour = tendance_d_hier + α × (pesée_du_jour − tendance_d_hier)
 - **Nom du coup spécial**, déclenché par le super : *« La Raclette Volante »*, *« Le Coup du Lundi »*…
 - **Phrase d'entrée sur le ring** : *« Ce soir, je mange léger… et toi aussi ! »*
 
-> **Look « BD » (livré, éteint par défaut).** Une variante du combattant est prête : des catcheurs masqués dessinés à l'encre. Le joueur y choisit un combattant parmi trois (Le Bulldozer, El Tornado, La Fusée) et une couleur pour son masque, sa tenue et ses gants ; coiffure, barbe et accessoires n'ont plus lieu d'être sous un masque. Surnom, coup spécial et phrase d'entrée restent. Voir [la direction artistique](02-direction-artistique.md#51-le-look--bd--livré-éteint-par-défaut).
+> **Look « BD » (livré, éteint par défaut).** Une variante du combattant est prête : des catcheurs masqués dessinés à l'encre. Le joueur y choisit un combattant parmi trois (Le Bulldozer, El Tornado, La Fusée) et une couleur pour son masque, sa tenue et ses gants ; coiffure, barbe et accessoires n'ont plus lieu d'être sous un masque. Surnom, coup spécial et phrase d'entrée restent. Avec ce look, le replay du soir devient un combat animé : face-à-face, gros plans d'expression, coup final en cas de K.O. Voir [la direction artistique](02-direction-artistique.md#51-le-look--bd--livré-éteint-par-défaut).
 
 ### 8.2 La corpulence réelle
 

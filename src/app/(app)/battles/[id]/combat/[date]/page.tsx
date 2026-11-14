@@ -65,6 +65,7 @@ export default async function CombatPage({ params }: { params: Promise<{ id: str
   return (
     <main className="mx-auto flex min-h-dvh max-w-[520px] flex-col">
       <CombatReplay
+        key={date}
         battleId={id}
         title={b.name}
         round={round}
@@ -76,6 +77,7 @@ export default async function CombatPage({ params }: { params: Promise<{ id: str
         target={target}
         lastOfRound={day === 7}
         recapHref={recapHref}
+        bd={style === 'bd'}
       />
       <nav className="flex items-center justify-between gap-2 px-4 pb-6 pt-2 text-sm font-bold">
         {prev ? <Link className="btn btn-ghost min-h-11 px-3 text-sm" href={`/battles/${id}/combat/${prev}`}>← Veille</Link> : <span />}
@@ -113,7 +115,8 @@ function toScene(bundle: Bundle, p: PairingDay, date: string, i: number, trendAt
         garde: players.some((m) => m.gardeUsed),
         combo: Math.max(0, ...players.map((m) => m.combo))
       },
-      boss: sid === BOSS_ID
+      boss: sid === BOSS_ID,
+      move: supers[sid] ?? null
     };
   };
   const a = view(p.a, p.attacks.a, false), b = view(p.b, p.attacks.b, true);

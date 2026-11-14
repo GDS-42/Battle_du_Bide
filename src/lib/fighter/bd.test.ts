@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import {
-  BD_CAST, BD_KEYS, BOSS_LOOK, distinctPair, faceFor, faceUrl, hasSprites, lookOf, mergeLook, nearestColor, paletteFor,
+  assetsOf, BD_CAST, BD_KEYS, BOSS_LOOK, distinctPair, faceFor, faceUrl, hasSprites, lookOf, mergeLook, nearestColor, paletteFor,
   poseFor, resolveLook, spritePoseOf, spriteUrl, styleFrom, tintable, tintHex
 } from './bd';
 import { SPRITES } from './bd-sprites';
@@ -148,6 +148,25 @@ describe('look « BD » : dessins', () => {
 });
 
 describe('look « BD » : validation à l’enregistrement', () => {
+  it('fichiers du combat animé : tout ce que liste une allure existe, calques compris', () => {
+    const missing: string[] = [];
+    for (const who of BD_KEYS) {
+      const full = assetsOf({ who, color: '#FFD23D', belt: true });
+      for (const url of full) if (!existsSync(path.join(PUBLIC, url))) missing.push(url);
+      // 9 poses × (dessin + couleur + ceinture) + 7 gros plans × (dessin + couleur) + le gant de l'adversaire
+      expect(full).toHaveLength(9 * 3 + 7 * 2 + 1);
+      // couleur d'origine : aucun calque de couleur à charger, seulement le gant de l'adversaire
+      expect(assetsOf({ who, color: null }).filter((u) => /\.[cb]\.webp$/.test(u))).toEqual([]);
+      expect(assetsOf({ who, color: null })).toHaveLength(9 + 7 + 1);
+      // second d'une équipe : ses quatre poses, sans gros plan
+      expect(assetsOf({ who, color: null }, ['garde', 'touche', 'ko', 'victoire']).sort()).toEqual(['garde', 'ko', 'touche', 'victoire'].map((p) => spriteUrl(who, p)));
+    }
+    const boss = assetsOf(BOSS_LOOK);
+    for (const url of boss) if (!existsSync(path.join(PUBLIC, url))) missing.push(url);
+    expect(boss.some((u) => /\.[cbo]\.webp$/.test(u))).toBe(false);
+    expect(missing).toEqual([]);
+  });
+
   it('les deux clés du look survivent à la validation, les anciens réglages aussi', () => {
     for (const p of PRESETS) expect(FighterSchema.parse(p.cfg)).toEqual(p.cfg);
     const cfg = { ...PRESETS[3].cfg, bd: 'tornado', bdColor: '#2E9E6B' };

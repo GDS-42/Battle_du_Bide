@@ -146,3 +146,24 @@ export function faceFor(who: SpriteLook['who'], expr: string): FaceMeta | null {
 export const tintable = (who: SpriteLook['who']) => who !== 'bide';
 export const spriteUrl = (who: string, pose: string, layer?: 'c' | 'b') => `${BD_BASE}${who}-${pose}${layer ? `.${layer}` : ''}.webp`;
 export const faceUrl = (who: string, expr: string, layer?: 'c' | 'o') => `${BD_BASE}${who}-f-${expr}${layer ? `.${layer}` : ''}.webp`;
+
+/**
+ * Tous les fichiers dont le combat animé a besoin pour une allure : poses, gros plans et leurs calques de couleur.
+ * `only` limite aux poses citées, sans gros plans (le second d'une équipe ne fait que quelques poses).
+ */
+export function assetsOf(look: SpriteLook, only?: string[]): string[] {
+  const set = SPRITES[look.who], tint = tintable(look.who), out: string[] = [];
+  for (const pose of Object.keys(set.poses)) {
+    if (only && !only.includes(pose)) continue;
+    out.push(spriteUrl(look.who, pose));
+    if (tint && look.color) out.push(spriteUrl(look.who, pose, 'c'));
+    if (tint && look.belt) out.push(spriteUrl(look.who, pose, 'b'));
+  }
+  if (only) return out;
+  for (const expr of Object.keys(set.faces)) {
+    out.push(faceUrl(look.who, expr));
+    if (tint && look.color) out.push(faceUrl(look.who, expr, 'c'));
+    if (tint && expr === 'impact') out.push(faceUrl(look.who, expr, 'o')); // le gant de l'adversaire, teint à sa couleur
+  }
+  return out;
+}

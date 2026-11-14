@@ -47,8 +47,9 @@ export function BdFighter({ look, pose, w = 240, flip, className, title }: {
           {can && look.color ? <TintLayer url={spriteUrl(look.who, name, 'c')} color={tintHex(look.color)} /> : null}
           {can && look.belt ? <span data-reward="ceinture"><TintLayer url={spriteUrl(look.who, name, 'b')} color={GOLD} /></span> : null}
         </span>
-        {look.gold ? (
-          // Gants dorés (série de 21 jours) : une médaille portée derrière le combattant, à hauteur de taille.
+        {look.gold && name !== 'ko' && name !== 'vol' ? (
+          // Gants dorés (série de 21 jours) : une médaille portée derrière le combattant, à hauteur de taille
+          // (rangée quand il vole ou gît au tapis : elle flotterait au-dessus de lui).
           <svg data-reward="gants" viewBox="-18 -18 36 36" width="34" height="34" style={{ position: 'absolute', left: BD_FRAME.cx - 74, top: BD_FRAME.ground - 104, overflow: 'visible' }}>
             <circle r="16" style={{ fill: '#FFF4E3', stroke: '#140A22', strokeWidth: 3 }} />
             <circle r="11.5" style={{ fill: 'none', stroke: GOLD, strokeWidth: 2 }} />
