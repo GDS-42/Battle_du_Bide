@@ -61,9 +61,9 @@ Le combattant est **généré** (SVG), pas dessiné à la main : une même fonct
 
 Le générateur de l'app ([`src/lib/fighter/gen.ts`](../src/lib/fighter/gen.ts)) est un portage exact de celui de l'atelier ([`design/atelier/fighter.js`](../design/atelier/fighter.js)) ; un test vérifie qu'ils produisent les mêmes tracés.
 
-### 5.1 Le look « BD » (livré, éteint par défaut)
+### 5.1 Le look « BD » (look par défaut)
 
-Une seconde façon de montrer le combattant : des catcheurs **masqués**, dessinés à l'encre dans l'esprit de la BD franco-belge, une image par pose. Le masque laisse voir les yeux et la bouche. On se reconnaît à un masque et à une couleur, pas à un visage.
+La façon dont le jeu montre le combattant par défaut (le tracé du générateur, ci-dessus, reste le repli) : des catcheurs **masqués**, dessinés à l'encre dans l'esprit de la BD franco-belge, une image par pose. Le masque laisse voir les yeux et la bouche. On se reconnaît à un masque et à une couleur, pas à un visage.
 
 - **Trois combattants au choix** : Le Bulldozer (rond et têtu, rouge), El Tornado (grand et costaud, vert) et La Fusée (vive et nerveuse, bleu). Le Bide a aussi son dessin.
 - **Une couleur par joueur**, pour le masque, la tenue et les gants ensemble : la palette du jeu, moins la couleur du liseré du combattant (sept teintes). Elle s'applique par un calque CSS : le gris du dessin (plis et ombres) multiplié par la teinte, limité à sa zone par un masque. Aucune image n'est recalculée.
@@ -89,7 +89,7 @@ Une seconde façon de montrer le combattant : des catcheurs **masqués**, dessin
 
 En équipe, le second combattant se tient derrière le premier ; il encaisse, tombe ou lève les bras avec lui. Les barres de vie et le commentaire suivent l'animation : les points de vie baissent à l'instant où le coup porte. Un combat dure de 12 à 20 secondes ; « Passer » et « Rejouer » restent disponibles à tout moment.
 
-Les images sont dans `public/bd/v1/`, leurs repères (taille, appui au sol, tête, main) dans [`src/lib/fighter/bd-sprites.ts`](../src/lib/fighter/bd-sprites.ts). Un fichier publié n'est jamais réécrit : un dessin modifié part dans `/bd/v2`. Le look s'allume pour tous par `BDB_FIGHTER_STYLE=bd`, ou pour un seul appareil par le lien `/look/bd` (voir [le guide de déploiement](04-deploiement-coolify.md)).
+Les images sont dans `public/bd/v1/`, leurs repères (taille, appui au sol, tête, main) dans [`src/lib/fighter/bd-sprites.ts`](../src/lib/fighter/bd-sprites.ts). Un fichier publié n'est jamais réécrit : un dessin modifié part dans `/bd/v2`. C'est le réglage par défaut (`DEFAULT_LOOK`, `src/lib/look.ts`). L'ancien dessin revient pour tous par `BDB_FIGHTER_STYLE=svg`, ou sur un seul appareil par le lien `/look/svg` (voir [le guide de déploiement](04-deploiement-coolify.md)).
 
 ## 6. Mouvement et son
 

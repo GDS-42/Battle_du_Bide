@@ -247,7 +247,7 @@ S'engager devant les autres met aussi en jeu sa « face » : l'image de soi que 
 **Limites.** C'est la famille la plus fragile.
 
 - Ces expériences se déroulent en réalité virtuelle immersive et mesurent un effet à très court terme, comme l'exercice fait dans les minutes qui suivent. Aucune ne mesure une perte de poids, et ici le combattant est un petit personnage en 2D sur un téléphone.
-- **Avec le look « BD »** (combattants masqués dessinés, éteint par défaut), le combattant ne reproduit plus la corpulence du joueur : seules les deux silhouettes de la « Transformation ! » la montrent. Le pari de l'auto-modélisation repose alors sur ce moment, et non plus sur le combattant vu chaque jour ; aucune étude citée ici ne porte sur ce cas.
+- **Avec le look « BD »** (combattants masqués dessinés, look par défaut), le combattant ne reproduit plus la corpulence du joueur : seules les deux silhouettes de la « Transformation ! » la montrent. Le pari de l'auto-modélisation repose alors sur ce moment, et non plus sur le combattant vu chaque jour ; aucune étude citée ici ne porte sur ce cas.
 - Un avatar qui reproduit la corpulence réelle peut aussi gêner. Le jeu l'assume : la silhouette est visible de tous les joueurs de la battle, même en mode pudique. Aucune étude citée ici ne dit si l'effet net est positif.
 
 ### 3.8 Compétence et équité

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { GOLD_STREAK } from '@/lib/engine/badges';
 import { BOSS_NAME, RULES } from '@/lib/engine/rules';
+import { fighterStyle } from '@/lib/look';
 import { Icon, Ribbon, TopBar } from '@/components/ui';
 
 export const metadata: Metadata = { title: 'Comment ça marche ?' };
@@ -15,7 +16,9 @@ const YOYO_G = 300;
 const TREND_MOVE_G = Math.round(YOYO_G * RULES.ALPHA);
 
 /** Mode d'emploi public : se lit sans compte, avant même de rejoindre une battle. */
-export default function AidePage() {
+export default async function AidePage() {
+  // Trois phrases dépendent du dessin des combattants : masqués et dessinés (look « BD »), ou tracés par le code.
+  const bd = (await fighterStyle()) === 'bd';
   return (
     <main className="mx-auto flex min-h-dvh max-w-[520px] flex-col">
       <TopBar back="/battles" kicker="MODE D'EMPLOI" title="Comment ça marche ?" />
@@ -80,7 +83,9 @@ export default function AidePage() {
             Pas de combat sans adversaire : tant que personne n'a relevé le défi, le premier combat est reporté au soir suivant.
             Et les inscriptions ferment au premier combat.
           </p>
-          <p className="text-[14px] leading-snug text-lilas">Profites-en pour créer ton combattant et inviter tes potes.</p>
+          <p className="text-[14px] leading-snug text-lilas">
+            {bd ? 'Profites-en pour choisir ton combattant masqué et sa couleur, et inviter tes potes.' : 'Profites-en pour créer ton combattant et inviter tes potes.'}
+          </p>
         </Block>
 
         {/* 4. Tes coups */}
@@ -180,7 +185,8 @@ export default function AidePage() {
           <ul className="flex flex-col gap-2 text-[15px] leading-snug">
             <Bullet>Des <b className="text-soleil">badges</b> saluent ta régularité, ta progression et tes combats. Tu les retrouves dans ton Profil.</Bullet>
             <Bullet>
-              <b className="text-soleil">Gants dorés</b> : à {GOLD_STREAK} jours de pesée d'affilée, tes gants deviennent dorés, et le restent tant que ta série tient.
+              <b className="text-soleil">Gants dorés</b> : à {GOLD_STREAK} jours de pesée d'affilée,{' '}
+              {bd ? 'ton combattant porte une médaille dorée, et la garde tant que ta série tient.' : 'tes gants deviennent dorés, et le restent tant que ta série tient.'}
             </Bullet>
             <Bullet>
               <b className="text-soleil">Ceinture de champion</b> : le vainqueur d'une battle la porte à la taille, visible de tous ses rivaux, tant qu'il la défend.
@@ -193,7 +199,7 @@ export default function AidePage() {
         <Block icon="zap" title="Vie privée et astuces">
           <ul className="flex flex-col gap-3">
             <Step icon="lock" k="Mode pudique">
-              Activé par défaut : les autres voient des %, des PV et ta silhouette, jamais tes kilos.
+              Activé par défaut : les autres voient des %, des PV et {bd ? 'ton combattant masqué' : 'ta silhouette'}, jamais tes kilos.
             </Step>
             <Step icon="bell" k="Installe l'app">
               Ajoute-la à ton écran d'accueil, puis active les notifications dans ton Profil. iPhone : dans Safari,

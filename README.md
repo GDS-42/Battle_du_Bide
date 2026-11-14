@@ -9,7 +9,7 @@ Chaque matin, ta pesée charge ton coup. À 21 h, les combattants montent sur le
 
 - **Connexion sans mot de passe** (lien magique par e-mail).
 - **Ton combattant** : 12 personnages prêts à jouer, à retoucher (peau, visage, coiffure, barbe, accessoires, âge, tenue, couleurs). Sa corpulence suit ton IMC réel et s'affine au fil des semaines (« Transformation ! »).
-- **Look « BD »** (livré, éteint par défaut) : trois catcheurs masqués dessinés à l'encre, une couleur au choix, et un replay du soir en combat animé. À essayer sur son appareil par `/look/bd`, à allumer pour tous par `BDB_FIGHTER_STYLE=bd`.
+- **Look « BD »** (look par défaut) : trois catcheurs masqués dessinés à l'encre, une couleur au choix, et un replay du soir en combat animé. L'ancien dessin revient pour tous par `BDB_FIGHTER_STYLE=svg`, ou sur un seul appareil par `/look/svg`.
 - **Battles** en duel, tournoi (3 à 8) ou équipes de 2 ; invitation par lien ou Signal ; date de départ au choix (dès le soir même) ; 4, 8 ou 12 rounds de 7 jours ; enjeu : gage, cagnotte déclarative ou honneur ; mode pudique (des %, jamais de kilos) ou transparent ; commentateur bon enfant ou trash talk.
 - **La pesée du matin** en 10 secondes, puis l'écran **« Coup chargé »** : jab, crochet, jauge de super, garde.
 - **Le combat du soir** rejoué en animation, avec barres de vie, éclats, commentateur, sons d'arcade et réactions.

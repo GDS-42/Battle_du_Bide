@@ -7,11 +7,12 @@ export const LOOK_COOKIE = 'bdb-look';
 
 /**
  * Réglage par défaut du dessin des combattants.
- * « svg » : les combattants dessinés sont livrés mais éteints ; seuls les appareils passés par /look/bd les voient.
- * « bd » : ils sont actifs pour tout le monde.
- * La variable d'environnement BDB_FIGHTER_STYLE (bd | svg) prend le pas sur ce réglage, sans toucher au code.
+ * « bd » : les combattants masqués dessinés, pour tout le monde (réglage actuel).
+ * « svg » : les combattants tracés par le code ; seuls les appareils passés par /look/bd voient alors les dessins.
+ * La variable d'environnement BDB_FIGHTER_STYLE (bd | svg) prend le pas sur ce réglage, sans toucher au code :
+ * « svg » y sert de retour arrière.
  */
-export const DEFAULT_LOOK: LookStyle = 'svg';
+export const DEFAULT_LOOK: LookStyle = 'bd';
 
 /** Dessin à utiliser pour cette requête. Lu côté serveur uniquement, puis transmis aux composants. */
 export async function fighterStyle(): Promise<LookStyle> {
