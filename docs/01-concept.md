@@ -100,7 +100,7 @@ Chaque mécanique s'appuie sur un résultat de recherche. Le détail par étude 
 
 ### 21 h : l'heure du combat
 
-- Le serveur résout les coups du jour et génère un **replay de 10 à 15 secondes**.
+- Le serveur résout les coups du jour et génère un **replay d'une quinzaine de secondes** (12 à 20 secondes en combat animé, selon les coups).
 - **Tout le monde le découvre en même temps** : écran de face-à-face, échanges de coups, barres de vie qui descendent et commentaire.
 - Ensuite viennent les réactions, le chambrage et le classement du round mis à jour.
 
@@ -185,7 +185,7 @@ Le format signature : un face-à-face, un combat chaque soir et un round chaque 
 - **Une barre de vie commune** par équipe (100 PV).
 - **Dégâts de l'équipe = moyenne des dégâts de ses membres**, ce qui garde l'équilibre même si une équipe est incomplète un soir.
 - **Attaque combinée** : si les deux membres se sont pesés le même jour, l'équipe gagne +2 PV de dégâts. On se motive mutuellement.
-- Dans le replay, les deux équipiers se relaient sur le ring, comme dans un combat par équipe.
+- Dans le replay, les deux équipiers sont sur le ring ensemble : le premier combat, le second se tient derrière lui et encaisse, tombe ou lève les bras avec lui.
 - Plusieurs équipes (3 ou 4) peuvent s'affronter en tournoi, sur le même principe que le tournoi individuel.
 
 ---

@@ -1,5 +1,5 @@
 'use client';
-// Bruitages d'arcade synthétisés en direct (Web Audio) : aucun fichier audio.
+// Bruitages d'arcade synthétisés en direct (Web Audio), sans fichier audio pour la plupart.
 // Chaque son superpose plusieurs couches (l'attaque, le corps, le souffle). Tous passent par un bus commun,
 // avec un limiteur, et envoient une part réglable dans une petite réverbération de salle fabriquée sur place.
 // Point de départ : design/canvas/Sons.dc.html.
