@@ -20,6 +20,8 @@ services:
       SHOW_MAGIC_LINK: ${SHOW_MAGIC_LINK:-0}
       INTERNAL_CLOCK: ${INTERNAL_CLOCK:-1}
       CRON_SECRET: ${CRON_SECRET:-}
+      # Dessin des combattants : « bd » (dessinés, masqués) ou « svg » (tracés par le code). Vide = réglage par défaut du code.
+      BDB_FIGHTER_STYLE: ${BDB_FIGHTER_STYLE:-}
     # Le proxy de Coolify (ou le vôtre) joint l'app sur le port 3000 : rien à publier sur l'hôte.
     expose:
       - "3000"

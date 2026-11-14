@@ -61,6 +61,20 @@ Le combattant est **généré** (SVG), pas dessiné à la main : une même fonct
 
 Le générateur de l'app ([`src/lib/fighter/gen.ts`](../src/lib/fighter/gen.ts)) est un portage exact de celui de l'atelier ([`design/atelier/fighter.js`](../design/atelier/fighter.js)) ; un test vérifie qu'ils produisent les mêmes tracés.
 
+### 5.1 Le look « BD » (livré, éteint par défaut)
+
+Une seconde façon de montrer le combattant : des catcheurs **masqués**, dessinés à l'encre dans l'esprit de la BD franco-belge, une image par pose. Le masque laisse voir les yeux et la bouche. On se reconnaît à un masque et à une couleur, pas à un visage.
+
+- **Trois combattants au choix** : Le Bulldozer (rond et têtu, rouge), El Tornado (grand et costaud, vert) et La Fusée (vive et nerveuse, bleu). Le Bide a aussi son dessin.
+- **Une couleur par joueur**, pour le masque, la tenue et les gants ensemble : la palette du jeu, moins la couleur du liseré du combattant (sept teintes). Elle s'applique par un calque CSS : le gris du dessin (plis et ombres) multiplié par la teinte, limité à sa zone par un masque. Aucune image n'est recalculée.
+- **Neuf poses** par combattant : garde, jab, élan, uppercut, coup encaissé, vol plané, K.O., victoire, endormi.
+- **Sept gros plans d'expression** par combattant : défi, rage, panique, coup reçu, sonné, moqueur, blasé. Grotesques et drôles, jamais moqueurs du corps.
+- **Récompenses** : la ceinture de champion dore la bande de taille ; les gants dorés sont une médaille portée derrière le combattant.
+- **Corpulence** : le dessin ne change pas avec le poids. La « Transformation ! » est montrée par deux silhouettes unies (avant → après), tracées par le générateur à partir du poids réel.
+- **Repli** : les silhouettes « fantôme » et tout combattant sans dessin gardent le tracé du générateur.
+
+Les images sont dans `public/bd/v1/`, leurs repères (taille, appui au sol, tête, main) dans [`src/lib/fighter/bd-sprites.ts`](../src/lib/fighter/bd-sprites.ts). Un fichier publié n'est jamais réécrit : un dessin modifié part dans `/bd/v2`. Le look s'allume pour tous par `BDB_FIGHTER_STYLE=bd`, ou pour un seul appareil par le lien `/look/bd` (voir [le guide de déploiement](04-deploiement-coolify.md)).
+
 ## 6. Mouvement et son
 
 - **Animations** courtes : `pop` (apparition avec rebond), `shake` (tremblement d'écran sur les gros coups), `floatup` (dégâts qui s'envolent), `flicker` (braseros qui dansent), `twinkle` (feu d'artifice qui scintille). Les deux dernières s'arrêtent si le joueur a demandé moins de mouvement.

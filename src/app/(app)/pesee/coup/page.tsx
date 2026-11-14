@@ -11,6 +11,7 @@ import { BADGES } from '@/lib/engine/badges';
 import { RULES } from '@/lib/engine/rules';
 import { stageLabel, bmi } from '@/lib/engine/silhouette';
 import { rewardsFor } from '@/lib/career';
+import { fighterStyle } from '@/lib/look';
 import { personalSeries } from '@/lib/progress';
 import { liveBattles } from '@/lib/weighin';
 import { localDate, now, prettyDate, zonedInstant } from '@/lib/time';
@@ -27,6 +28,7 @@ const STAGE_K: Record<string, number> = { S1: 1, S2: 0.8, S3: 0.6, S4: 0.4, S5: 
 export default async function CoupPage({ searchParams }: { searchParams: Promise<{ transfo?: string; corrige?: string; badges?: string }> }) {
   const sp = await searchParams;
   const user = await requireFighter('/pesee/coup');
+  const style = await fighterStyle();
   const at = now();
   const today = localDate(at, user.timezone);
   const [wi] = await db.select().from(weighIns).where(and(eq(weighIns.userId, user.id), eq(weighIns.date, today))).limit(1);
@@ -61,7 +63,16 @@ export default async function CoupPage({ searchParams }: { searchParams: Promise
 
       <RingScene height={300} className="border-b-[5px] border-encre">
         <div className="absolute left-4 top-4"><Ribbon>{transfo ? 'TRANSFORMATION !' : first?.p ? 'COUP CHARGÉ !' : live.length ? 'ÉCHAUFFEMENT' : 'PESÉE OK'}</Ribbon></div>
-        {transfo ? (
+        {transfo && style === 'bd' ? (
+          // Combattants dessinés : leur corps ne change pas. La transformation est montrée par deux silhouettes
+          // unies (avant → après), calculées comme toujours à partir du poids réel, à côté du combattant qui fête.
+          <div className="absolute inset-x-3 bottom-10 flex items-end justify-center gap-1">
+            <div className="opacity-60" style={{ filter: 'brightness(2.6) saturate(.7)' }}><Fighter cfg={{ ...fighterFor(user, null), k: STAGE_K[from], w: 78, ghost: true }} /></div>
+            <Icon name="zap" size={26} className="mb-14 text-soleil" />
+            <div style={{ filter: 'brightness(3.4) saturate(.6)' }}><Fighter cfg={{ ...fighterFor(user, null), k: STAGE_K[to], w: 78, ghost: true }} title={`Silhouette ${from} → ${to}`} /></div>
+            <Fighter cfg={fighterFor(user, g.trend ?? wi.weight, { w: 120, spritePose: 'victoire' }, reward, style)} title={displayName(user)} />
+          </div>
+        ) : transfo ? (
           <div className="absolute inset-x-4 bottom-10 flex items-end justify-center gap-2">
             <div className="opacity-60"><Fighter cfg={{ ...fighterFor(user, null), k: STAGE_K[from], w: 120, ghost: true }} /></div>
             <Icon name="zap" size={36} className="mb-24 text-soleil" />
@@ -69,7 +80,7 @@ export default async function CoupPage({ searchParams }: { searchParams: Promise
           </div>
         ) : (
           <>
-            <div className="absolute bottom-10 left-6"><Fighter cfg={fighterFor(user, g.trend ?? wi.weight, { w: 160, pose: first?.p?.attack.total ? 'punch' : 'guard' }, reward)} title={displayName(user)} /></div>
+            <div className="absolute bottom-10 left-6"><Fighter cfg={fighterFor(user, g.trend ?? wi.weight, { w: 160, pose: first?.p?.attack.total ? 'punch' : 'guard' }, reward, style)} title={displayName(user)} /></div>
             {first?.p ? (
               <div className="absolute right-3 top-16 animate-pop"><Burst text={`${Math.round(total)} PV`} sub="CHARGÉS" color={big ? '#FFD23D' : '#FFF4E3'} /></div>
             ) : null}
@@ -91,7 +102,7 @@ export default async function CoupPage({ searchParams }: { searchParams: Promise
         {transfo ? (
           <div className="card flex flex-col gap-1 p-4">
             <div className="font-display text-[22px] text-soleil">Silhouette {from} → {to} !</div>
-            <p className="text-sm text-lilas">Ton combattant suit ta tendance réelle. Tes rivaux viennent d'être prévenus.</p>
+            <p className="text-sm text-lilas">{style === 'bd' ? 'Ta silhouette suit ta tendance réelle.' : 'Ton combattant suit ta tendance réelle.'} Tes rivaux viennent d'être prévenus.</p>
           </div>
         ) : null}
 

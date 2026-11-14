@@ -104,3 +104,10 @@ body { font-family: var(--font-sans); -webkit-tap-highlight-color: transparent; 
   }
   .stroke-text { -webkit-text-stroke: 2px var(--color-encre); paint-order: stroke fill; }
 }
+
+/* Calque de couleur des combattants dessinés. Sans masques CSS, la teinte n'est pas affichée : le dessin garde
+   sa couleur d'origine, plutôt qu'un aplat coloré par-dessus. */
+.bd-tint { display: none; }
+@supports ((mask-image: url("")) or (-webkit-mask-image: url(""))) {
+  .bd-tint { display: block; }
+}

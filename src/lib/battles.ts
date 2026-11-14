@@ -9,6 +9,7 @@ import { BOSS_ID, BOSS_NAME } from './engine/rules';
 import { bmi, kFromBmi } from './engine/silhouette';
 import type { BattleState, EngineInput } from './engine/types';
 import type { FighterConfig, FighterRender } from './fighter/types';
+import { BOSS_LOOK, lookOf, type LookStyle } from './fighter/bd';
 import { PRESETS } from './fighter/presets';
 import { sendOnce } from './push';
 import { addDays, dayDiff, localDate, localTime, now, prettyDate, zonedInstant } from './time';
@@ -155,6 +156,11 @@ export function sideMembers(bundle: Bundle, sideId: string): MemberRow[] {
 
 export const BOSS_FIGHTER: FighterRender = { k: 1, base: 'A', skin: 'cacao', outfit: 'catch', mask: true, main: '#5A2A7A', trim: '#FFD23D' };
 
+/** Le Bide, dans le dessin demandé. */
+export function bossFighter(extra: Partial<FighterRender> = {}, style: LookStyle = 'svg'): FighterRender {
+  return { ...BOSS_FIGHTER, ...(style === 'bd' ? { sprite: BOSS_LOOK } : {}), ...extra };
+}
+
 /** Couleur des gants dorés (série de 21 jours). */
 export const GOLD_GLOVE = '#FFC61A';
 
@@ -166,10 +172,17 @@ export function fighterFor(
   u: Pick<User, 'fighter' | 'presetKey' | 'heightCm'>,
   weight: number | null | undefined,
   extra: Partial<FighterRender> = {},
-  reward?: { gold: boolean; belt: boolean } | null
+  reward?: { gold: boolean; belt: boolean } | null,
+  style: LookStyle = 'svg'
 ): FighterRender {
   const cfg: FighterConfig = u.fighter ?? PRESETS.find((p) => p.key === u.presetKey)?.cfg ?? PRESETS[0].cfg;
-  return { ...cfg, k: kFromBmi(bmi(weight, u.heightCm)), ...(reward?.gold ? { glove: GOLD_GLOVE } : {}), ...(reward?.belt ? { champ: true } : {}), ...extra };
+  return {
+    ...cfg, k: kFromBmi(bmi(weight, u.heightCm)), ...(reward?.gold ? { glove: GOLD_GLOVE } : {}), ...(reward?.belt ? { champ: true } : {}),
+    // Look « BD » : le combattant dessiné du joueur (choisi, ou déduit de son ancien personnage). Le réglage d'origine
+    // reste dans l'objet, pour que le tracé actuel serve de repli si un dessin venait à manquer.
+    ...(style === 'bd' ? { sprite: lookOf(u.fighter, u.presetKey, reward) } : {}),
+    ...extra
+  };
 }
 
 export async function userBattles(userId: string) {

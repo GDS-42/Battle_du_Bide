@@ -5,12 +5,16 @@ import { eq } from 'drizzle-orm';
 import { requireUser, safeNext } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
-import { FighterSchema, TimeSchema } from '@/lib/validation';
+import { BdLookSchema, FighterSchema, TimeSchema } from '@/lib/validation';
+import { mergeLook, paletteFor } from '@/lib/fighter/bd';
+import type { FighterConfig } from '@/lib/fighter/types';
 import { recordWeighIn } from '@/lib/weighin';
 
 const ProfileSchema = z.object({
   presetKey: z.string().max(40).optional(),
-  cfg: FighterSchema,
+  // L'ancien studio envoie tout le réglage (`cfg`) ; le studio des combattants dessinés n'envoie que `look`.
+  cfg: FighterSchema.optional(),
+  look: BdLookSchema.optional(),
   name: z.string().trim().min(1, 'Ton prénom ?').max(30),
   nickname: z.string().trim().max(30).optional().default(''),
   superMove: z.string().trim().max(40).optional().default(''),
@@ -28,9 +32,24 @@ export async function saveFighter(input: unknown): Promise<SaveFighterResult> {
   const parsed = ProfileSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? 'Données invalides' };
   const p = parsed.data;
+  let fighter: FighterConfig;
+  let presetKey: string | null;
+  if (p.look) {
+    // Combattant dessiné : on ajoute son choix au réglage déjà enregistré, sans rien retirer ni réécrire d'autre.
+    if (!paletteFor(p.look.bd).some(([c]) => c.toLowerCase() === p.look!.bdColor.toLowerCase())) return { ok: false, error: 'Couleur indisponible pour ce combattant' };
+    fighter = mergeLook(user.fighter, user.presetKey, p.look);
+    presetKey = user.presetKey ?? p.look.bd;
+  } else if (p.cfg) {
+    // Ancien studio : on garde le combattant dessiné que le joueur avait éventuellement choisi.
+    const kept = user.fighter ?? {};
+    fighter = { ...p.cfg, ...(p.cfg.bd === undefined && kept.bd ? { bd: kept.bd } : {}), ...(p.cfg.bdColor === undefined && kept.bdColor ? { bdColor: kept.bdColor } : {}) };
+    presetKey = p.presetKey ?? null;
+  } else {
+    return { ok: false, error: 'Données invalides' };
+  }
   await db.update(users).set({
-    presetKey: p.presetKey ?? null,
-    fighter: p.cfg,
+    presetKey,
+    fighter,
     name: p.name,
     nickname: p.nickname || null,
     superMove: p.superMove || null,

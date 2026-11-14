@@ -8,6 +8,7 @@ import { displayName, fighterFor } from '@/lib/battles';
 import { bmi, stageLabel } from '@/lib/engine/silhouette';
 import { careerFor, rewardsFor } from '@/lib/career';
 import { vapidPublicKey } from '@/lib/push';
+import { fighterStyle } from '@/lib/look';
 import { localDate, now, prettyDate } from '@/lib/time';
 import { logout } from '@/app/actions/auth';
 import { deleteAccount } from '@/app/actions/profile';
@@ -26,6 +27,7 @@ const fmtShort = (n: number) => n.toLocaleString('fr-FR', { maximumFractionDigit
 export default async function ProfilPage({ searchParams }: { searchParams: Promise<{ erreur?: string; periode?: string }> }) {
   const { erreur, periode } = await searchParams;
   const user = await requireFighter('/profil');
+  const style = await fighterStyle();
   const at = now();
   const today = localDate(at, user.timezone);
   // Palmarès, badges et courbe : calculés à partir des pesées et des battles, jamais stockés.
@@ -41,7 +43,7 @@ export default async function ProfilPage({ searchParams }: { searchParams: Promi
     <main className="mx-auto flex min-h-dvh max-w-[520px] flex-col">
       <RingScene height={300} className="border-b-[5px] border-encre">
         <div className="absolute left-4 top-[max(16px,env(safe-area-inset-top))]"><Ribbon>TON COMBATTANT</Ribbon></div>
-        <div className="absolute bottom-9 left-1/2 -translate-x-1/2"><Fighter cfg={fighterFor(user, g.trend ?? g.last, { w: 170 }, reward)} title={displayName(user)} /></div>
+        <div className="absolute bottom-9 left-1/2 -translate-x-1/2"><Fighter cfg={fighterFor(user, g.trend ?? g.last, { w: 170 }, reward, style)} title={displayName(user)} /></div>
         <div className="absolute right-4 top-16 flex flex-col items-end text-right">
           <span className="extrude text-[30px] leading-none">{displayName(user).toUpperCase()}</span>
           {user.nickname ? <span className="font-display text-[16px] text-soleil">« {user.nickname} »</span> : null}

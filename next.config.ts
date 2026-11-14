@@ -11,6 +11,12 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
+        // Dessins des combattants : chaque fichier est figé sous son numéro de version (/bd/v1), donc mis en cache longtemps.
+        // Pour changer un dessin, on ouvre /bd/v2 ; on ne réécrit jamais un fichier publié.
+        source: '/bd/:version/:file*',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }]
+      },
+      {
         source: '/sw.js',
         headers: [
           { key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' },

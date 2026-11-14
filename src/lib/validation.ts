@@ -19,8 +19,13 @@ export const FighterSchema = z.object({
   outfit: z.enum(['boxe', 'catch', 'kimono', 'mma', 'track']).optional(),
   main: color.optional(), trim: color.optional(), glove: color.optional(), top: color.optional(), bottom: color.optional(),
   boot: color.optional(), belt: color.optional(), band: color.optional(), bandana: color.optional(),
-  mask: z.boolean().optional(), tank: z.boolean().optional()
+  mask: z.boolean().optional(), tank: z.boolean().optional(),
+  // Look « BD » : sans ces deux lignes, `.strip()` effacerait le choix du joueur à chaque enregistrement.
+  bd: z.enum(['bulldozer', 'tornado', 'fusee']).optional(), bdColor: color.optional()
 }).strip();
+
+/** Choix fait dans le studio des combattants dessinés : un combattant et une couleur. */
+export const BdLookSchema = z.object({ bd: z.enum(['bulldozer', 'tornado', 'fusee']), bdColor: color });
 
 /** Poids saisi en kg, accepte la virgule. */
 export const WeightSchema = z.preprocess(

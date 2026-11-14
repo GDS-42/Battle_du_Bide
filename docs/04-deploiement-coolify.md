@@ -62,6 +62,14 @@ Les volumes `pgdata` (base) et `uploads` (photos de balance) sont persistants : 
 
 Poussez sur la branche suivie, puis *Redeploy* dans Coolify (ou activez le déploiement automatique). Les nouvelles migrations s'appliquent au démarrage. Le moteur recalcule les combats à partir des pesées : une mise à jour du barème s'applique donc aussi aux combats passés ; évitez de changer `rules.ts` en cours de battle.
 
+## Dessin des combattants (look « BD »)
+
+Les combattants masqués dessinés sont livrés avec l'app. Le réglage par défaut est dans le code (`DEFAULT_LOOK`, `src/lib/look.ts`).
+
+- **Essayer sur un seul appareil**, sans rien changer pour les autres joueurs : ouvrir `https://bide.example.com/look/bd`. Pour revenir au réglage général : `/look/auto`. C'est un simple cookie ; rien n'est écrit en base.
+- **Allumer ou éteindre pour tout le monde sans toucher au code** : variable `BDB_FIGHTER_STYLE`, avec `bd` (combattants dessinés) ou `svg` (tracés par le code), puis redéployer. Laissée vide, le réglage du code s'applique.
+- **Retour arrière** : `BDB_FIGHTER_STYLE=svg` rétablit l'ancien dessin, l'ancien studio et l'ancien replay. Les données ne sont pas touchées : le choix d'un combattant dessiné n'ajoute que deux clés au réglage du joueur, sans en retirer aucune.
+
 ## Sauvegardes
 
 L'essentiel tient dans la base. Option B : activez les sauvegardes planifiées de la ressource PostgreSQL dans Coolify. Option A : une tâche planifiée Coolify sur le service `db` :

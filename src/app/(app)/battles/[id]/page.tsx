@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { appUrl, requireFighter } from '@/lib/auth';
 import {
-  BOSS_FIGHTER, battleStatus, computeState, displayName, endDateOf, fighterFor, fightPending, loadBundle, previewFor, recentFeed,
+  bossFighter, battleStatus, computeState, displayName, endDateOf, fighterFor, fightPending, loadBundle, previewFor, recentFeed,
   roundOf, sideMembers, sideName, superState, warmupLabel
 } from '@/lib/battles';
 import { beltHeld, roundPairings } from '@/lib/engine/battle';
@@ -12,6 +12,8 @@ import { trendLabel } from '@/lib/engine/recap';
 import { BOSS_ID } from '@/lib/engine/rules';
 import { formatEuros, settleStakes } from '@/lib/engine/stakes';
 import { rewardsFor } from '@/lib/career';
+import { distinctPair } from '@/lib/fighter/bd';
+import { fighterStyle } from '@/lib/look';
 import { personalSeries } from '@/lib/progress';
 import { canStartTonight, START_MAX_DAYS } from '@/lib/start-date';
 import { TAUNTS } from '@/lib/taunts';
@@ -33,6 +35,7 @@ export default async function RingPage({ params, searchParams }: { params: Promi
   const { id } = await params;
   const sp = await searchParams;
   const user = await requireFighter(`/battles/${id}`);
+  const style = await fighterStyle();
   const bundle = await loadBundle(id);
   if (!bundle) notFound();
   const b = bundle.battle;
@@ -63,8 +66,14 @@ export default async function RingPage({ params, searchParams }: { params: Promi
   // Récompenses portées par les combattants : gants dorés (série de 21 jours), ceinture de champion
   const rewards = await rewardsFor(bundle.members.map((m) => m.userId), at);
   const fighterOfSide = (sideId: string, flip: boolean, w: number) => {
-    if (sideId === BOSS_ID) return [{ key: 'boss', cfg: { ...BOSS_FIGHTER, flip, w } }];
-    return sideMembers(bundle, sideId).slice(0, 2).map((m, i) => ({ key: m.userId, cfg: fighterFor(m.user, trendOf(m.userId), { flip, w: i ? Math.round(w * 0.8) : w }, rewards.get(m.userId)) }));
+    if (sideId === BOSS_ID) return [{ key: 'boss', cfg: bossFighter({ flip, w }, style) }];
+    return sideMembers(bundle, sideId).slice(0, 2).map((m, i) => ({ key: m.userId, cfg: fighterFor(m.user, trendOf(m.userId), { flip, w: i ? Math.round(w * 0.8) : w }, rewards.get(m.userId), style) }));
+  };
+  // Face-à-face : deux combattants dessinés à l'allure identique seraient indiscernables, le camp d'en face change de teinte.
+  const faceOff = (mine: string, theirs: string) => {
+    const a = fighterOfSide(mine, false, 130), b = fighterOfSide(theirs, true, 130);
+    if (a[0]?.cfg.sprite && b[0]?.cfg.sprite) b[0].cfg = { ...b[0].cfg, sprite: distinctPair(a[0].cfg.sprite, b[0].cfg.sprite) };
+    return { a, b };
   };
   // Photo de balance (mode transparent) : la dernière déjà révélée
   const photoOf = (uid: string) => !pudique && b.photoProof
@@ -139,10 +148,15 @@ export default async function RingPage({ params, searchParams }: { params: Promi
                 </div>
               </div>
               <RingScene height={250} flame={flame.level} className="border-b-[5px] border-encre">
-                <div className="absolute inset-x-3 bottom-[30px] flex items-end justify-between">
-                  <div className="flex items-end">{fighterOfSide(mySide.id, false, 130).map((f) => <Fighter key={f.key} cfg={f.cfg} />)}</div>
-                  <div className="flex items-end">{fighterOfSide(oppId, true, 130).map((f) => <Fighter key={f.key} cfg={f.cfg} />)}</div>
-                </div>
+                {(() => {
+                  const duo = faceOff(mySide.id, oppId);
+                  return (
+                    <div className="absolute inset-x-3 bottom-[30px] flex items-end justify-between">
+                      <div className="flex items-end">{duo.a.map((f) => <Fighter key={f.key} cfg={f.cfg} />)}</div>
+                      <div className="flex items-end">{duo.b.map((f) => <Fighter key={f.key} cfg={f.cfg} />)}</div>
+                    </div>
+                  );
+                })()}
                 {myPair.ko ? <div className="absolute left-1/2 top-6 -translate-x-1/2"><Ribbon>K.O. · ROUND TERMINÉ</Ribbon></div> : null}
               </RingScene>
             </section>
@@ -246,7 +260,7 @@ export default async function RingPage({ params, searchParams }: { params: Promi
               return (
                 <div key={m.userId} className="card-line flex items-center gap-3 px-3 py-2">
                   <div className="relative h-[60px] w-[54px] shrink-0 overflow-hidden rounded-xl bg-violet-2">
-                    <div className="absolute left-1/2 top-0 -ml-[40px]"><Fighter cfg={fighterFor(m.user, trendOf(m.userId), { w: 80 }, rewards.get(m.userId))} /></div>
+                    <div className="absolute left-1/2 top-0 -ml-[40px]"><Fighter cfg={fighterFor(m.user, trendOf(m.userId), { w: 80 }, rewards.get(m.userId), style)} /></div>
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="truncate font-display text-[17px]">{displayName(m.user)}{m.user.nickname ? <span className="text-lilas"> « {m.user.nickname} »</span> : null}</div>

@@ -1,7 +1,9 @@
 'use client';
 import { useId, useMemo } from 'react';
 import { gen } from '@/lib/fighter/gen';
+import { hasSprites, spritePoseOf } from '@/lib/fighter/bd';
 import type { FighterRender } from '@/lib/fighter/types';
+import { BdFighter } from './BdFighter';
 
 const S = (o: React.CSSProperties) => o;
 const OUT = { strokeLinejoin: 'round' as const };
@@ -25,7 +27,18 @@ function champBelt(waist: string): { strap: string; cx: number; cy: number; angl
   };
 }
 
+/**
+ * Le combattant d'un joueur. Quand le look « BD » est actif (`cfg.sprite`), c'est son dessin ; sinon, et pour les
+ * silhouettes unies ou tout combattant sans dessin, c'est le tracé du générateur, inchangé.
+ */
 export function Fighter({ cfg, className, title }: { cfg: FighterRender; className?: string; title?: string }) {
+  if (cfg.sprite && !cfg.ghost && hasSprites(cfg.sprite.who)) {
+    return <BdFighter look={cfg.sprite} pose={spritePoseOf(cfg.pose, cfg.spritePose)} w={cfg.w} flip={cfg.flip} className={className} title={title} />;
+  }
+  return <SvgFighter cfg={cfg} className={className} title={title} />;
+}
+
+function SvgFighter({ cfg, className, title }: { cfg: FighterRender; className?: string; title?: string }) {
   const raw = useId();
   const id = 'f' + raw.replace(/[^a-zA-Z0-9_-]/g, '');
   const f = useMemo(() => gen({ ...cfg, id }), [cfg, id]);

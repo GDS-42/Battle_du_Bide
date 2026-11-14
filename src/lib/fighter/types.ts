@@ -29,6 +29,24 @@ export interface FighterConfig {
   bandana?: string;
   mask?: boolean;
   tank?: boolean;
+  /** Combattant dessiné choisi par le joueur (look « BD »). Absent tant qu'il n'a rien choisi : il est alors déduit du reste. */
+  bd?: BdKey;
+  /** Couleur de son masque, de sa tenue et de ses gants (une teinte de la palette du jeu). */
+  bdColor?: string;
+}
+
+/** Les combattants dessinés que le joueur peut choisir. */
+export type BdKey = 'bulldozer' | 'tornado' | 'fusee';
+
+/** Allure dessinée, résolue au moment de l'affichage (elle n'est jamais stockée telle quelle). */
+export interface SpriteLook {
+  who: BdKey | 'bide';
+  /** Couleur du masque, de la tenue et des gants ; null = couleur d'origine du dessin. */
+  color: string | null;
+  /** Ceinture de champion : la bande de taille passe à l'or. */
+  belt?: boolean;
+  /** Gants dorés (série de 21 jours) : un insigne doré accompagne le combattant. */
+  gold?: boolean;
 }
 
 /** Paramètres de rendu : apparence + corpulence + pose. */
@@ -40,4 +58,8 @@ export interface FighterRender extends FighterConfig {
   w?: number;
   /** Ceinture de champion portée à la taille (récompense ; dessinée par le composant Fighter, pas par le générateur). */
   champ?: boolean;
+  /** Présent quand le look « BD » est actif : le combattant est alors affiché par son dessin, pas par le générateur. */
+  sprite?: SpriteLook;
+  /** Pose du dessin quand elle n'a pas d'équivalent dans le générateur (ex. « victoire »). */
+  spritePose?: string;
 }

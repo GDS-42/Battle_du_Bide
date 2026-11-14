@@ -217,6 +217,8 @@ tendance_du_jour = tendance_d_hier + α × (pesée_du_jour − tendance_d_hier)
 - **Nom du coup spécial**, déclenché par le super : *« La Raclette Volante »*, *« Le Coup du Lundi »*…
 - **Phrase d'entrée sur le ring** : *« Ce soir, je mange léger… et toi aussi ! »*
 
+> **Look « BD » (livré, éteint par défaut).** Une variante du combattant est prête : des catcheurs masqués dessinés à l'encre. Le joueur y choisit un combattant parmi trois (Le Bulldozer, El Tornado, La Fusée) et une couleur pour son masque, sa tenue et ses gants ; coiffure, barbe et accessoires n'ont plus lieu d'être sous un masque. Surnom, coup spécial et phrase d'entrée restent. Voir [la direction artistique](02-direction-artistique.md#51-le-look--bd--livré-éteint-par-défaut).
+
 ### 8.2 La corpulence réelle
 
 - **Au départ**, la silhouette du combattant reproduit **la corpulence réelle du joueur**, calculée par l'**IMC** à partir de la taille (demandée à l'inscription) et du poids de départ.
@@ -235,10 +237,11 @@ tendance_du_jour = tendance_d_hier + α × (pesée_du_jour − tendance_d_hier)
 - **Forme optimale** : vers un IMC de 23, le combattant atteint sa **forme équilibrée**, la plus athlétique, et ne s'affine plus au-delà. Le but visuel est la forme d'athlète, pas la maigreur.
 - **Moment fort : l'écran « Transformation ! »**. Quand le combattant franchit une silhouette clé, une animation dédiée montre l'avant/après **du personnage**, jamais de photo du joueur. On peut la partager dans le fil.
 - La silhouette est visible par tous les joueurs de la battle, même en mode pudique où les kilos sont cachés.
+- **Avec le look « BD »**, le dessin du combattant ne change pas avec le poids. L'écran « Transformation ! » montre alors l'avant/après par deux silhouettes unies, calculées comme ci-dessus, à côté du combattant qui fête.
 
 ### 8.3 Ce qui s'ajoute au fil des battles
 
-- **Gants dorés** : à 21 jours de pesée d'affilée, les gants du combattant deviennent dorés. Ils le restent tant que la série tient : les perdre fait plus mal que ne pas les avoir.
+- **Gants dorés** : à 21 jours de pesée d'affilée, les gants du combattant deviennent dorés (avec le look « BD » : une médaille dorée portée par le combattant). Ils le restent tant que la série tient : les perdre fait plus mal que ne pas les avoir.
 - **Ceinture de champion** : le vainqueur de sa dernière battle terminée la porte à la taille, visible de ses rivaux, tant que la défense tient (en solo).
 - **Badges** : 16 badges calculés à partir des pesées et des battles, jamais stockés. Régularité (première pesée, séries de 7, 21 et 50 jours), progression (premier kilo, −2 %, −5 %, −10 %), combat (premier crochet, super, round gagné, cinq rounds, K.O., vainqueur du Bide, remontée, ceinture). Un joueur qui stagne en poids gagne quand même par sa régularité.
 - **Palmarès** dans le profil : pesées, série en cours et record, rounds gagnés, K.O., battles, ceintures.

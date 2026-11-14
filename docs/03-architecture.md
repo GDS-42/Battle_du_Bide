@@ -19,7 +19,7 @@ Navigateur / PWA ──HTTPS──▶ Next.js (Node 22, « standalone »)
 | Données | PostgreSQL + Drizzle ORM ; migrations SQL versionnées dans `drizzle/`, appliquées au démarrage |
 | Connexion | lien magique par e-mail (aucun mot de passe) |
 | Notifications | Web Push (VAPID) via un service worker |
-| Tests | Vitest (moteur de jeu, dates, générateur de combattant) ; parcours Playwright manuel |
+| Tests | Vitest (moteur de jeu, dates, générateur de combattant, look « BD ») ; parcours Playwright manuel |
 
 ## 2. Arborescence
 
@@ -28,7 +28,8 @@ src/
   app/
     page.tsx                    accueil
     connexion/, auth/verifier/  lien magique
-    combattant/                 studio : galerie → retouches → fiche
+    combattant/                 studio : galerie → retouches → fiche ; avec le look « BD » : combattant et couleur → fiche
+    look/[style]/               lien d'essai du look « BD » pour un seul appareil (cookie)
     b/[code]/                   page d'invitation (publique)
     (app)/                      espace connecté, avec barre de navigation
       battles/                  liste, création, ring, replay du combat du soir, bilan de round et son image à partager
@@ -37,10 +38,11 @@ src/
     actions/                    server actions (auth, combattant, pesée, battle, profil)
     api/                        push, export, photos/[id], health, cron/tick
     icons/[size]/, manifest.ts  PWA
-  components/                   Fighter (SVG), ui (rubans, barres de vie…), WeightChart (courbe de pesées)…
+  components/                   Fighter (tracé SVG, ou dessin BdFighter selon le look), ui (rubans, barres de vie…), WeightChart (courbe de pesées)…
   lib/
     engine/                     moteur de jeu PUR (aucune dépendance à la base)
-    fighter/                    générateur de combattant et presets
+    fighter/                    générateur de combattant et presets ; look « BD » (bd.ts : choix, palette, fusion ; bd-sprites.ts : repères des dessins)
+    look.ts                     quel dessin afficher pour cette requête (réglage du code, variable d'environnement, cookie d'essai)
     db/                         schéma Drizzle, connexion, migrations
     battles.ts, weighin.ts      chargement des données, règles d'écriture
     career.ts                   palmarès, badges et récompenses portées par le combattant (calculés, jamais stockés)
@@ -74,9 +76,11 @@ Tout le jeu tient dans [`src/lib/engine/`](../src/lib/engine/) : des **fonctions
 
 ## 4. Données
 
-Tables principales ([`schema.ts`](../src/lib/db/schema.ts)) : `users` (profil, combattant en JSON, taille, heure de pesée, fuseau), `battles` (format, rounds, date de début, heure du combat, enjeu, confidentialité, ton), `battle_members`, `weighins` (une par joueur et par jour), `supers`, `feed` (provocations, transformations, coups de coude), `reactions`, `nudges`, `push_subscriptions`, `notif_log`, `sessions`, `login_tokens`.
+Tables principales ([`schema.ts`](../src/lib/db/schema.ts)) : `users` (profil, combattant en JSON, taille, heure de pesée, fuseau ; le JSON peut porter en plus le combattant dessiné choisi et sa couleur, `bd` et `bdColor`), `battles` (format, rounds, date de début, heure du combat, enjeu, confidentialité, ton), `battle_members`, `weighins` (une par joueur et par jour), `supers`, `feed` (provocations, transformations, coups de coude), `reactions`, `nudges`, `push_subscriptions`, `notif_log`, `sessions`, `login_tokens`.
 
 Les pesées appartiennent au **joueur**, pas à la battle : une même pesée compte dans toutes ses battles en cours.
+
+**Le look « BD » n'a demandé aucune migration.** Le combattant dessiné et sa couleur sont deux clés facultatives du JSON `users.fighter`. Tant qu'un joueur n'a rien choisi, ils sont déduits à l'affichage de son ancien personnage (`resolveLook`, pur et testé), sans rien écrire. Le studio des combattants dessinés n'envoie que ce choix ; le serveur le fusionne dans le réglage enregistré (`mergeLook`), sans retirer aucune clé : le tracé d'origine reste disponible à tout moment. Le dessin à afficher est décidé côté serveur (`src/lib/look.ts`) puis transmis aux composants.
 
 ## 5. Sécurité et confidentialité
 
