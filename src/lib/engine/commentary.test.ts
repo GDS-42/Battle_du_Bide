@@ -13,7 +13,7 @@ function side(uid: string, o: Partial<PlayerAttack> = {}): SideAttack {
 }
 const absent = (uid: string, o: Partial<PlayerAttack> = {}) => side(uid, { weighed: false, jab: 0, total: 0, blocked: false, combo: 0, ...o });
 function pairing(a: SideAttack, b: SideAttack, hpBefore = { a: 80, b: 80 }, o: Partial<PairingDay> = {}): PairingDay {
-  return { a: 'marc', b: 'julie', hpBefore, attacks: { a, b }, hpAfter: { a: hpBefore.a - b.total, b: hpBefore.b - a.total }, ko: null, idle: false, ...o };
+  return { a: 'marc', b: 'julie', hpBefore, attacks: { a, b }, hpAfter: { a: hpBefore.a - b.total, b: hpBefore.b - a.total }, ko: null, idle: false, fresh: false, kos: { a: 0, b: 0 }, resumes: false, ...o };
 }
 /** Le bilan appartient-il à cette famille de phrases ? (on compare au gabarit, variables retirées) */
 const TONES = ['bon', 'trash'] as const;
@@ -27,11 +27,17 @@ describe('commentateur : situations', () => {
       pairing(side('marc', { crochet: 20, crochetPct: 0.4, total: 24, blocked: false, super: 15 }), absent('julie', { late: true, combo: 5 })),
       pairing(absent('marc', { gardeUsed: true, combo: 8 }), side('julie', { combo: 7 })),
       pairing(absent('marc'), absent('julie')),
-      pairing(side('marc'), side('julie'), { a: 3, b: 60 }, { ko: 'a', hpAfter: { a: -1, b: 56 } })
+      pairing(side('marc'), side('julie'), { a: 3, b: 60 }, { ko: 'a', hpAfter: { a: -1, b: 56 } }),
+      // Règle « on se relève » : K.O. qui marque un point, reprise, score aux K.O., double K.O.
+      pairing(side('marc'), side('julie'), { a: 3, b: 60 }, { ko: 'a', hpAfter: { a: -1, b: 56 }, kos: { a: 0, b: 1 }, resumes: true }),
+      pairing(side('marc'), side('julie'), { a: 3, b: 60 }, { ko: 'a', hpAfter: { a: -1, b: 56 }, kos: { a: 2, b: 1 } }),
+      pairing(side('marc'), side('julie'), { a: 100, b: 100 }, { fresh: true, kos: { a: 1, b: 0 } }),
+      pairing(side('marc', { jab: 6, total: 6 }), side('julie'), { a: 70, b: 60 }, { kos: { a: 1, b: 1 } }),
+      pairing(side('marc'), side('julie'), { a: 3, b: 2 }, { ko: 'both', hpAfter: { a: -1, b: -2 }, kos: { a: 2, b: 1 }, resumes: true })
     ];
     for (const p of cases) for (const opts of [{}, { lastDay: true }]) {
       for (const c of all(p, opts)) {
-        for (const l of [...c.a, ...c.b, c.end ?? '']) { expect(l).not.toMatch(/[{}]/); expect(l).not.toContain('undefined'); }
+        for (const l of [c.intro ?? '', ...c.a, ...c.b, c.end ?? '']) { expect(l).not.toMatch(/[{}]/); expect(l).not.toContain('undefined'); }
       }
       expect(commentary(p, NAMES, 'bon', 'x', {}, opts)).toEqual(commentary(p, NAMES, 'bon', 'x', {}, opts));
     }
@@ -74,13 +80,59 @@ describe('commentateur : situations', () => {
     for (const c of all(ko, { lastDay: true })) expect(c.end).toMatch(/K\.O\./);
   });
 
+  it('tant qu’aucun K.O. n’est marqué, rien ne parle de K.O. ni de reprise', () => {
+    for (const opts of [{}, { lastDay: true }]) for (const c of all(pairing(side('marc', { jab: 6, total: 6 }), side('julie'), { a: 50, b: 40 }), opts)) {
+      expect(c.intro).toBeNull();
+      expect(c.end).not.toMatch(/K\.O\.|manche|Reprise|relève/i);
+    }
+  });
+
+  it('annonce la reprise : 100 PV partout, puis rappelle le score aux K.O.', () => {
+    for (const c of all(pairing(side('marc'), side('julie', { jab: 6, total: 6 }), { a: 100, b: 100 }, { fresh: true, kos: { a: 1, b: 0 } }))) {
+      expect(c.intro).toMatch(/100 PV/);
+      expect(c.end).toMatch(/K\.O\./);
+      expect(c.end).toMatch(/Marc/);
+      expect(c.end).toMatch(/1 à 0/);
+    }
+    for (const c of all(pairing(side('marc', { jab: 6, total: 6 }), side('julie'), { a: 70, b: 60 }, { kos: { a: 1, b: 1 } }))) expect(c.end).toMatch(/K\.O\. : 1 partout/);
+  });
+
+  it('un K.O. qui ne termine pas le round marque un point et annonce la reprise du lendemain', () => {
+    const p = pairing(side('marc'), side('julie'), { a: 3, b: 60 }, { ko: 'a', hpAfter: { a: -1, b: 56 }, kos: { a: 0, b: 1 }, resumes: true });
+    for (const c of all(p)) {
+      expect(c.end).toMatch(/K\.O\./);
+      expect(c.end).toMatch(/point/);
+      expect(c.end).toMatch(/demain soir/i);
+      expect(c.end).not.toMatch(/prend le round|C’est fini/);
+    }
+    // Deuxième K.O. du round : le score est rappelé.
+    for (const c of all({ ...p, kos: { a: 1, b: 1 } })) expect(c.end).toMatch(/1 partout/);
+  });
+
+  it('le dernier soir, le verdict suit le score aux K.O., pas les PV de la dernière manche', () => {
+    // Marc mène 1 K.O. à 0, mais Julie finit la dernière manche devant aux PV : le round est pour Marc.
+    for (const c of all(pairing(side('marc'), side('julie', { jab: 6, total: 6 }), { a: 80, b: 90 }, { kos: { a: 1, b: 0 } }), { lastDay: true })) {
+      expect(c.end).toMatch(/round/i);
+      expect(c.end).toMatch(/Marc/);
+      expect(c.end).toMatch(/K\.O\./);
+      expect(c.end).not.toMatch(/PV/);
+    }
+    // K.O. de Julie au dernier soir, mais Marc en avait deux : le round reste à Marc.
+    for (const c of all(pairing(side('marc'), side('julie'), { a: 3, b: 60 }, { ko: 'a', hpAfter: { a: -1, b: 56 }, kos: { a: 2, b: 1 } }), { lastDay: true })) {
+      expect(c.end).toMatch(/Marc .*2.* à 1|round pour Marc|Marc repart|Marc empoche|Marc l’emporte/);
+      expect(c.end).not.toMatch(/Julie prend le round/);
+    }
+    // À K.O. égaux, ce sont les PV qui tranchent.
+    for (const c of all(pairing(side('marc', { jab: 6, total: 6 }), side('julie'), { a: 50, b: 40 }, { kos: { a: 1, b: 1 } }), { lastDay: true })) expect(c.end).toMatch(/1 partout.*round|1 partout.*Cloche/i);
+  });
+
   it('annonce les PV du Bide', () => {
     const p: PairingDay = { ...pairing(side('marc'), { total: 6.5, jab: 6.5, crochet: 0, super: 0, teamBonus: 0, members: {} }), b: 'boss' };
     for (const c of all(p)) expect(c.b[0]).toMatch(/7 PV/);
   });
 
   it('ne se moque jamais du corps : aucune phrase du répertoire n’y touche', () => {
-    expect(ALL_LINES.length).toBeGreaterThan(90);
+    expect(ALL_LINES.length).toBeGreaterThan(110);
     for (const l of ALL_LINES) {
       expect(l).not.toMatch(/\b(gros|grosse|gras|grasse|ventre|bide(?!\b)|bouboule|obèse|graisse|bourrelet|kilos? en trop|régime|manger?|bouffe|ration|appétit|frigo|dessert)\b/i);
     }

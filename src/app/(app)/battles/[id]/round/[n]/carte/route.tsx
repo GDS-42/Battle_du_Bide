@@ -3,7 +3,7 @@ import path from 'node:path';
 import { ImageResponse } from 'next/og';
 import { currentUser } from '@/lib/auth';
 import { loadBundle, roundRecapFor, sideName } from '@/lib/battles';
-import { resultLabel, trendLabel } from '@/lib/engine/recap';
+import { resultLabel, showsKoScore, trendLabel } from '@/lib/engine/recap';
 import { now } from '@/lib/time';
 
 export const dynamic = 'force-dynamic';
@@ -64,7 +64,13 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         <div style={{ display: 'flex', flexDirection: 'column', position: 'absolute', left: 60, right: 60, top: 800, gap: 22 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             {bar(r.hp.me, false)}
-            <div style={{ display: 'flex', fontSize: 54, color: LILAS }}>VS</div>
+            {showsKoScore(r) ? (
+              // Score aux K.O. du round (le duel reprend à 100 PV le lendemain d'un K.O.)
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', color: SOLEIL, lineHeight: 1 }}>
+                <span style={{ fontSize: 30, color: LILAS }}>K.O.</span>
+                <span style={{ fontSize: 50, marginTop: 4 }}>{r.kos.me} – {r.kos.opp}</span>
+              </div>
+            ) : <div style={{ display: 'flex', fontSize: 54, color: LILAS }}>VS</div>}
             {bar(r.hp.opp, true)}
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>

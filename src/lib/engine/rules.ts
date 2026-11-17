@@ -1,8 +1,14 @@
 // Barème du jeu (voir docs/01-concept.md §5). Valeurs de départ, à calibrer avec l'usage.
 
 export const RULES = {
-  /** Points de vie de chaque camp au début d'un round. */
+  /** Points de vie de chaque camp au début d'un round, et à chaque reprise après un K.O. */
   HP: 100,
+  /**
+   * K.O. : à partir des combats de cette date, le duel reprend dès le lendemain soir (tout le monde à HP) et le K.O.
+   * compte un point dans le round. Avant, un K.O. terminait le round. Les soirées antérieures gardent l'ancien calcul :
+   * le moteur recalcule toute la battle à chaque fois, cette date est ce qui empêche de réécrire le passé.
+   */
+  KO_REVIVE_FROM: '2026-11-17',
   /** Coefficient de la moyenne mobile pondérée (tendance). */
   ALPHA: 0.2,
   /** Jab selon le combo : moins de 7 jours, 7 à 20 jours, 21 jours et plus. */

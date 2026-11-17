@@ -23,7 +23,7 @@ export interface Career {
   roundsWon: number;
   roundsLost: number;
   roundsDrawn: number;
-  /** Rounds gagnés par K.O. */
+  /** K.O. infligés (un round peut en compter plusieurs depuis que le duel reprend le lendemain d'un K.O.). */
   kos: number;
   /** Rounds gagnés contre Le Bide. */
   bossWins: number;
@@ -73,11 +73,13 @@ export function career(input: CareerInput, userId: string): Career {
     }
     for (const r of state.rounds) {
       const p = r.pairings.find((x) => x.a === mine.id || x.b === mine.id);
-      if (!p || !p.complete) continue;
+      if (!p) continue;
+      // Un K.O. marqué est acquis tout de suite, même si le round continue.
+      c.kos += p.kos[p.a === mine.id ? 'a' : 'b'];
+      if (!p.complete) continue;
       if (p.winner === null) { c.roundsDrawn += 1; continue; }
       if (p.winner !== mine.id) { c.roundsLost += 1; continue; }
       c.roundsWon += 1;
-      if (p.ko) c.kos += 1;
       if (p.a === BOSS_ID || p.b === BOSS_ID) c.bossWins += 1;
       if (trailedAtMidRound(state, r.index, mine.id)) c.comebacks += 1;
     }
@@ -86,12 +88,13 @@ export function career(input: CareerInput, userId: string): Career {
   return c;
 }
 
-/** Le camp était-il mené au soir du 4e jour de ce round ? */
+/** Le camp était-il mené au soir du 4e jour de ce round ? (aux K.O. d'abord, puis aux PV) */
 export function trailedAtMidRound(state: BattleState, roundIndex: number, sideId: string): boolean {
   const day = state.days.find((d) => d.roundIndex === roundIndex && d.dayIndex === 3);
   const p = day?.pairings.find((x) => x.a === sideId || x.b === sideId);
   if (!p) return false;
   const me = p.a === sideId ? 'a' : 'b', opp = me === 'a' ? 'b' : 'a';
+  if (p.kos[me] !== p.kos[opp]) return p.kos[me] < p.kos[opp];
   return p.hpAfter[me] < p.hpAfter[opp];
 }
 
@@ -126,7 +129,7 @@ export const BADGES: BadgeDef[] = [
   { key: 'first-super', name: 'Super !', how: 'Déclenche ton super une première fois.', icon: 'zap', group: 'combat', value: count('supers'), goal: 1 },
   { key: 'first-round', name: 'Premier round', how: 'Gagne un round.', icon: 'ring', group: 'combat', value: count('roundsWon'), goal: 1 },
   { key: 'rounds-5', name: 'Cinq rounds', how: 'Gagne 5 rounds, toutes battles confondues.', icon: 'ring', group: 'combat', value: count('roundsWon'), goal: 5, unit: 'rounds' },
-  { key: 'first-ko', name: 'K.O. !', how: 'Gagne un round par K.O.', icon: 'play', group: 'combat', value: count('kos'), goal: 1 },
+  { key: 'first-ko', name: 'K.O. !', how: 'Mets un adversaire K.O.', icon: 'play', group: 'combat', value: count('kos'), goal: 1 },
   { key: 'boss', name: 'Tombeur du Bide', how: 'Gagne un round contre Le Bide.', icon: 'check', group: 'combat', value: count('bossWins'), goal: 1 },
   { key: 'comeback', name: 'Remontée', how: 'Gagne un round où tu étais mené à mi-parcours.', icon: 'fire', group: 'combat', value: count('comebacks'), goal: 1 },
   { key: 'belt', name: 'Ceinture', how: 'Remporte une battle : ton combattant porte la ceinture de champion.', icon: 'trophy', group: 'combat', value: count('belts'), goal: 1 }

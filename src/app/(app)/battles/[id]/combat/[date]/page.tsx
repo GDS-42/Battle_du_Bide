@@ -7,6 +7,7 @@ import { rewardsFor, type Reward } from '@/lib/career';
 import { distinctPair, type LookStyle } from '@/lib/fighter/bd';
 import { fighterStyle } from '@/lib/look';
 import { commentaryParts } from '@/lib/engine/commentary';
+import { roundEndedOn } from '@/lib/engine/recap';
 import { BOSS_ID } from '@/lib/engine/rules';
 import type { BattleState, PairingDay, SideAttack } from '@/lib/engine/types';
 import { REACTIONS } from '@/lib/taunts';
@@ -43,8 +44,15 @@ export default async function CombatPage({ params }: { params: Promise<{ id: str
     return s?.trend ?? state.players[uid]?.startWeight ?? null;
   };
   const rewards = await rewardsFor(bundle.members.map((m) => m.userId), now());
+  // Score aux K.O. du round avant ce combat : celui de la veille (0 à 0 le premier soir du round).
+  const eve = state.days.find((d) => d.roundIndex === fight.roundIndex && d.dayIndex === fight.dayIndex - 1);
+  const kosBefore = (p: PairingDay) => eve?.pairings.find((x) => x.a === p.a && x.b === p.b)?.kos ?? { a: 0, b: 0 };
+  // Soir sans combat d'un duel qui reprend ensuite : un K.O. d'avant la règle « on se relève », dans un round qu'elle rattrape.
+  const revived = (p: PairingDay) => p.idle && (
+    state.days.some((d) => d.roundIndex === fight.roundIndex && d.pairings.some((x) => x.a === p.a && x.b === p.b && x.fresh))
+    || !!state.rounds[fight.roundIndex]?.pairings.find((x) => x.a === p.a && x.b === p.b)?.resuming);
   const scenes: Scene[] = fight.pairings
-    .map((p, i) => toScene(bundle, p, date, i, trendAt, fight.dayIndex === 6, rewards, style))
+    .map((p, i) => toScene(bundle, p, date, i, trendAt, fight.dayIndex === 6, rewards, style, { kosBefore: kosBefore(p), revived: revived(p) }))
     .sort((x, y) => Number(y.a.id === mySide || y.b.id === mySide) - Number(x.a.id === mySide || x.b.id === mySide));
   for (const s of scenes) s.mine = s.a.id === mySide || s.b.id === mySide;
 
@@ -56,9 +64,9 @@ export default async function CombatPage({ params }: { params: Promise<{ id: str
     mine: rx.some((x) => x.emoji === r.key && x.userId === user.id)
   }));
   const { round, day } = roundOf(b, date);
-  // Bilan du round : proposé à la fin du replay quand le round de mon camp vient de se terminer (7e soir ou K.O.).
-  const myRound = state.rounds[fight.roundIndex]?.pairings.find((p) => p.a === mySide || p.b === mySide);
-  const recapHref = myRound?.complete && (day === 7 || myRound.koDate === date) ? `/battles/${id}/round/${round}` : null;
+  // Bilan du round : proposé à la fin du replay quand le round de mon camp s'est terminé ce soir-là (7e soir, ou K.O.
+  // sous l'ancienne règle). Un K.O. après lequel le duel a repris ne termine pas le round.
+  const recapHref = mySide && roundEndedOn(state, mySide, date) ? `/battles/${id}/round/${round}` : null;
   const prev = date > b.startDate ? addDays(date, -1) : null;
   const next = date < until ? addDays(date, 1) : null;
 
@@ -88,7 +96,7 @@ export default async function CombatPage({ params }: { params: Promise<{ id: str
   );
 }
 
-function toScene(bundle: Bundle, p: PairingDay, date: string, i: number, trendAt: (uid: string) => number | null, lastDay: boolean, rewards: Map<string, Reward>, style: LookStyle): Scene {
+function toScene(bundle: Bundle, p: PairingDay, date: string, i: number, trendAt: (uid: string) => number | null, lastDay: boolean, rewards: Map<string, Reward>, style: LookStyle, { kosBefore, revived }: { kosBefore: { a: number; b: number }; revived: boolean }): Scene {
   const names: Record<string, string> = { [p.a]: sideName(bundle, p.a), [p.b]: sideName(bundle, p.b) };
   const supers: Record<string, string | undefined> = {};
   for (const sid of [p.a, p.b]) {
@@ -127,11 +135,14 @@ function toScene(bundle: Bundle, p: PairingDay, date: string, i: number, trendAt
     key: `${p.a}-${p.b}`,
     mine: false,
     idle: p.idle,
+    revived,
     a,
     b,
     hpBefore: p.hpBefore,
     hpAfter: p.hpAfter,
     ko: p.ko,
+    fresh: p.fresh,
+    kos: { before: kosBefore, after: p.kos, show: !p.idle && (p.resumes || kosBefore.a + kosBefore.b > 0) },
     lines: parts
   };
 }

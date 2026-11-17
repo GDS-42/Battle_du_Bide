@@ -145,20 +145,28 @@ describe('duel', () => {
     expect(s2.champion).toBeNull();
   });
 
-  it('KO quand les PV tombent à zéro : le round s’arrête pour ce duel', () => {
+  it('ancienne règle (soirées d’avant la bascule) : un K.O. arrête le round pour ce duel', () => {
+    const OLD = '2026-10-05'; // un lundi, bien avant RULES.KO_REVIVE_FROM
     const w = [
-      { userId: 'marc', date: addDays(START, -1), weight: 100 },
-      ...series('marc', START, 7, 99, -0.6),
-      ...series('julie', START, 7, 70, 0)
+      { userId: 'marc', date: addDays(OLD, -1), weight: 100 },
+      ...series('marc', OLD, 7, 99, -0.6),
+      ...series('julie', OLD, 7, 70, 0)
     ];
-    const s = simulateBattle(duel(w, [], 1), addDays(START, 6));
+    const input: EngineInput = { ...duel(w, [], 1), battle: { ...duel(w, [], 1).battle, startDate: OLD } };
+    const s = simulateBattle(input, addDays(OLD, 6));
     const r = s.rounds[0].pairings[0];
-    expect(r.ko).toBe(true);
-    expect(r.winner).toBe('marc');
+    expect(r).toMatchObject({ ko: true, winner: 'marc', complete: true, resuming: false, kos: { a: 1, b: 0 } });
     const koDay = s.days.find((d) => d.date === r.koDate)!;
-    expect(koDay.pairings[0].ko).toBe('b');
+    expect(koDay.pairings[0]).toMatchObject({ ko: 'b', resumes: false });
     const after = s.days.filter((d) => d.date > r.koDate!);
-    for (const d of after) expect(d.pairings[0].hpAfter).toEqual(d.pairings[0].hpBefore);
+    expect(after.length).toBeGreaterThan(0);
+    for (const d of after) {
+      expect(d.pairings[0].hpAfter).toEqual(d.pairings[0].hpBefore);
+      expect(d.pairings[0]).toMatchObject({ idle: true, fresh: false });
+    }
+    // Le round est acquis dès le soir du K.O., sans attendre le 7e soir.
+    expect(simulateBattle(input, r.koDate!).rounds[0].pairings[0]).toMatchObject({ complete: true, winner: 'marc' });
+    expect(s.standings[0]).toMatchObject({ sideId: 'marc', wins: 1, kos: 1 });
   });
 
   it('rien n’est simulé avant le premier lundi', () => {
@@ -232,6 +240,147 @@ describe('cagnotte', () => {
     const s = settleStakes({ mode: 'objectif', amount: 2000, objectivePct: 10, players, championMembers: [] });
     expect(s.carryOver).toBe(true);
     expect(s.transfers).toHaveLength(0);
+  });
+});
+
+describe('K.O. : on se relève (combats à partir de RULES.KO_REVIVE_FROM)', () => {
+  const CUT = RULES.KO_REVIVE_FROM;
+  /** Marc fond à vue d'œil : il met Julie K.O. au 5e soir (jours 0 à 4 : 14, 18, 21,2, 23,8 puis 25,8 PV). */
+  const fonte = (from: string, skip: number[] = []) => [{ userId: 'marc', date: addDays(from, -1), weight: 100 }, ...series('marc', from, 7, 99, -0.6, skip)];
+  const at = (startDate: string, w: EngineWeighIn[], rounds = 1): EngineInput => ({ battle: { format: 'duel', startDate, rounds, members: [{ userId: 'marc' }, { userId: 'julie' }] }, weighIns: w, supers: [] });
+
+  it('après un K.O., le duel reprend le lendemain à 100 PV partout et le K.O. compte un point', () => {
+    const input = at(CUT, [...fonte(CUT), ...series('julie', CUT, 7, 70, 0)]);
+    const s = simulateBattle(input, addDays(CUT, 6));
+    const koDay = s.days.find((d) => d.pairings[0].ko)!;
+    expect(koDay.dayIndex).toBe(4);
+    expect(koDay.pairings[0]).toMatchObject({ ko: 'b', resumes: true, kos: { a: 1, b: 0 }, fresh: false });
+    const next = s.days[5].pairings[0];
+    expect(next).toMatchObject({ fresh: true, idle: false, hpBefore: { a: 100, b: 100 }, ko: null, kos: { a: 1, b: 0 } });
+    expect(next.hpAfter.a).toBe(96);
+    expect(next.hpAfter.b).toBeLessThan(80);
+    expect(s.days[6].pairings[0]).toMatchObject({ fresh: false, idle: false });
+    // Aucune soirée sans combat : les dégâts de tous les soirs comptent.
+    expect(s.days.every((d) => !d.pairings[0].idle)).toBe(true);
+    const r = s.rounds[0].pairings[0];
+    expect(r).toMatchObject({ ko: true, kos: { a: 1, b: 0 }, winner: 'marc', complete: true, resuming: false });
+    expect(r.damage.a).toBeGreaterThan(150);
+    expect(s.standings[0]).toMatchObject({ sideId: 'marc', wins: 1, kos: 1 });
+  });
+
+  it('le round n’est plus terminé par le K.O. : il reste en cours jusqu’au 7e soir', () => {
+    const input = at(CUT, [...fonte(CUT), ...series('julie', CUT, 7, 70, 0)]);
+    const s = simulateBattle(input, addDays(CUT, 4));
+    expect(s.rounds[0].pairings[0]).toMatchObject({ ko: true, kos: { a: 1, b: 0 }, complete: false, winner: null, resuming: true, koDate: addDays(CUT, 4) });
+    expect(s.standings.find((x) => x.sideId === 'marc')).toMatchObject({ wins: 0, kos: 1 });
+    expect(simulateBattle(input, addDays(CUT, 5)).rounds[0].pairings[0]).toMatchObject({ complete: false, resuming: false, hp: { a: 96 } });
+  });
+
+  it('le round va au plus de K.O., même si l’autre finit avec plus de PV', () => {
+    // Marc met Julie K.O. au 5e soir, puis ne se pèse plus : dans la dernière manche, Julie mène aux PV.
+    const s = simulateBattle(at(CUT, [...fonte(CUT, [5, 6]), ...series('julie', CUT, 7, 70, 0)]), addDays(CUT, 6));
+    const r = s.rounds[0].pairings[0];
+    expect(r.hp.b).toBe(100);
+    expect(r.hp.a).toBeLessThan(100);
+    expect(r).toMatchObject({ kos: { a: 1, b: 0 }, winner: 'marc' });
+  });
+
+  it('un K.O. partout : le round se joue aux PV ; un K.O. du 7e soir clôt le round', () => {
+    // Marc met Julie K.O. au 4e soir puis s'arrête ; Julie, qui stagnait, fond à son tour et le couche au 7e soir.
+    const marc = [{ userId: 'marc', date: addDays(CUT, -1), weight: 100 }, ...series('marc', CUT, 7, 98.8, -1.2, [4, 5, 6])];
+    const julie = [...series('julie', CUT, 4, 70, 0), ...series('julie', addDays(CUT, 4), 3, 68.7, -1.3)];
+    const s = simulateBattle(at(CUT, [...marc, ...julie]), addDays(CUT, 6));
+    expect(s.days[3].pairings[0]).toMatchObject({ ko: 'b', resumes: true, kos: { a: 1, b: 0 } });
+    expect(s.days[4].pairings[0]).toMatchObject({ fresh: true, hpBefore: { a: 100, b: 100 } });
+    expect(s.days[6].pairings[0]).toMatchObject({ ko: 'a', resumes: false, kos: { a: 1, b: 1 } });
+    const r = s.rounds[0].pairings[0];
+    expect(r).toMatchObject({ kos: { a: 1, b: 1 }, winner: 'julie', complete: true, resuming: false });
+    expect(r.hp.a).toBeLessThanOrEqual(0);
+    expect(r.hp.b).toBe(100);
+  });
+
+  it('bascule en cours de round : un K.O. de la veille reprend le soir de la bascule', () => {
+    // Battle commencée 5 jours avant : K.O. au 5e soir (la veille de la bascule), sous l'ancienne règle.
+    const start = addDays(CUT, -5);
+    const input = at(start, [...fonte(start), ...series('julie', start, 7, 70, 0)]);
+    const eve = simulateBattle(input, addDays(CUT, -1));
+    expect(eve.days[4].pairings[0]).toMatchObject({ ko: 'b', resumes: true, kos: { a: 1, b: 0 } });
+    expect(eve.rounds[0].pairings[0]).toMatchObject({ ko: true, complete: false, winner: null, resuming: true, hp: { b: expect.any(Number) } });
+    expect(eve.rounds[0].pairings[0].hp.b).toBeLessThanOrEqual(0);
+    const first = simulateBattle(input, CUT);
+    expect(first.days[5].pairings[0]).toMatchObject({ fresh: true, idle: false, hpBefore: { a: 100, b: 100 }, kos: { a: 1, b: 0 } });
+    const end = simulateBattle(input, addDays(start, 6));
+    expect(end.rounds[0].pairings[0]).toMatchObject({ complete: true, winner: 'marc', kos: { a: 1, b: 0 } });
+    // Les soirées d'avant la bascule ne bougent pas, quel que soit l'instant du calcul.
+    expect(end.days.slice(0, 5).map((d) => d.pairings[0].hpAfter)).toEqual(eve.days.map((d) => d.pairings[0].hpAfter));
+  });
+
+  it('duel plié depuis plusieurs jours : les soirs d’avant la bascule restent sans combat, il reprend à la bascule', () => {
+    // Battle commencée 5 jours avant : K.O. au 4e soir, un soir sans combat (ancienne règle), puis reprise.
+    const start = addDays(CUT, -5);
+    const marc = [{ userId: 'marc', date: addDays(start, -1), weight: 100 }, ...series('marc', start, 7, 98.8, -1.2)];
+    const input = at(start, [...marc, ...series('julie', start, 7, 70, 0)]);
+    const s = simulateBattle(input, addDays(start, 6));
+    expect(s.days[3].pairings[0]).toMatchObject({ ko: 'b', resumes: false });
+    expect(s.days[4].pairings[0]).toMatchObject({ idle: true, fresh: false });
+    expect(s.days[5].pairings[0]).toMatchObject({ idle: false, fresh: true, hpBefore: { a: 100, b: 100 } });
+    // Tant que la reprise n'a pas eu lieu, le round est annoncé « en reprise », pas terminé.
+    expect(simulateBattle(input, addDays(CUT, -1)).rounds[0].pairings[0]).toMatchObject({ complete: false, resuming: true, winner: null });
+  });
+
+  it('un round entièrement joué avant la bascule garde son K.O. final, même si la battle continue après', () => {
+    const start = addDays(CUT, -7);
+    const marc = [{ userId: 'marc', date: addDays(start, -1), weight: 100 }, ...series('marc', start, 14, 99, -0.6)];
+    const s = simulateBattle(at(start, [...marc, ...series('julie', start, 14, 70, 0)], 2), addDays(start, 13));
+    expect(s.rounds[0].pairings[0]).toMatchObject({ ko: true, complete: true, winner: 'marc', resuming: false, kos: { a: 1, b: 0 } });
+    expect(s.days.filter((d) => d.roundIndex === 0 && d.pairings[0].idle)).toHaveLength(2);
+    expect(s.days.filter((d) => d.roundIndex === 1 && d.pairings[0].idle)).toHaveLength(0);
+  });
+
+  it('tournoi et équipes : jamais de soir sans combat, reprise à 100 PV, vainqueur cohérent avec le score', () => {
+    let seed = 7;
+    const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+    let kos = 0, fresh = 0, multi = 0;
+    for (let t = 0; t < 60; t++) {
+      const format = (['duel', 'tournoi', 'equipes'] as const)[t % 3];
+      const n = format === 'duel' ? 2 : format === 'tournoi' ? 3 + (t % 4) : 4;
+      const members = Array.from({ length: n }, (_, i) => ({ userId: `u${i}`, team: format === 'equipes' ? Math.floor(i / 2) + 1 : null }));
+      const weighIns: EngineWeighIn[] = members.flatMap((m, i) => {
+        const slope = [-1.2, -0.8, -0.5, 0, -1, 0.1][(i + t) % 6];
+        return [{ userId: m.userId, date: addDays(CUT, -1), weight: 90 }, ...series(m.userId, CUT, 14, 90 + slope, slope).filter(() => rnd() > 0.1)];
+      });
+      const s = simulateBattle({ battle: { format, startDate: CUT, rounds: 2, members }, weighIns, supers: [] }, addDays(CUT, 13));
+      for (const d of s.days) {
+        const prev = d.dayIndex > 0 ? s.days.find((x) => x.roundIndex === d.roundIndex && x.dayIndex === d.dayIndex - 1)! : null;
+        d.pairings.forEach((p, j) => {
+          expect(p.idle).toBe(false);
+          const before = prev?.pairings[j];
+          expect(p.fresh).toBe(!!before?.ko);
+          if (p.fresh || d.dayIndex === 0) expect(p.hpBefore).toEqual({ a: 100, b: 100 });
+          else expect(p.hpBefore).toEqual(before!.hpAfter);
+          expect(p.kos.a + p.kos.b - (before ? before.kos.a + before.kos.b : 0)).toBeLessThanOrEqual(1);
+          expect(p.resumes).toBe(!!p.ko && d.dayIndex < 6);
+          if (p.ko) kos++;
+          if (p.fresh) fresh++;
+        });
+      }
+      for (const r of s.rounds) for (const p of r.pairings) {
+        expect(p.complete).toBe(true);
+        if (p.kos.a + p.kos.b > 1) multi++;
+        const expected = p.kos.a !== p.kos.b ? (p.kos.a > p.kos.b ? p.a : p.b)
+          : p.hp.a !== p.hp.b ? (p.hp.a > p.hp.b ? p.a : p.b)
+          : p.weighIns.a !== p.weighIns.b ? (p.weighIns.a > p.weighIns.b ? p.a : p.b) : null;
+        expect(p.winner).toBe(expected);
+      }
+      // Classement : une victoire par duel et par round, K.O. additionnés.
+      const wins = s.standings.reduce((x, y) => x + y.wins, 0), draws = s.standings.reduce((x, y) => x + y.draws, 0);
+      const realPairs = s.rounds.flatMap((r) => r.pairings).length;
+      expect(wins).toBeLessThanOrEqual(realPairs);
+      expect(wins + draws).toBeGreaterThan(0);
+    }
+    expect(kos).toBeGreaterThan(20);
+    expect(fresh).toBeGreaterThan(15);
+    expect(multi).toBeGreaterThan(0);
   });
 });
 

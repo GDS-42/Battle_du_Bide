@@ -86,6 +86,7 @@ La façon dont le jeu montre le combattant par défaut (le tracé du générateu
 | Le Bide | Il gonfle, charge ventre en avant, aplatit l'adversaire comme une crêpe |
 | K.O. | Coup final en uppercut (ou coup de bide), vol plané, pose de victoire. Le vaincu frappe **avant** : il ne se relève pas pour répliquer |
 | Double K.O. | Les deux se percutent au centre et s'envolent chacun de leur côté |
+| Lendemain d'un K.O. | Bandeau « NOUVELLE MANCHE », barres de vie revenues à 100 PV, score aux K.O. affiché entre les deux noms |
 
 En équipe, le second combattant se tient derrière le premier ; il encaisse, tombe ou lève les bras avec lui. Les barres de vie et le commentaire suivent l'animation : les points de vie baissent à l'instant où le coup porte. Un combat dure de 12 à 20 secondes ; « Passer » et « Rejouer » restent disponibles à tout moment.
 

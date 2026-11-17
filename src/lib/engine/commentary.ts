@@ -99,6 +99,32 @@ const T = {
   roundTie: {
     bon: ['Fin du round sur une égalité, {A} partout : le nombre de pesées départagera.', 'La cloche sonne à {A} partout. Ce sont les pesées qui trancheront.'],
     trash: ['Fin du round, {A} partout. On sort le compteur de pesées pour les départager.', 'Égalité à la cloche : {A} partout. Le plus assidu l’emporte.']
+  },
+  // K.O. « on se relève » (combats à partir de RULES.KO_REVIVE_FROM). Ces familles s'ajoutent : aucune phrase existante
+  // n'est modifiée, pour que les replays déjà vus gardent leur texte.
+  fresh: {
+    bon: ['Nouvelle manche ! Tout le monde repart à 100 PV.', 'La cloche relance le duel : 100 PV de chaque côté.', 'On se relève et on y retourne : 100 PV partout.'],
+    trash: ['Nouvelle manche ! 100 PV partout. Hier, c’est hier.', 'Tout le monde debout : 100 PV partout, et on y retourne.', 'Les compteurs reviennent à 100 PV. Certains en avaient plus besoin que d’autres.']
+  },
+  koPoint: {
+    bon: ['K.O. ! {W} envoie {L} au tapis et marque le point.', 'K.O. ! {L} est au tapis : un point pour {W}.', 'C’est le K.O. ! {W} couche {L} et prend le point.'],
+    trash: ['K.O. ! {L} est au tapis, {W} marque le point. Quelqu\'un a une éponge ?', "K.O. ! {W} vient d'éteindre {L} : un point de plus.", 'K.O. ! {L} compte les étoiles, {W} compte un point.']
+  },
+  resume: {
+    bon: ['Reprise demain soir, 100 PV partout.', 'On remet ça demain soir : 100 PV de chaque côté.'],
+    trash: ['Demain soir, tout le monde se relève à 100 PV.', 'Rendez-vous demain soir, 100 PV partout. Pas de repos pour les braves.']
+  },
+  tally: {
+    bon: ['Aux K.O., {X} mène {A} à {B}.', 'Compteur des K.O. : {X} devant, {A} à {B}.'],
+    trash: ['Aux K.O., {X} mène {A} à {B}. Ça compte double dans les têtes.', 'Compteur des K.O. : {A} à {B} pour {X}.']
+  },
+  tallyTie: {
+    bon: ['Aux K.O. : {A} partout.', 'Compteur des K.O. : {A} partout.'],
+    trash: ['Aux K.O. : {A} partout. Ça rend coup pour coup.', 'Compteur des K.O. : {A} partout. Personne ne lâche.']
+  },
+  roundWinKo: {
+    bon: ['Fin du round ! {W} l’emporte aux K.O., {A} à {B}.', 'La cloche sonne : round pour {W}, {A} K.O. à {B} !'],
+    trash: ['Fin du round : {W} repart avec, {A} K.O. à {B}. {L} repart avec ses regrets.', 'Cloche ! {W} empoche le round aux K.O., {A} à {B}.']
   }
 } as const;
 
@@ -134,7 +160,10 @@ export interface CommentaryOptions {
   lastDay?: boolean;
 }
 
-/** Commentaire découpé : les coups de A, la réplique de B, puis le bilan. */
+/**
+ * Commentaire découpé : l'annonce d'une reprise s'il y en a une, les coups de A, la réplique de B, puis le bilan.
+ * Tant qu'aucun K.O. n'a été marqué dans le round, le texte est exactement celui d'avant la règle « on se relève ».
+ */
 export function commentaryParts(
   p: PairingDay,
   names: Record<string, string>,
@@ -142,33 +171,53 @@ export function commentaryParts(
   seed: string,
   superNames: Record<string, string | undefined> = {},
   opts: CommentaryOptions = {}
-): { a: string[]; b: string[]; end: string | null } {
-  if (p.idle) return { a: [], b: [], end: null };
+): { intro: string | null; a: string[]; b: string[]; end: string | null } {
+  if (p.idle) return { intro: null, a: [], b: [], end: null };
   const na = names[p.a] ?? '?', nb = names[p.b] ?? '?';
   const a = sideLines(p.a, p.attacks.a, na, tone, seed + 'a', superNames[p.a]);
   const b = sideLines(p.b, p.attacks.b, nb, tone, seed + 'b', superNames[p.b]);
   const A = Math.max(0, Math.round(p.hpAfter.a)), B = Math.max(0, Math.round(p.hpAfter.b));
   const leader = A > B ? na : nb, trailer = A > B ? nb : na;
   const scores = { A: pv(Math.max(A, B)), B: pv(Math.min(A, B)) };
+  // Score aux K.O. du round, ce combat compris.
+  const ka = p.kos.a, kb = p.kos.b;
+  const koVars = { A: String(Math.max(ka, kb)), B: String(Math.min(ka, kb)) };
+  const koLeader = ka > kb ? na : nb, koTrailer = ka > kb ? nb : na;
+  const tally = ka + kb === 0 ? '' : ka === kb ? line('tallyTie', tone, seed + 'tl', koVars) : line('tally', tone, seed + 'tl', { X: koLeader, ...koVars });
+  const koVerdict = () => line('roundWinKo', tone, seed + 'rd', { W: koLeader, L: koTrailer, ...koVars });
+  const join = (...parts: string[]) => parts.filter(Boolean).join(' ');
+  const intro = p.fresh ? line('fresh', tone, seed + 'fr', {}) : null;
   let end: string;
-  if (p.ko === 'both') end = line('koBoth', tone, seed + 'ko', {});
-  else if (p.ko) {
+  if (p.ko === 'both') {
+    end = line('koBoth', tone, seed + 'ko', {});
+    if (p.resumes) end = join(end, tally, line('resume', tone, seed + 'rs', {}));
+  } else if (p.ko) {
     const loser = p.ko === 'a' ? na : nb, winner = p.ko === 'a' ? nb : na;
-    end = line('ko', tone, seed + 'ko', { W: winner, L: loser });
+    const wonKos = p.ko === 'a' ? kb : ka, lostKos = p.ko === 'a' ? ka : kb;
+    if (p.resumes) {
+      // Le duel reprend demain : le K.O. marque un point, il ne donne pas le round.
+      end = join(line('koPoint', tone, seed + 'ko', { W: winner, L: loser }), wonKos + lostKos > 1 ? tally : '', line('resume', tone, seed + 'rs', {}));
+    } else if (lostKos > wonKos) {
+      // K.O. du dernier soir, mais l'autre camp en a marqué davantage : le round est pour lui.
+      end = join(line('koPoint', tone, seed + 'ko', { W: winner, L: loser }), koVerdict());
+    } else {
+      end = line('ko', tone, seed + 'ko', { W: winner, L: loser });
+    }
   } else if (opts.lastDay) {
-    end = A === B ? line('roundTie', tone, seed + 'rd', { A: pv(A) }) : line('roundWin', tone, seed + 'rd', { W: leader, L: trailer, ...scores });
+    end = ka !== kb ? koVerdict()
+      : join(tally, A === B ? line('roundTie', tone, seed + 'rd', { A: pv(A) }) : line('roundWin', tone, seed + 'rd', { W: leader, L: trailer, ...scores }));
   } else if (p.attacks.a.total === 0 && p.attacks.b.total === 0) {
-    end = line('quiet', tone, seed + 'st', {});
+    end = join(line('quiet', tone, seed + 'st', {}), tally);
   } else if (A === B) {
-    end = line('tie', tone, seed + 'st', { A: pv(A) });
+    end = join(line('tie', tone, seed + 'st', { A: pv(A) }), tally);
   } else {
     // Renversement : le camp qui était derrière (ou à égalité) avant ce soir passe devant.
     const before = p.hpBefore.a - p.hpBefore.b, after = A - B;
     const flipped = before !== 0 && Math.sign(before) !== Math.sign(after);
     const kind = flipped ? 'comeback' : Math.abs(A - B) <= CLOSE_GAP ? 'close' : 'lead';
-    end = line(kind, tone, seed + 'st', { L: leader, ...scores });
+    end = join(line(kind, tone, seed + 'st', { L: leader, ...scores }), tally);
   }
-  return { a, b, end };
+  return { intro, a, b, end };
 }
 
 export function commentary(
@@ -180,7 +229,7 @@ export function commentary(
   opts: CommentaryOptions = {}
 ): string[] {
   const c = commentaryParts(p, names, tone, seed, superNames, opts);
-  return c.end === null ? [] : [...c.a, ...c.b, c.end];
+  return c.end === null ? [] : [...(c.intro ? [c.intro] : []), ...c.a, ...c.b, c.end];
 }
 
 /** Toutes les phrases du commentateur (pour les tests : aucune ne doit viser le corps). */

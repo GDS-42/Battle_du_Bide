@@ -53,7 +53,7 @@ export default async function RingPage({ params, searchParams }: { params: Promi
   const inBattle = today >= b.startDate && today <= end;
   const roundIdx = Math.max(0, Math.min(b.rounds - 1, Math.floor(dayDiff(b.startDate, today) / 7)));
   const roundRes = state.rounds[roundIdx];
-  const pairsNow = roundRes?.pairings ?? roundPairings(state.sides.map((s) => s.id), roundIdx).map(([a, c]) => ({ a, b: c, hp: { a: 100, b: 100 }, winner: null, ko: false, koDate: null, weighIns: { a: 0, b: 0 }, damage: { a: 0, b: 0 }, complete: false }));
+  const pairsNow = roundRes?.pairings ?? roundPairings(state.sides.map((s) => s.id), roundIdx).map(([a, c]) => ({ a, b: c, hp: { a: 100, b: 100 }, winner: null, ko: false, koDate: null, kos: { a: 0, b: 0 }, resuming: false, weighIns: { a: 0, b: 0 }, damage: { a: 0, b: 0 }, complete: false }));
   const myPair = pairsNow.find((p) => p.a === mySide?.id || p.b === mySide?.id);
   const lastFight = until ? state.days.find((d) => d.date === until) : undefined;
   const lastMyPair = lastFight?.pairings.find((p) => p.a === mySide?.id || p.b === mySide?.id);
@@ -132,6 +132,13 @@ export default async function RingPage({ params, searchParams }: { params: Promi
           const myHp = meIsA ? myPair.hp.a : myPair.hp.b, oppHp = meIsA ? myPair.hp.b : myPair.hp.a;
           const lastDmgMe = lastMyPair && roundRes && lastFight?.roundIndex === roundIdx ? (meIsA ? lastMyPair.attacks.b.total : lastMyPair.attacks.a.total) : 0;
           const lastDmgOpp = lastMyPair && roundRes && lastFight?.roundIndex === roundIdx ? (meIsA ? lastMyPair.attacks.a.total : lastMyPair.attacks.b.total) : 0;
+          // K.O. marqués dans le round. Après un K.O., le duel reprend au prochain combat, tout le monde à 100 PV.
+          const myKos = meIsA ? myPair.kos.a : myPair.kos.b, oppKos = meIsA ? myPair.kos.b : myPair.kos.a;
+          const down = myHp <= 0 || oppHp <= 0; // un camp est au tapis : le dernier combat joué s'est fini par un K.O.
+          const koBanner = myPair.resuming ? `K.O. ! · REPRISE ${fightAtToday ? 'CE SOIR' : 'DEMAIN SOIR'}`
+            : myPair.ko && myPair.complete ? (down ? 'K.O. · ROUND TERMINÉ' : 'ROUND TERMINÉ') : null;
+          // Le score aux K.O. s'affiche dès qu'il y en a, sauf quand les barres le disent déjà (un seul K.O., qui a clos le round).
+          const showKos = myKos + oppKos > 0 && !(myPair.complete && myKos + oppKos === 1 && down);
           return (
             <section aria-label="Face-à-face du round">
               <div className="bg-encre px-3 pb-3 pt-2">
@@ -144,6 +151,9 @@ export default async function RingPage({ params, searchParams }: { params: Promi
                 </div>
                 <div className="mt-1 flex justify-between font-display text-[18px]">
                   <span>{sideName(bundle, mySide.id)} <span className="text-soleil">{Math.round(Math.max(0, myHp))}</span></span>
+                  {showKos ? (
+                    <span className="shrink-0 px-2 text-[15px] text-soleil" aria-label={`K.O. marqués dans le round : ${sideName(bundle, mySide.id)} ${myKos}, ${sideName(bundle, oppId)} ${oppKos}`}>K.O. {myKos} – {oppKos}</span>
+                  ) : null}
                   <span><span className="text-soleil">{Math.round(Math.max(0, oppHp))}</span> {sideName(bundle, oppId)}</span>
                 </div>
               </div>
@@ -157,7 +167,7 @@ export default async function RingPage({ params, searchParams }: { params: Promi
                     </div>
                   );
                 })()}
-                {myPair.ko ? <div className="absolute left-1/2 top-6 -translate-x-1/2"><Ribbon>K.O. · ROUND TERMINÉ</Ribbon></div> : null}
+                {koBanner ? <div className="absolute left-1/2 top-6 -translate-x-1/2 whitespace-nowrap"><Ribbon>{koBanner}</Ribbon></div> : null}
               </RingScene>
             </section>
           );
@@ -304,11 +314,13 @@ export default async function RingPage({ params, searchParams }: { params: Promi
                 {state.rounds.map((r) => {
                   const p = r.pairings.find((x) => x.a === mySide?.id || x.b === mySide?.id) ?? r.pairings[0];
                   const won = p?.winner && p.winner === mySide?.id, lost = p?.winner && p.winner !== mySide?.id;
+                  // K.O. du round, les miens d'abord (sans camp à moi : ceux du premier duel).
+                  const kMe = p ? (p.b === mySide?.id ? p.kos.b : p.kos.a) : 0, kOpp = p ? (p.b === mySide?.id ? p.kos.a : p.kos.b) : 0;
                   return (
                     <Link key={r.index} href={`/battles/${id}/round/${r.index + 1}`} aria-label={`Bilan du round ${r.index + 1}`}
                       className={`rounded-xl border-2 px-2 py-2 text-center ${won ? 'border-encre bg-soleil text-encre' : lost ? 'border-prune bg-violet' : 'border-prune'}`}>
                       <div className="font-display text-[15px]">R{r.index + 1}</div>
-                      <div className="text-[11px]">{!p?.complete ? 'en cours' : won ? (p.ko ? 'K.O. !' : 'gagné') : lost ? 'perdu' : 'nul'}</div>
+                      <div className="text-[11px]">{!p?.complete ? (kMe + kOpp > 0 ? `K.O. ${kMe} – ${kOpp}` : 'en cours') : won ? (kMe > kOpp ? 'K.O. !' : 'gagné') : lost ? 'perdu' : 'nul'}</div>
                     </Link>
                   );
                 })}

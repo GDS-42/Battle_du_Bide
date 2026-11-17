@@ -20,11 +20,15 @@ export interface RoundRecap {
   rounds: number;
   startDate: string;
   endDate: string;
-  /** Round terminé (7 soirs joués, ou K.O.). */
+  /** Round terminé : 7 soirs joués (ou K.O. sous l'ancienne règle, quand un K.O. arrêtait le round). */
   complete: boolean;
   result: 'win' | 'loss' | 'draw' | 'pending';
-  /** Le round s'est fini par K.O. */
+  /** Le round s'est joué aux K.O. : un camp en a marqué plus que l'autre. */
   ko: boolean;
+  /** K.O. marqués dans le round par chaque camp. */
+  kos: { me: number; opp: number };
+  /** Un K.O. vient de tomber : le duel reprend au prochain combat, 100 PV partout. */
+  resuming: boolean;
   mySide: string;
   oppSide: string;
   hp: { me: number; opp: number };
@@ -98,7 +102,7 @@ export function roundRecap(state: BattleState, userId: string, roundIndex: numbe
   const won = pair.complete && pair.winner === mine.id;
   const feats: RoundFeat[] = [];
   if (weighIns === 7) feats.push('perfect');
-  if (won && pair.ko) feats.push('ko');
+  if (won && pair.kos[me] > pair.kos[opp]) feats.push('ko');
   if (won && pair[opp] === BOSS_ID) feats.push('boss');
   if (won && trailedAtMidRound(state, roundIndex, mine.id)) feats.push('comeback');
   if (supers > 0) feats.push('super');
@@ -107,7 +111,9 @@ export function roundRecap(state: BattleState, userId: string, roundIndex: numbe
     round: roundIndex + 1, rounds: totalRounds, startDate: r.startDate, endDate: r.endDate,
     complete: pair.complete,
     result: !pair.complete ? 'pending' : pair.winner === null ? 'draw' : pair.winner === mine.id ? 'win' : 'loss',
-    ko: pair.ko,
+    ko: pair.kos.a !== pair.kos.b,
+    kos: { me: pair.kos[me], opp: pair.kos[opp] },
+    resuming: pair.resuming,
     mySide: mine.id, oppSide: pair[opp],
     hp: { me: Math.max(0, Math.round(pair.hp[me])), opp: Math.max(0, Math.round(pair.hp[opp])) },
     damage: { me: Math.round(pair.damage[me]), opp: Math.round(pair.damage[opp]) },
@@ -124,6 +130,31 @@ export function trendLabel(lossPct: number | null): string {
   if (lossPct === null) return '—';
   if (Math.abs(lossPct) < 0.005) return 'stable';
   return `${lossPct > 0 ? '−' : '+'}${Math.abs(lossPct).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} %`;
+}
+
+/**
+ * Le round de ce camp s'est-il terminé ce soir-là ? Au 7e soir, ou sur un K.O. que rien n'a suivi (ancienne règle :
+ * les soirs suivants du round sont sans combat). Un K.O. après lequel le duel a repris ne termine pas le round.
+ */
+export function roundEndedOn(state: BattleState, sideId: string, date: string): boolean {
+  const fight = state.days.find((d) => d.date === date);
+  if (!fight) return false;
+  const pairOf = (d: BattleState['days'][number]) => d.pairings.find((p) => p.a === sideId || p.b === sideId);
+  const round = state.rounds[fight.roundIndex]?.pairings.find((p) => p.a === sideId || p.b === sideId);
+  if (!round?.complete) return false;
+  if (fight.dayIndex === 6) return true;
+  const later = state.days.filter((d) => d.roundIndex === fight.roundIndex && d.dayIndex > fight.dayIndex);
+  return !!pairOf(fight)?.ko && later.every((d) => pairOf(d)?.idle === true);
+}
+
+/**
+ * Faut-il afficher le score aux K.O. à côté des PV ? Oui dès qu'un K.O. a été marqué, sauf quand les barres de vie
+ * le montrent déjà : un seul K.O., qui a clos le round (le vaincu est à 0 PV).
+ */
+export function showsKoScore(r: Pick<RoundRecap, 'kos' | 'complete' | 'hp'>): boolean {
+  const total = r.kos.me + r.kos.opp;
+  if (total === 0) return false;
+  return !(r.complete && total === 1 && (r.hp.me === 0 || r.hp.opp === 0));
 }
 
 /** Titre du résultat d'un round, et sa couleur (page du bilan et image à partager). */

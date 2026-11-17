@@ -81,8 +81,14 @@ export interface PairingDay {
   hpAfter: { a: number; b: number };
   /** Côté mis KO ce soir-là. */
   ko: 'a' | 'b' | 'both' | null;
-  /** Le duel était déjà terminé (KO un soir précédent) : pas d'échange. */
+  /** Le duel était déjà terminé (KO un soir précédent, ancienne règle) : pas d'échange. */
   idle: boolean;
+  /** Reprise après un K.O. de la veille : les deux camps sont repartis à 100 PV avant ce combat. */
+  fresh: boolean;
+  /** K.O. marqués par chaque camp dans le round, ce combat compris. */
+  kos: { a: number; b: number };
+  /** Le K.O. de ce soir ne termine pas le round : le duel reprend le lendemain. */
+  resumes: boolean;
 }
 
 export interface DayFight {
@@ -97,8 +103,14 @@ export interface RoundPairingResult {
   b: string;
   hp: { a: number; b: number };
   winner: string | null;
+  /** Il y a eu au moins un K.O. dans le round. */
   ko: boolean;
+  /** Date du dernier K.O. du round. */
   koDate: string | null;
+  /** K.O. marqués par chaque camp dans le round. */
+  kos: { a: number; b: number };
+  /** Un K.O. vient de tomber et le duel reprend au prochain combat (pas encore joué). */
+  resuming: boolean;
   weighIns: { a: number; b: number };
   damage: { a: number; b: number };
   complete: boolean;

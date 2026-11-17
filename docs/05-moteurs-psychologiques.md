@@ -116,6 +116,7 @@ Deux autres ressorts jouent sur le temps :
 - **Le combat a lieu le soir même.** La récompense est à moins de 24 heures, pas à trois mois.
 - **Le suspense** : jusqu'à l'heure du combat, on sait qui s'est pesé, mais pas ce que valent les coups. Un compte à rebours indique le temps qu'il reste.
 - **Chaque round est un nouveau départ** : la vie repart à 100 PV et le crochet se mesure par rapport au plus bas du round. Une mauvaise semaine n'hypothèque pas la suivante. L'organisateur peut faire démarrer la battle un lundi pour profiter du repère du calendrier.
+- **On se relève d'un K.O. dès le lendemain** : les deux camps repartent à 100 PV, et le K.O. compte un point dans le round. Un K.O. qui arrêtait le round privait les deux joueurs de leur combat du soir, c'est-à-dire de la récompense immédiate, jusqu'à la semaine suivante. C'est une règle de jeu, pas un résultat de recherche : elle protège le rendez-vous quotidien, et d'abord pour celui qui vient de tomber.
 
 **Limites.** Ces théories sont solides, mais aucune ne dit qu'un coup de poing virtuel pèse autant qu'une récompense réelle. L'étude de Dai et al. porte sur des données d'archives et sur les repères naturels du calendrier : un début de round est un repère fabriqué. Le lien entre suspense et retour dans l'app est un pari.
 
@@ -265,7 +266,7 @@ S'engager devant les autres met aussi en jeu sa « face » : l'image de soi que 
 **Dans le jeu.**
 
 - **L'équité.** Tout est exprimé en % du poids de départ et calculé sur la tendance lissée. Une pesée faite après l'heure du combat ne frappe pas ce soir-là, et un combat révélé ne change plus. Le Bide, qui complète le tableau quand le nombre de camps est impair, frappe comme la moyenne des autres camps du soir, avec un minimum de 4 PV.
-- **Des écarts serrés.** Chaque round repart à 100 PV et le crochet se mesure par rapport au plus bas du round : un joueur distancé au classement peut gagner le round suivant.
+- **Des écarts serrés.** Chaque round repart à 100 PV et le crochet se mesure par rapport au plus bas du round : un joueur distancé au classement peut gagner le round suivant. Dans un round, celui qui est mis K.O. se relève le lendemain à 100 PV et peut rendre le K.O.
 - **Plusieurs façons d'être bon.** Les 16 badges couvrent la régularité, la progression et le combat. Se peser donne toujours un jab, même quand le poids stagne.
 - **Des objectifs précis et proches** : le prochain palier du combo, la jauge de super, le badge suivant avec son compteur.
 - **L'autonomie** : un combattant à soi, un super déclenché le soir que l'on choisit, et pour l'organisateur le format, l'enjeu, le ton et la date de départ.

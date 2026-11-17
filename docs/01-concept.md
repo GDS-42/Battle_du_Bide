@@ -67,7 +67,7 @@ Chaque mécanique s'appuie sur un résultat de recherche. Le détail par étude 
 | Niveau | Durée | Ce qui se joue |
 |---|---|---|
 | **Battle** | 4, 8 (par défaut) ou 12 semaines | Le titre de champion, **la ceinture**, le gage ou la cagnotte. |
-| **Round** | 7 jours, à partir du jour de départ | Une victoire de round. Chaque combattant commence le round à **100 PV**. |
+| **Round** | 7 jours, à partir du jour de départ | Une victoire de round. Chaque combattant commence le round à **100 PV**, et y revient le lendemain d'un K.O. |
 | **Combat du soir** | Chaque jour à 21 h | Les coups chargés par les pesées du jour sont échangés et rejoués en animation. |
 
 - **Date de départ.** L'organisateur choisit le jour du premier combat : ce soir (si l'heure du combat n'est pas passée), demain (choix par défaut), un lundi ou toute autre date dans les 60 jours. Il peut encore la changer tant qu'aucun combat n'a eu lieu.
@@ -143,8 +143,11 @@ Chaque mécanique s'appuie sur un résultat de recherche. Le détail par étude 
 | **Tu t'es pesé et ta tendance a baissé sous le plus bas du round** | Jab + crochet. |
 | **Tu t'es pesé mais ta tendance stagne ou remonte** | Jab seul. Ton crochet est **bloqué** : aucune sanction pour une fluctuation. |
 | **Tu ne t'es pas pesé** | Aucune attaque ce soir. Le combo est sauvé si tu as une garde, sinon il retombe à zéro. |
-| **Un combattant tombe à 0 PV avant la fin du round** | **KO** : le round s'arrête et va au vainqueur, avec une animation de KO et un badge. Jusqu'au round suivant, les pesées continuent de remplir le combo et la jauge de super. |
-| **Fin du round (7ᵉ soir, 21 h)** | Le combattant qui a **le plus de PV** gagne le round. En cas d'égalité, c'est celui qui s'est pesé le plus de jours. |
+| **Un combattant tombe à 0 PV avant la fin du round** | **KO** : le vainqueur marque **un K.O.**, avec une animation de KO et un badge. **Dès le lendemain soir, les deux repartent à 100 PV** et le combat reprend : il n'y a jamais de soir sans combat. Le crochet garde sa référence, le plus bas du round. |
+| **Double KO le même soir** | Le K.O. va à celui à qui il reste le plus de PV ; sinon à celui qui a frappé le plus fort ce soir-là ; sinon à personne. |
+| **Fin du round (7ᵉ soir, 21 h)** | Le round va à celui qui a marqué **le plus de K.O.** ; à égalité, à celui qui a **le plus de PV** ; puis à celui qui s'est pesé le plus de jours. |
+
+> **Pourquoi on se relève.** À l'origine, un K.O. arrêtait le round : les deux joueurs n'avaient plus de combat jusqu'à la semaine suivante, parfois cinq soirs de suite. Or le combat du soir est le cœur du jeu, et celui qui vient de tomber est celui qu'il faut le moins laisser sans rien. Depuis le 17 novembre 2026, le duel reprend donc le lendemain. Les soirées jouées avant cette date gardent l'ancien calcul.
 
 ### 5.4 Exemple chiffré : round 3 d'un duel
 
@@ -244,8 +247,8 @@ tendance_du_jour = tendance_d_hier + α × (pesée_du_jour − tendance_d_hier)
 - **Gants dorés** : à 21 jours de pesée d'affilée, les gants du combattant deviennent dorés (avec le look « BD » : une médaille dorée portée par le combattant). Ils le restent tant que la série tient : les perdre fait plus mal que ne pas les avoir.
 - **Ceinture de champion** : le vainqueur de sa dernière battle terminée la porte à la taille, visible de ses rivaux, tant que la défense tient (en solo).
 - **Badges** : 16 badges calculés à partir des pesées et des battles, jamais stockés. Régularité (première pesée, séries de 7, 21 et 50 jours), progression (premier kilo, −2 %, −5 %, −10 %), combat (premier crochet, super, round gagné, cinq rounds, K.O., vainqueur du Bide, remontée, ceinture). Un joueur qui stagne en poids gagne quand même par sa régularité.
-- **Palmarès** dans le profil : pesées, série en cours et record, rounds gagnés, K.O., battles, ceintures.
-- **Exploits du round**, affichés dans le bilan : 7 pesées sur 7, victoire par K.O., Le Bide au tapis, remontée, super déclenché.
+- **Palmarès** dans le profil : pesées, série en cours et record, rounds gagnés, K.O. infligés, battles, ceintures. Un K.O. compte dès le soir où il tombe, même si le round continue ; le badge « K.O. ! » aussi.
+- **Exploits du round**, affichés dans le bilan : 7 pesées sur 7, victoire par K.O. (round gagné en marquant plus de K.O. que l'adversaire), Le Bide au tapis, remontée, super déclenché.
 - Plus tard : équipement à débloquer (short, bandeau…) et aura de combo.
 
 ---

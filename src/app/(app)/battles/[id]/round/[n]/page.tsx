@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { requireFighter } from '@/lib/auth';
 import { displayName, loadBundle, revealedUntil, roundRecapFor, sideName } from '@/lib/battles';
-import { FEAT_LABELS, resultLabel, trendLabel } from '@/lib/engine/recap';
+import { FEAT_LABELS, resultLabel, showsKoScore, trendLabel } from '@/lib/engine/recap';
 import { addDays, now, prettyDate } from '@/lib/time';
 import { ShareRound } from '@/components/ShareRound';
 import { HpBar, Icon, Ribbon, TopBar } from '@/components/ui';
@@ -27,9 +27,12 @@ export default async function RoundPage({ params }: { params: Promise<{ id: stri
   const me = sideName(bundle, r.mySide), opp = sideName(bundle, r.oppSide);
   const lastDay = until < r.endDate ? until : r.endDate;
   const hasNext = n < b.rounds && until >= addDays(r.endDate, 1);
+  // Score aux K.O. du round, quand il y en a eu (le duel reprend à 100 PV le lendemain d'un K.O.).
+  const koScore = showsKoScore(r) ? `K.O. ${r.kos.me} – ${r.kos.opp}` : null;
+  const score = `${me} ${r.hp.me} PV, ${opp} ${r.hp.opp} PV${koScore ? ` (${koScore})` : ''}`;
   const text = r.result === 'pending'
-    ? `Round ${r.round} de « ${b.name} » : ${me} ${r.hp.me} PV, ${opp} ${r.hp.opp} PV. À suivre sur Battle du Bide !`
-    : `Round ${r.round} de « ${b.name} » : ${me} ${r.hp.me} PV, ${opp} ${r.hp.opp} PV. Que le meilleur perde !`;
+    ? `Round ${r.round} de « ${b.name} » : ${score}. À suivre sur Battle du Bide !`
+    : `Round ${r.round} de « ${b.name} » : ${score}. Que le meilleur perde !`;
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-[520px] flex-col">
@@ -47,7 +50,13 @@ export default async function RoundPage({ params }: { params: Promise<{ id: stri
             <span className="min-w-0 truncate font-display text-[20px]">{me} <span className="text-soleil">{r.hp.me}</span></span>
             <span className="min-w-0 truncate text-right font-display text-[20px]"><span className="text-soleil">{r.hp.opp}</span> {opp}</span>
           </div>
-          {r.result === 'pending' ? <p className="text-sm text-lilas">Round en cours : {r.days} soir{r.days > 1 ? 's' : ''} sur 7 joué{r.days > 1 ? 's' : ''}.</p> : null}
+          {koScore ? <div className="font-display text-[18px] leading-none text-soleil" aria-label={`K.O. marqués dans le round : ${me} ${r.kos.me}, ${opp} ${r.kos.opp}`}>{koScore}</div> : null}
+          {r.result === 'pending' ? (
+            <p className="text-sm text-lilas">
+              Round en cours : {r.days} soir{r.days > 1 ? 's' : ''} sur 7 joué{r.days > 1 ? 's' : ''}.
+              {r.resuming ? ' Le duel reprend au prochain combat, 100 PV partout.' : ''}
+            </p>
+          ) : null}
         </div>
 
         <div className="grid grid-cols-3 gap-2">

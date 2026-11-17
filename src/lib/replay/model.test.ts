@@ -7,7 +7,7 @@ const side = (over: Partial<SideView['attack']> = {}, extra: Partial<SideView> =
   ...extra
 });
 const scene = (a: SideView, b: SideView, ko: Scene['ko'] = null, idle = false): Scene => ({
-  key: 'k', mine: true, idle, a, b, hpBefore: { a: 60, b: 55 }, hpAfter: { a: 50, b: 45 }, ko, lines: { a: [], b: [], end: null }
+  key: 'k', mine: true, idle, revived: false, a, b, hpBefore: { a: 60, b: 55 }, hpAfter: { a: 50, b: 45 }, ko, fresh: false, kos: { before: { a: 0, b: 0 }, after: { a: 0, b: 0 }, show: false }, lines: { intro: null, a: [], b: [], end: null }
 });
 
 describe('replay : du combat aux séquences', () => {

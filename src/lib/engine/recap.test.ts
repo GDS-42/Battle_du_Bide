@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { battleEndDate, simulateBattle } from './battle';
-import { resultLabel, roundRecap, trendLabel } from './recap';
+import { resultLabel, roundEndedOn, roundRecap, trendLabel } from './recap';
 import type { EngineInput, EngineWeighIn } from './types';
 import { addDays } from '../time';
 
@@ -10,8 +10,8 @@ function series(userId: string, from: string, days: number, w0: number, perDay: 
   for (let i = 0; i < days; i++) if (!skip.includes(i)) out.push({ userId, date: addDays(from, i), weight: Math.round((w0 + perDay * i) * 10) / 10 });
   return out;
 }
-const duel = (weighIns: EngineWeighIn[], rounds = 2): EngineInput => ({
-  battle: { format: 'duel', startDate: START, rounds, members: [{ userId: 'marc' }, { userId: 'julie' }] }, weighIns, supers: []
+const duel = (weighIns: EngineWeighIn[], rounds = 2, startDate = START): EngineInput => ({
+  battle: { format: 'duel', startDate, rounds, members: [{ userId: 'marc' }, { userId: 'julie' }] }, weighIns, supers: []
 });
 
 describe('roundRecap', () => {
@@ -57,14 +57,63 @@ describe('roundRecap', () => {
     expect(r).toMatchObject({ weighIns: 6, late: 1, combo: 7, result: 'loss' });
   });
 
-  it('reconnaît un K.O. et une égalité', () => {
-    const ko = duel([...series('marc', addDays(START, -3), 10, 100, -0.9), ...series('julie', START, 7, 70, 0)]);
-    const rk = roundRecap(simulateBattle(ko, addDays(START, 6)), 'julie', 0, 2)!;
-    expect(rk).toMatchObject({ result: 'loss', ko: true });
+  it('ancienne règle : reconnaît un K.O. qui a arrêté le round, et une égalité', () => {
+    const OLD = '2026-10-07'; // bien avant RULES.KO_REVIVE_FROM
+    const ko = duel([...series('marc', addDays(OLD, -3), 10, 100, -0.9), ...series('julie', OLD, 7, 70, 0)], 2, OLD);
+    const rk = roundRecap(simulateBattle(ko, addDays(OLD, 6)), 'julie', 0, 2)!;
+    expect(rk).toMatchObject({ result: 'loss', ko: true, kos: { me: 0, opp: 1 }, resuming: false });
     expect(rk.hp.me).toBe(0);
     expect(rk.days).toBeLessThan(7);
+    expect(resultLabel(rk).text).toBe('K.O.…');
     const flat = duel([...series('marc', START, 7, 100, 0), ...series('julie', START, 7, 70, 0)]);
     expect(roundRecap(simulateBattle(flat, addDays(START, 6)), 'marc', 0, 2)!.result).toBe('draw');
+  });
+
+  it('K.O. « on se relève » : le round reste en cours, puis se gagne aux K.O.', () => {
+    const NEW = '2026-11-23'; // après RULES.KO_REVIVE_FROM
+    const ko = duel([...series('marc', addDays(NEW, -3), 10, 100, -0.9), ...series('julie', NEW, 7, 70, 0)], 2, NEW);
+    const full = simulateBattle(ko, addDays(NEW, 6));
+    const koDay = full.days.find((d) => d.pairings[0].ko)!;
+    expect(koDay.dayIndex).toBeLessThan(6);
+    // Le soir du K.O. : un point pour Marc, round en cours, reprise au prochain combat.
+    const eve = simulateBattle(ko, koDay.date);
+    expect(roundRecap(eve, 'marc', 0, 2)).toMatchObject({ result: 'pending', complete: false, kos: { me: 1, opp: 0 }, resuming: true, ko: true });
+    expect(roundRecap(eve, 'julie', 0, 2)).toMatchObject({ result: 'pending', kos: { me: 0, opp: 1 }, resuming: true });
+    expect(resultLabel(roundRecap(eve, 'marc', 0, 2)!).text).toBe('EN COURS');
+    // Au 7e soir : 7 combats joués, victoire par K.O., et l'exploit qui va avec.
+    const marc = roundRecap(full, 'marc', 0, 2)!, julie = roundRecap(full, 'julie', 0, 2)!;
+    expect(marc).toMatchObject({ result: 'win', complete: true, ko: true, days: 7, resuming: false });
+    expect(marc.kos.me).toBeGreaterThanOrEqual(1);
+    expect(marc.feats).toContain('ko');
+    expect(resultLabel(marc).text).toBe('VICTOIRE PAR K.O. !');
+    expect(julie).toMatchObject({ result: 'loss', ko: true });
+    expect(julie.feats).not.toContain('ko');
+    expect(resultLabel(julie).text).toBe('K.O.…');
+  });
+
+  it('sait quel soir le round s’est terminé : le 7e, ou le soir du K.O. sous l’ancienne règle seulement', () => {
+    const ko = (start: string) => duel([...series('marc', addDays(start, -3), 10, 100, -0.9), ...series('julie', start, 7, 70, 0)], 2, start);
+    // Ancienne règle : le K.O. clôt le round ; le bilan est proposé ce soir-là, et encore au 7e soir (sans combat).
+    const OLD = '2026-10-07';
+    const old = simulateBattle(ko(OLD), addDays(OLD, 6));
+    const oldKo = old.rounds[0].pairings[0].koDate!;
+    expect(oldKo < addDays(OLD, 5)).toBe(true);
+    expect(roundEndedOn(old, 'marc', oldKo)).toBe(true);
+    expect(roundEndedOn(old, 'julie', addDays(oldKo, 1))).toBe(false);
+    expect(roundEndedOn(old, 'marc', addDays(OLD, 6))).toBe(true);
+    expect(roundEndedOn(simulateBattle(ko(OLD), oldKo), 'marc', oldKo)).toBe(true);
+    // Règle « on se relève » : le soir du K.O. ne termine rien, même relu une fois le round fini.
+    const NEW = '2026-11-23';
+    const fresh = simulateBattle(ko(NEW), addDays(NEW, 6));
+    const newKo = fresh.days.find((d) => d.pairings[0].ko)!.date;
+    expect(newKo < addDays(NEW, 6)).toBe(true);
+    expect(roundEndedOn(fresh, 'marc', newKo)).toBe(false);
+    expect(roundEndedOn(fresh, 'marc', addDays(NEW, 6))).toBe(true);
+    expect(roundEndedOn(simulateBattle(ko(NEW), newKo), 'marc', newKo)).toBe(false);
+    // Round en cours, date inconnue, camp inconnu.
+    expect(roundEndedOn(simulateBattle(ko(NEW), addDays(NEW, 2)), 'marc', addDays(NEW, 2))).toBe(false);
+    expect(roundEndedOn(fresh, 'marc', '2030-01-01')).toBe(false);
+    expect(roundEndedOn(fresh, 'inconnu', addDays(NEW, 6))).toBe(false);
   });
 
   it('renvoie null pour un joueur étranger ou un round pas encore commencé', () => {

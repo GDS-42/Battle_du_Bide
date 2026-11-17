@@ -201,19 +201,24 @@ export function CombatReplay({ battleId, title, round, day, when, dateLabel, sce
   const poseB: FighterRender['pose'] = step === 2 ? 'punch' : step === 1 ? 'hurt' : step === 3 && (s.ko === 'b' || s.ko === 'both') ? 'hurt' : 'guard';
   const hit = step === 1 ? hitOf(s.a) : step === 2 ? hitOf(s.b) : null;
   const shown = [
+    ...(started && s.lines.intro ? [{ t: s.lines.intro, c: 'intro' }] : []), // reprise après un K.O. : annoncée dès le lancement
     ...said.flatMap((c) => s.lines[c].map((t) => ({ t, c: c as string }))),
     ...(step >= 3 && s.lines.end ? [{ t: s.lines.end, c: 'end' }] : [])
   ];
   const progress = !started ? 0 : animated ? Math.round(8 + (84 * (anim.beat + 0.5)) / Math.max(1, anim.count)) : step === 0 ? 8 : step === 1 ? 40 : step === 2 ? 72 : 100;
   const endBanner = s.ko ? 'K.O. !' : lastOfRound ? 'FIN DU ROUND' : 'FIN DU COMBAT';
-  const banner = step === 0 ? `ROUND ${round} · JOUR ${day}` : hit ? labelOf(step === 1 ? s.a : s.b) : endBanner;
+  // Reprise après un K.O. de la veille : tout le monde repart à 100 PV, le bandeau l'annonce.
+  const opening = s.fresh ? 'NOUVELLE MANCHE' : `ROUND ${round} · JOUR ${day}`;
+  const banner = step === 0 ? opening : hit ? labelOf(step === 1 ? s.a : s.b) : endBanner;
   // Combat animé : bandeau et poses de repos (le moteur anime le reste)
-  const bdBanner = step >= 3 ? (s.ko === 'both' ? 'DOUBLE K.O. !' : endBanner) : animated ? anim.label : `ROUND ${round} · JOUR ${day}`;
+  const bdBanner = step >= 3 ? (s.ko === 'both' ? 'DOUBLE K.O. !' : endBanner) : animated ? anim.label : opening;
+  // Score aux K.O. du round : celui d'avant le combat, puis celui d'après une fois le résultat connu.
+  const kos = step >= 3 ? s.kos.after : s.kos.before;
   const restOf = (me: 'a' | 'b'): RestPose => (step < 3 || !s.ko ? 'garde' : s.ko === me || s.ko === 'both' ? 'ko' : 'victoire');
   const startOverlay = !started ? (
     <div className="absolute inset-0 z-30 grid place-items-center bg-encre/55 px-6 text-center">
       <div className="flex flex-col items-center gap-3">
-        <div className="font-display text-[22px] text-soleil">{s.idle ? 'Ce duel est déjà plié' : 'Le combat est prêt'}</div>
+        <div className="font-display text-[22px] text-soleil">{s.idle ? (s.revived ? 'Pas de combat ce soir-là' : 'Ce duel est déjà plié') : s.fresh ? 'Nouvelle manche : 100 PV partout' : 'Le combat est prêt'}</div>
         <button type="button" onClick={() => start()} className="btn btn-soleil min-h-14 px-6 text-[22px]">
           <Icon name="play" size={22} /> {s.idle ? 'VOIR LE RÉSULTAT' : 'LANCER LE COMBAT'}
         </button>
@@ -245,7 +250,12 @@ export function CombatReplay({ battleId, title, round, day, when, dateLabel, sce
             <span className="truncate font-display text-[20px] leading-none">{s.a.name.toUpperCase()} <span className="text-soleil">{r(hpA)}</span></span>
             <span className="truncate text-[12px] text-lilas">{s.a.sub}</span>
           </div>
-          <span className="shrink-0 px-2 pt-1 text-[12px] font-bold tracking-[0.12em] text-lilas">{when}</span>
+          <div className="flex shrink-0 flex-col items-center px-2 pt-1">
+            <span className="text-[12px] font-bold tracking-[0.12em] text-lilas">{when}</span>
+            {s.kos.show && kos.a + kos.b > 0 ? ( // jamais « 0 – 0 » : avant le premier K.O. du round, il annoncerait le K.O. du soir
+              <span className="font-display text-[14px] leading-tight text-soleil" aria-label={`K.O. marqués dans le round : ${s.a.name} ${kos.a}, ${s.b.name} ${kos.b}`}>K.O. {kos.a} – {kos.b}</span>
+            ) : null}
+          </div>
           <div className="flex min-w-0 flex-col items-end">
             <span className="truncate font-display text-[20px] leading-none"><span className="text-soleil">{r(hpB)}</span> {s.b.name.toUpperCase()}</span>
             <span className="truncate text-[12px] text-lilas">{s.b.sub}</span>
@@ -300,7 +310,13 @@ export function CombatReplay({ battleId, title, round, day, when, dateLabel, sce
         <div className="absolute -top-3.5 left-3.5 -skew-x-12 border-[3px] border-encre bg-soleil px-3 py-px">
           <div className="flex skew-x-12 items-center gap-1.5 font-display text-[15px] text-encre"><Icon name="mic" size={16} /> AU MICRO</div>
         </div>
-        {s.idle ? <p className="text-[15px] leading-snug text-lilas">Ce duel s'est terminé par K.O. plus tôt dans le round. Les deux camps récupèrent jusqu'au prochain round.</p> : null}
+        {s.idle ? (
+          <p className="text-[15px] leading-snug text-lilas">
+            {s.revived
+              ? 'Ce duel a été arrêté par un K.O. plus tôt dans le round : pas de combat ce soir-là. Il reprend ensuite, 100 PV partout.'
+              : 'Ce duel s\'est terminé par K.O. plus tôt dans le round. Les deux camps récupèrent jusqu\'au prochain round.'}
+          </p>
+        ) : null}
         {!s.idle && !shown.length ? <p className="text-[15px] leading-snug text-lilas">Le commentateur s'éclaircit la voix…</p> : null}
         {shown.map((l, i) => (
           <p key={i} className={`animate-pop text-[15px] leading-snug ${l.c === 'end' ? 'text-lilas' : ''}`}>

@@ -70,6 +70,24 @@ describe('career', () => {
     expect(career({ days: [], battles: [{ state: simulateBattle(trio, addDays(START, 6)), finished: true }] }, 'a').bossWins).toBe(1);
   });
 
+  it('un K.O. marqué est acquis tout de suite, même si le round continue (règle « on se relève »)', () => {
+    const NEW = '2026-11-23';
+    const input: EngineInput = {
+      battle: { format: 'duel', startDate: NEW, rounds: 1, members: [{ userId: 'marc' }, { userId: 'julie' }] },
+      weighIns: [...series('marc', addDays(NEW, -3), 10, 100, -0.9), ...series('julie', NEW, 7, 70, 0)], supers: []
+    };
+    const full = simulateBattle(input, addDays(NEW, 6));
+    const koDate = full.days.find((d) => d.pairings[0].ko)!.date;
+    // Le soir du K.O. : le round n'est pas fini, mais le K.O. compte déjà (et le badge avec).
+    const eve = career({ days: [], battles: [{ state: simulateBattle(input, koDate), finished: false }] }, 'marc');
+    expect(eve).toMatchObject({ kos: 1, roundsWon: 0 });
+    expect(earnedKeys(eve)).toContain('first-ko');
+    expect(career({ days: [], battles: [{ state: simulateBattle(input, koDate), finished: false }] }, 'julie').kos).toBe(0);
+    const end = career({ days: [], battles: [{ state: full, finished: true }] }, 'marc');
+    expect(end.roundsWon).toBe(1);
+    expect(end.kos).toBeGreaterThanOrEqual(1);
+  });
+
   it('repère une remontée : mené au 4e soir, vainqueur à la fin', () => {
     // Julie frappe seule les 4 premiers soirs, puis Marc se réveille avec de gros crochets
     const w = [...series('julie', START, 4, 70, 0), ...series('marc', addDays(START, -3), 3, 100, 0), ...series('marc', addDays(START, 4), 3, 99, -0.8)];

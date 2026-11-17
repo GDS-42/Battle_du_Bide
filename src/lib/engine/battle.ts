@@ -227,9 +227,12 @@ export function simulateBattle(input: EngineInput, until: string | null): Battle
     for (let r = 0; r < b.rounds; r++) {
       const rStart = addDays(b.startDate, r * 7);
       if (rStart > last) break;
+      const rEnd = addDays(rStart, 6);
+      // `done` : un K.O. vient de tomber, le duel est arrêté (jusqu'à la reprise du lendemain, ou pour de bon avec l'ancienne règle).
+      // `kA`/`kB` : K.O. marqués par chaque camp dans le round. `winner` : vainqueur du dernier K.O.
       const pairs = roundPairings(ids, r).map(([a, c]) => ({
         a, b: c, hpA: RULES.HP as number, hpB: RULES.HP as number, done: false, ko: false, koDate: null as string | null,
-        winner: null as string | null, wA: 0, wB: 0, dA: 0, dB: 0, played: 0
+        winner: null as string | null, kA: 0, kB: 0, wA: 0, wB: 0, dA: 0, dB: 0, played: 0
       }));
       for (let i = 0; i < 7; i++) {
         const d = addDays(rStart, i);
@@ -244,8 +247,12 @@ export function simulateBattle(input: EngineInput, until: string | null): Battle
           const sa = sideById.get(p.a)!, sb = sideById.get(p.b)!;
           const attA = attackOf(sa, sb);
           const attB = attackOf(sb, sa);
+          // Reprise : K.O. un soir précédent, et le combat de ce soir relève de la nouvelle règle. Tout le monde repart à HP.
+          const fresh = p.done && d >= RULES.KO_REVIVE_FROM;
+          if (fresh) { p.hpA = RULES.HP; p.hpB = RULES.HP; p.done = false; }
           const before = { a: p.hpA, b: p.hpB };
           let ko: PairingDay['ko'] = null;
+          let resumes = false;
           if (!p.done) {
             p.hpA = r1(p.hpA - attB.total);
             p.hpB = r1(p.hpB - attA.total);
@@ -257,29 +264,46 @@ export function simulateBattle(input: EngineInput, until: string | null): Battle
             if (p.hpA <= 0 || p.hpB <= 0) {
               ko = p.hpA <= 0 && p.hpB <= 0 ? 'both' : p.hpA <= 0 ? 'a' : 'b';
               p.done = true; p.ko = true; p.koDate = d;
+              // Le K.O. va au camp à qui il reste le plus de PV ; double K.O. à PV égaux : à celui qui a frappé le plus fort, sinon à personne.
+              p.winner = null;
               if (p.hpA !== p.hpB) p.winner = p.hpA > p.hpB ? p.a : p.b;
               else if (attA.total !== attB.total) p.winner = attA.total > attB.total ? p.a : p.b;
+              if (p.winner === p.a) p.kA += 1; else if (p.winner === p.b) p.kB += 1;
+              resumes = i < 6 && addDays(d, 1) >= RULES.KO_REVIVE_FROM;
             }
           }
           fight.pairings.push({
             a: p.a, b: p.b, hpBefore: before, attacks: { a: attA, b: attB },
-            hpAfter: { a: p.hpA, b: p.hpB }, ko, idle: before.a === p.hpA && before.b === p.hpB && p.done && ko === null
+            hpAfter: { a: p.hpA, b: p.hpB }, ko, idle: before.a === p.hpA && before.b === p.hpB && p.done && ko === null,
+            fresh, kos: { a: p.kA, b: p.kB }, resumes
           });
         }
         days.push(fight);
       }
-      const complete = addDays(rStart, 6) <= last;
+      const allPlayed = rEnd <= last;
       rounds.push({
-        index: r, startDate: rStart, endDate: addDays(rStart, 6),
+        index: r, startDate: rStart, endDate: rEnd,
         pairings: pairs.map((p): RoundPairingResult => {
-          let winner = p.winner;
-          if (!p.ko && complete) {
-            if (p.hpA !== p.hpB) winner = p.hpA > p.hpB ? p.a : p.b;
+          // Duel arrêté par un K.O. : il reprend au premier combat du round qui relève de la nouvelle règle (pas encore
+          // joué, sinon `done` serait retombé). S'il n'en reste aucun, le K.O. a clos le round : 7e soir, ou ancienne règle.
+          const next = p.done && p.koDate ? addDays(p.koDate, 1) : null;
+          const resumeOn = next === null ? null : next >= RULES.KO_REVIVE_FROM ? next : RULES.KO_REVIVE_FROM;
+          const resuming = resumeOn !== null && resumeOn <= rEnd;
+          const complete = allPlayed || (p.done && !resuming);
+          let winner: string | null = null;
+          if (p.done && !resuming && p.koDate! < RULES.KO_REVIVE_FROM) {
+            // Ancienne règle (K.O. d'avant la bascule, jamais repris) : le K.O. donne le round, sans autre départage.
+            winner = p.winner;
+          } else if (complete) {
+            // Le plus de K.O., puis le plus de PV, puis le plus de jours de pesée.
+            if (p.kA !== p.kB) winner = p.kA > p.kB ? p.a : p.b;
+            else if (p.hpA !== p.hpB) winner = p.hpA > p.hpB ? p.a : p.b;
             else if (p.wA !== p.wB) winner = p.wA > p.wB ? p.a : p.b;
           }
           return {
-            a: p.a, b: p.b, hp: { a: p.hpA, b: p.hpB }, winner: p.ko || complete ? winner : null,
-            ko: p.ko, koDate: p.koDate, weighIns: { a: p.wA, b: p.wB }, damage: { a: p.dA, b: p.dB }, complete: p.ko || complete
+            a: p.a, b: p.b, hp: { a: p.hpA, b: p.hpB }, winner,
+            ko: p.ko, koDate: p.koDate, kos: { a: p.kA, b: p.kB }, resuming,
+            weighIns: { a: p.wA, b: p.wB }, damage: { a: p.dA, b: p.dB }, complete
           };
         })
       });
@@ -291,12 +315,12 @@ export function simulateBattle(input: EngineInput, until: string | null): Battle
   for (const r of rounds) {
     for (const p of r.pairings) {
       const A = st.get(p.a), B = st.get(p.b);
-      if (A) { A.damageDealt = r1(A.damageDealt + p.damage.a); A.damageTaken = r1(A.damageTaken + p.damage.b); }
-      if (B) { B.damageDealt = r1(B.damageDealt + p.damage.b); B.damageTaken = r1(B.damageTaken + p.damage.a); }
+      if (A) { A.damageDealt = r1(A.damageDealt + p.damage.a); A.damageTaken = r1(A.damageTaken + p.damage.b); A.kos += p.kos.a; }
+      if (B) { B.damageDealt = r1(B.damageDealt + p.damage.b); B.damageTaken = r1(B.damageTaken + p.damage.a); B.kos += p.kos.b; }
       if (!p.complete) continue;
       if (p.winner === null) { if (A) A.draws++; if (B) B.draws++; continue; }
       const W = st.get(p.winner), L = st.get(p.winner === p.a ? p.b : p.a);
-      if (W) { W.wins++; if (p.ko) W.kos++; }
+      if (W) W.wins++;
       if (L) L.losses++;
     }
   }

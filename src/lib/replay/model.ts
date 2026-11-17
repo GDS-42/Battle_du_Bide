@@ -16,12 +16,21 @@ export interface Scene {
   key: string;
   mine: boolean;
   idle: boolean;
+  /** Soir sans combat d'un duel qui reprend ensuite dans le même round (K.O. d'avant la règle « on se relève »). */
+  revived: boolean;
   a: SideView;
   b: SideView;
   hpBefore: { a: number; b: number };
   hpAfter: { a: number; b: number };
   ko: 'a' | 'b' | 'both' | null;
-  lines: { a: string[]; b: string[]; end: string | null };
+  /** Reprise après un K.O. de la veille : les deux camps repartent à 100 PV. */
+  fresh: boolean;
+  /**
+   * K.O. marqués par chaque camp dans le round : avant ce combat, et après. `show` : le score s'affiche (règle « on se
+   * relève » : un K.O. a déjà été marqué dans le round, ou celui de ce soir ne le termine pas).
+   */
+  kos: { before: { a: number; b: number }; after: { a: number; b: number }; show: boolean };
+  lines: { intro: string | null; a: string[]; b: string[]; end: string | null };
 }
 
 export type BlowKind = 'bide' | 'absent' | 'super' | 'crochet' | 'bloque' | 'jab';
