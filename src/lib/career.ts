@@ -9,7 +9,7 @@ import { personalSeries, type PersonalSeries } from './progress';
 import { addDays, dayDiff, localDate } from './time';
 
 /** Palmarès et badges d'un joueur, toutes battles confondues. */
-export async function careerFor(user: Pick<User, 'id' | 'timezone'>, at: Date): Promise<{ career: Career; badges: BadgeState[]; personal: PersonalSeries }> {
+export async function careerFor(user: Pick<User, 'id' | 'timezone' | 'heightCm'>, at: Date): Promise<{ career: Career; badges: BadgeState[]; personal: PersonalSeries }> {
   const personal = await personalSeries(user.id, localDate(at, user.timezone));
   const list = await userBattles(user.id);
   const states = [];
@@ -18,7 +18,7 @@ export async function careerFor(user: Pick<User, 'id' | 'timezone'>, at: Date): 
     if (!bundle) continue;
     states.push({ state: computeState(bundle, at).state, finished: battleStatus(bundle.battle, at) === 'finished' });
   }
-  const c = career({ days: personal.days, battles: states }, user.id);
+  const c = career({ days: personal.days, battles: states, heightCm: user.heightCm }, user.id);
   return { career: c, badges: badgeStates(c), personal };
 }
 

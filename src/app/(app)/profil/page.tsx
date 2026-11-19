@@ -5,7 +5,7 @@ import { requireFighter } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { pushSubscriptions } from '@/lib/db/schema';
 import { displayName, fighterFor } from '@/lib/battles';
-import { bmi, stageLabel } from '@/lib/engine/silhouette';
+import { bmi, bmiView, stageLabel } from '@/lib/engine/silhouette';
 import { careerFor, rewardsFor } from '@/lib/career';
 import { vapidPublicKey } from '@/lib/push';
 import { fighterStyle } from '@/lib/look';
@@ -14,6 +14,7 @@ import { logout } from '@/app/actions/auth';
 import { deleteAccount } from '@/app/actions/profile';
 import { Fighter } from '@/components/Fighter';
 import { WeightChart } from '@/components/WeightChart';
+import { BmiTarget, chartTarget } from '@/components/BmiTarget';
 import { InstallCard } from '@/components/InstallPrompt';
 import { Icon, RingScene, Ribbon } from '@/components/ui';
 import { SettingsForm } from './SettingsForm';
@@ -36,6 +37,8 @@ export default async function ProfilPage({ searchParams }: { searchParams: Promi
   const period = PERIODS.some(([k]) => k === periode) ? periode! : '30';
   const range = period === 'tout' ? null : Number(period);
   const lost = g.firstWeight !== null && g.trend !== null ? g.firstWeight - g.trend : null;
+  // IMC en clair et prochain palier : comme la courbe, visibles par le joueur seul.
+  const view = bmiView(g.trend ?? g.last, g.firstWeight, user.heightCm);
   const subs = (await db.select({ id: pushSubscriptions.id }).from(pushSubscriptions).where(eq(pushSubscriptions.userId, user.id))).length;
   const earned = badges.filter((x) => x.earned).length;
 
@@ -109,7 +112,14 @@ export default async function ProfilPage({ searchParams }: { searchParams: Promi
                 <Fact k="Tendance" v={g.trend !== null ? `${fmt(g.trend)} kg` : '—'} />
                 <Fact k="Évolution" v={lost === null ? '—' : Math.abs(lost) < 0.05 ? 'stable' : `${lost > 0 ? '−' : '+'}${fmt(Math.abs(lost))} kg`} strong={lost !== null && lost >= 0.05} />
               </div>
-              <WeightChart days={g.days} range={range} label="Courbe de toutes tes pesées" />
+              {view ? (
+                <div className="border-t-2 border-prune pt-3"><BmiTarget view={view} start={g.firstWeight} /></div>
+              ) : (
+                <p className="border-t-2 border-prune pt-3 text-[14px] leading-snug text-lilas">
+                  <Link href="/combattant?next=/profil" className="font-bold text-soleil underline">Indique ta taille</Link> pour voir ton IMC et ton prochain palier.
+                </p>
+              )}
+              <WeightChart days={g.days} range={range} target={chartTarget(view)} label="Courbe de toutes tes pesées" />
               {g.days.length > 30 ? (
                 <nav className="flex flex-wrap gap-1.5" aria-label="Période affichée">
                   {PERIODS.map(([k, l]) => (

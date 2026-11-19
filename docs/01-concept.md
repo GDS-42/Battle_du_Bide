@@ -242,11 +242,19 @@ tendance_du_jour = tendance_d_hier + α × (pesée_du_jour − tendance_d_hier)
 - La silhouette est visible par tous les joueurs de la battle, même en mode pudique où les kilos sont cachés.
 - **Avec le look « BD »**, le dessin du combattant ne change pas avec le poids. L'écran « Transformation ! » montre alors l'avant/après par deux silhouettes unies, calculées comme ci-dessus, à côté du combattant qui fête.
 
+**L'IMC en clair et le prochain palier.** Les silhouettes clés S2 à S6 sont aussi les **paliers** du joueur : 35, 30, 27, 25, puis 23.
+
+- **Sous sa courbe et après chaque pesée**, le joueur lit son IMC, sa catégorie (celles de l'OMS : maigreur, corpulence normale, surpoids, obésité modérée, sévère, massive) et son **prochain palier converti en kilos**. Une jauge montre le chemin parcouru depuis son poids de départ, et la courbe trace le palier quand il est assez proche pour ne pas l'écraser.
+- **Le poids du palier** est celui où l'IMC affiché atteint la valeur du palier : c'est exactement le seuil qui déclenche la « Transformation ! ». L'écran dit alors « Palier IMC 27 franchi » et annonce le suivant.
+- **À 23 ou moins, plus de palier** : l'écran dit que l'objectif est de tenir. Le jeu ne propose jamais de cible plus basse que la forme équilibrée. Sous 18,5, il invite à en parler à un professionnel de santé.
+- **Tout cela n'est visible que par le joueur.** Ses rivaux voient l'annonce « se transforme » et celle du badge, sans kilos ni IMC.
+- L'IMC est un repère, pas un diagnostic : il ne distingue pas le muscle de la graisse. Le mode d'emploi le dit.
+
 ### 8.3 Ce qui s'ajoute au fil des battles
 
 - **Gants dorés** : à 21 jours de pesée d'affilée, les gants du combattant deviennent dorés (avec le look « BD » : une médaille dorée portée par le combattant). Ils le restent tant que la série tient : les perdre fait plus mal que ne pas les avoir.
 - **Ceinture de champion** : le vainqueur de sa dernière battle terminée la porte à la taille, visible de ses rivaux, tant que la défense tient (en solo).
-- **Badges** : 16 badges calculés à partir des pesées et des battles, jamais stockés. Régularité (première pesée, séries de 7, 21 et 50 jours), progression (premier kilo, −2 %, −5 %, −10 %), combat (premier crochet, super, round gagné, cinq rounds, K.O., vainqueur du Bide, remontée, ceinture). Un joueur qui stagne en poids gagne quand même par sa régularité.
+- **Badges** : 18 badges calculés à partir des pesées et des battles, jamais stockés. Régularité (première pesée, séries de 7, 21 et 50 jours), progression (premier kilo, −2 %, −5 %, −10 %, un palier d'IMC franchi, deux paliers), combat (premier crochet, super, round gagné, cinq rounds, K.O., vainqueur du Bide, remontée, ceinture). Un joueur qui stagne en poids gagne quand même par sa régularité. Les deux badges de palier ne sont montrés qu'à un joueur qui a ce palier devant lui : parti d'un IMC de 23 ou moins, il ne les voit pas.
 - **Palmarès** dans le profil : pesées, série en cours et record, rounds gagnés, K.O. infligés, battles, ceintures. Un K.O. compte dès le soir où il tombe, même si le round continue ; le badge « K.O. ! » aussi.
 - **Exploits du round**, affichés dans le bilan : 7 pesées sur 7, victoire par K.O. (round gagné en marquant plus de K.O. que l'adversaire), Le Bide au tapis, remontée, super déclenché.
 - Plus tard : équipement à débloquer (short, bandeau…) et aura de combo.
@@ -380,7 +388,7 @@ Lien d'invitation reçu sur Signal
 | 8 | ⭐ **Face-à-face et replay du combat** | Le spectacle du soir : barres de vie, coups, commentateur. |
 | 9 | **Ring du round** | État du round : PV, combos, jauges, qui s'est pesé, flamme du ring. Pour un tournoi, la carte des duels et le classement. |
 | 10 | **Fil** | Replays, réactions, provocations, coups de coude, transformations. |
-| 11 | **Fiche combattant** | Silhouette, courbe de pesées et de tendance (en kilos, visible par le joueur seul), stats, équipement, ceintures. |
+| 11 | **Fiche combattant** | Silhouette, courbe de pesées et de tendance (en kilos, visible par le joueur seul), IMC et prochain palier, stats, équipement, ceintures. |
 | 12 | **Transformation !** | L'avant/après du combattant au passage d'une silhouette clé. |
 | 13 | **Fin de round** | La cloche : vainqueur du round, stats de la semaine. |
 | 14 | **Fin de battle** | Podium, ceinture, enjeu ou cagnotte, revanche. |

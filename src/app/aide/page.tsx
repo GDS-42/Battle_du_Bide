@@ -129,6 +129,14 @@ export default async function AidePage() {
             Ta <b className="text-soleil">courbe</b> (tes pesées et ta tendance, en kilos) t'attend sur le ring, après chaque pesée et dans ton Profil.
             Elle démarre dès ta première pesée, même pendant l'échauffement, et tu es le seul à la voir.
           </p>
+          <p id="imc" className="scroll-mt-24 text-[15px] leading-snug">
+            Avec elle, ton <b className="text-soleil">IMC</b> (ton poids divisé par le carré de ta taille) et ton{' '}
+            <b className="text-soleil">prochain palier</b>, converti en kilos : 35, 30, 27, 25, puis 23. En franchir un, c'est une
+            « Transformation ! ». À 23, plus de palier : l'objectif devient de tenir.
+          </p>
+          <p className="text-[14px] leading-snug text-lilas">
+            L'IMC est un repère, pas un diagnostic : il ne distingue pas le muscle de la graisse. Tu es le seul à voir le tien.
+          </p>
           <p className="text-[14px] leading-snug text-lilas">
             Un chiffre vraiment bizarre (plus de {Math.round(RULES.ANOMALY * 100)}&nbsp;% d'écart d'un coup) est mis de côté
             jusqu'à ce que ta pesée suivante le confirme.

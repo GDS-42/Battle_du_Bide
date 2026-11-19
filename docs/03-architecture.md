@@ -41,7 +41,7 @@ src/
     actions/                    server actions (auth, combattant, pesée, battle, profil)
     api/                        push, export, photos/[id], health, cron/tick
     icons/[size]/, manifest.ts  PWA
-  components/                   Fighter (tracé SVG, ou dessin BdFighter selon le look), ui (rubans, barres de vie…), WeightChart (courbe de pesées)…
+  components/                   Fighter (tracé SVG, ou dessin BdFighter selon le look), ui (rubans, barres de vie…), WeightChart (courbe de pesées), BmiTarget (IMC, prochain palier et jauge)…
     bd/engine.ts                moteur du combat animé (look « BD »), chargé au clic sur « Lancer le combat »
   lib/
     engine/                     moteur de jeu PUR (aucune dépendance à la base)

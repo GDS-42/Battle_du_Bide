@@ -15,9 +15,10 @@ Chaque matin, ta pesée charge ton coup. À 21 h, les combattants montent sur le
 - **Le combat du soir** rejoué en animation, avec barres de vie, éclats, commentateur, vrais bruits de coups, public qui réagit et réactions des joueurs.
 - **Le ring** : face-à-face, classement, rounds, flamme du ring (les jours d'affilée où tout le monde s'est pesé embellissent le décor à 7, 14 et 30 jours), fil de provocations, coups de coude, finale avec ceinture et partage de la cagnotte, revanche en un clic.
 - **Notifications** (rappel du matin, combat prêt, série en danger) et **app installable** sur l'écran d'accueil.
-- **Badges et récompenses** : 16 badges (régularité, progression, combat), un palmarès, des gants dorés à 21 jours de série et la ceinture de champion portée par le combattant.
+- **Badges et récompenses** : 18 badges (régularité, progression, combat), un palmarès, des gants dorés à 21 jours de série et la ceinture de champion portée par le combattant.
 - **Le bilan de round** : à la fin de chaque round, ton score, tes pesées, ta série et ta tendance, avec une image à envoyer à tes rivaux (PV et %, jamais de kilos).
 - **Ta courbe** : tes pesées et ta tendance en kilos, dès la première pesée (échauffement compris) ; sur le ring, après chaque pesée et dans le profil (30 jours, 90 jours ou tout l'historique). Visible par toi seul.
+- **Ton IMC et ton prochain palier** : sous la courbe, ton IMC en clair, le prochain palier converti en kilos (35, 30, 27, 25, puis 23) et le chemin parcouru depuis ton départ. À 23, plus de palier : l'objectif devient de tenir. Visible par toi seul.
 - **Tes données** : export CSV/JSON et suppression du compte.
 
 ## Démarrer

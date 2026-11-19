@@ -88,8 +88,8 @@ export async function recordWeighIn(user: User, input: { weight: number; comment
   if (!updated) await notifyRivals(user, date, fightsToday.filter((f) => at < f.at).map((f) => f.b.id));
 
   // Badges débloqués par cette pesée (régularité et progression : ceux de combat se gagnent le soir).
-  const had = new Set(earnedKeys(career({ days: before.days, battles: [] }, user.id)));
-  const badges = earnedKeys(career({ days: after.days, battles: [] }, user.id)).filter((k) => !had.has(k));
+  const had = new Set(earnedKeys(career({ days: before.days, battles: [], heightCm: user.heightCm }, user.id)));
+  const badges = earnedKeys(career({ days: after.days, battles: [], heightCm: user.heightCm }, user.id)).filter((k) => !had.has(k));
   if (badges.length && live.length) {
     const names = badges.map((k) => `« ${BADGES.find((b) => b.key === k)!.name} »`).join(' et ');
     await db.insert(feed).values(live.map((b) => ({

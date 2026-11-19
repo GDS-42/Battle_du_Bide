@@ -25,6 +25,8 @@ import { InviteBox } from '@/components/InviteBox';
 import { StartDateBox } from '@/components/StartDateBox';
 import { TauntBox } from '@/components/TauntBox';
 import { WeightChart } from '@/components/WeightChart';
+import { chartTarget } from '@/components/BmiTarget';
+import { bmiView } from '@/lib/engine/silhouette';
 import { Empty, Gauge, HpBar, Icon, RingScene, Ribbon, TopBar } from '@/components/ui';
 
 export const metadata: Metadata = { title: 'Le ring' };
@@ -231,7 +233,7 @@ export default async function RingPage({ params, searchParams }: { params: Promi
                       {showLoss ? <b className="text-soleil">{trendLabel(me.lossPct)}</b> : null}
                       {personal.trend !== null ? <span className="text-lilas">{showLoss ? ' · ' : ''}{fmt(personal.trend, 1)} kg{pudique ? ' (visible par toi seul)' : ''}</span> : null}
                     </span></div>
-                  <WeightChart days={personal.days} range={30} marker={{ date: b.startDate, label: 'Début' }} label="Courbe de tes pesées" />
+                  <WeightChart days={personal.days} range={30} marker={{ date: b.startDate, label: 'Début' }} target={chartTarget(bmiView(personal.trend, personal.firstWeight, user.heightCm))} label="Courbe de tes pesées" />
                 </div>
               ) : null}
             </section>

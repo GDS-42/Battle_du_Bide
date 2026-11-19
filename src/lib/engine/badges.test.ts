@@ -124,6 +124,36 @@ describe('badges', () => {
     expect(s7.def.goal).toBe(7);
   });
 
+  it('compte les paliers d’IMC franchis depuis la première pesée, selon la taille', () => {
+    // 1,78 m : 88 kg = IMC 27,8 ; palier 27 à 85,7 kg, palier 25 à 79,3 kg
+    const at = (weights: number[], heightCm: number | null = 178) => career({ days: personal(weights), battles: [], heightCm }, 'marc');
+    expect(at([88, 86.7])).toMatchObject({ steps: 0, stepsPossible: 3 });
+    expect(at([88, 85.7])).toMatchObject({ steps: 1, stepsPossible: 3 });
+    expect(at([88, 79.3])).toMatchObject({ steps: 2, stepsPossible: 3 });
+    // Poids repris au-dessus du palier : le badge se reperd, comme ceux de progression
+    expect(at([88, 85.7, 86.5]).steps).toBe(0);
+    expect(earnedKeys(at([88, 85.7]))).toContain('step-1');
+    expect(earnedKeys(at([88, 85.7]))).not.toContain('step-2');
+    expect(earnedKeys(at([88, 79.3]))).toEqual(expect.arrayContaining(['step-1', 'step-2']));
+    // Sans taille, aucun palier
+    expect(at([88, 79.3], null)).toMatchObject({ steps: 0, stepsPossible: 0 });
+    expect(career({ days: personal([88, 79.3]), battles: [] }, 'marc')).toMatchObject({ steps: 0, stepsPossible: 0 });
+  });
+
+  it('ne montre un badge de palier qu’à qui a ce palier devant lui', () => {
+    const keys = (weights: number[], heightCm: number | null) => badgeStates(career({ days: personal(weights), battles: [], heightCm }, 'marc')).map((b) => b.def.key);
+    expect(keys([88], 178)).toEqual(expect.arrayContaining(['step-1', 'step-2']));
+    // Parti à 75 kg (IMC 23,7) : un seul palier devant lui
+    expect(keys([75], 178)).toContain('step-1');
+    expect(keys([75], 178)).not.toContain('step-2');
+    // Parti en forme équilibrée, ou taille inconnue : aucun badge de palier, les autres restent
+    for (const k of [keys([70], 178), keys([88], null), keys([], 178)]) {
+      expect(k).not.toContain('step-1');
+      expect(k).not.toContain('step-2');
+      expect(k).toHaveLength(BADGES.length - 2);
+    }
+  });
+
   it('a des clés uniques et un texte pour chaque badge', () => {
     expect(new Set(BADGES.map((b) => b.key)).size).toBe(BADGES.length);
     for (const b of BADGES) { expect(b.name.length).toBeGreaterThan(2); expect(b.how.length).toBeGreaterThan(10); expect(b.goal).toBeGreaterThan(0); }

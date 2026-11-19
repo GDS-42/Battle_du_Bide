@@ -6,18 +6,20 @@ const kg = (n: number) => n.toLocaleString('fr-FR', { minimumFractionDigits: 1, 
  * Courbe de pesées du joueur, en kilos : points = pesées, trait jaune = tendance lissée.
  * Toujours réservée à son propriétaire (les autres joueurs ne voient que des %).
  */
-export function WeightChart({ days, range = 30, marker = null, label = 'Courbe de tes pesées' }: {
+export function WeightChart({ days, range = 30, marker = null, target = null, label = 'Courbe de tes pesées' }: {
   days: ChartDay[];
   /** Nombre de jours affichés ; null = tout l'historique. */
   range?: number | null;
   /** Repère vertical, par exemple le début de la battle. */
   marker?: { date: string; label: string } | null;
+  /** Prochain palier (poids en kg, et son nom pour la légende) : tracé seulement s'il est assez proche de la courbe. */
+  target?: { weight: number; label: string } | null;
   label?: string;
 }) {
-  const m = chartModel(days, range, marker);
+  const m = chartModel(days, range, marker, target);
   if (m.empty) return <p className="text-sm text-lilas">Ta courbe démarre à ta première pesée.</p>;
   const { W, H, left, right, bottom } = CHART;
-  const aria = `${label} : ${m.count} pesée${m.count > 1 ? 's' : ''} du ${shortDate(m.from)} au ${shortDate(m.to)}, de ${kg(m.firstWeight!)} à ${kg(m.lastWeight!)} kg${m.last ? `, tendance ${kg(m.last.value)} kg` : ''}.`;
+  const aria = `${label} : ${m.count} pesée${m.count > 1 ? 's' : ''} du ${shortDate(m.from)} au ${shortDate(m.to)}, de ${kg(m.firstWeight!)} à ${kg(m.lastWeight!)} kg${m.last ? `, tendance ${kg(m.last.value)} kg` : ''}${m.target ? `, prochain palier à ${kg(m.target.weight)} kg` : ''}.`;
   const line = m.path.includes('L');
   // Sur un long historique, des points plus petits pour ne pas noyer la tendance
   const dot = m.count > 60 ? { r: 1.7, sw: 0.8 } : m.count > 35 ? { r: 2.4, sw: 1.1 } : { r: 3.2, sw: 1.5 };
@@ -39,6 +41,13 @@ export function WeightChart({ days, range = 30, marker = null, label = 'Courbe d
             <text x={Math.min(Math.max(m.marker.x, left + 14), W - right - 14)} y={7} textAnchor="middle" fontSize="9" fontWeight="700" fill="#2BB5FF">{m.marker.label}</text>
           </g>
         ) : null}
+        {m.target ? (
+          <g>
+            <path d={`M ${left} ${m.target.y} H ${W - right}`} stroke="#FFF4E3" strokeOpacity=".8" strokeWidth="1.5" strokeDasharray="5 4" />
+            <text x={m.target.side === 'left' ? left + 4 : W - right - 4} y={m.target.y - 5} textAnchor={m.target.side === 'left' ? 'start' : 'end'}
+              fontSize="10" fontWeight="700" fill="#FFF4E3" stroke="#2A1548" strokeWidth="3" paintOrder="stroke">palier {kg(m.target.weight)}</text>
+          </g>
+        ) : null}
         {m.points.map((p) => <circle key={p.date} cx={p.x} cy={p.y} r={line ? dot.r : 5} fill="#CDB8F0" stroke="#140A22" strokeWidth={line ? dot.sw : 2} />)}
         {line ? <path d={m.path} fill="none" stroke="#FFD23D" strokeWidth={m.count > 60 ? 2.6 : 3.5} strokeLinecap="round" strokeLinejoin="round" /> : null}
         {m.last ? (
@@ -54,6 +63,7 @@ export function WeightChart({ days, range = 30, marker = null, label = 'Courbe d
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-lilas">
         <span className="flex items-center gap-1.5"><span aria-hidden className="inline-block size-2.5 rounded-full border border-encre bg-lilas" /> tes pesées</span>
         <span className="flex items-center gap-1.5"><span aria-hidden className="inline-block h-1 w-5 rounded bg-soleil" /> ta tendance (kg)</span>
+        {m.target ? <span className="flex items-center gap-1.5"><span aria-hidden className="inline-block w-5 border-t-2 border-dashed border-creme" /> prochain palier ({m.target.label})</span> : null}
         {m.count < 2 ? <span className="text-creme">Encore une pesée et ta courbe se dessine.</span> : null}
       </div>
     </div>

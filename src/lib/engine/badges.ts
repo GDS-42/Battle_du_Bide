@@ -1,5 +1,6 @@
 // Palmarès et badges d'un joueur : calculés à partir de ses pesées et de ses battles, jamais stockés. Pur et testé.
 import { BOSS_ID } from './rules';
+import { stepsAhead, stepsCrossed } from './silhouette';
 import type { BattleState } from './types';
 
 export interface CareerInput {
@@ -7,6 +8,8 @@ export interface CareerInput {
   days: { date: string; weight: number | null; trend: number | null }[];
   /** Battles du joueur, simulées jusqu'au dernier soir révélé. */
   battles: { state: BattleState; finished: boolean }[];
+  /** Taille du joueur, pour les paliers d'IMC (sans elle, aucun palier n'est compté). */
+  heightCm?: number | null;
 }
 
 export interface Career {
@@ -17,6 +20,9 @@ export interface Career {
   /** Perte de tendance depuis la première pesée, en kg et en % (0 si le poids n'a pas baissé). */
   lostKg: number;
   lostPct: number;
+  /** Paliers d'IMC franchis depuis la première pesée, et paliers qui étaient devant le joueur ce jour-là (0 à 5). */
+  steps: number;
+  stepsPossible: number;
   battles: number;
   finished: number;
   belts: number;
@@ -54,6 +60,7 @@ export function career(input: CareerInput, userId: string): Career {
   const c: Career = {
     weighIns: weighed.length, bestStreak: best, currentStreak: current,
     lostKg, lostPct: first ? Math.round((lostKg / first) * 1000) / 10 : 0,
+    steps: stepsCrossed(first, trend, input.heightCm), stepsPossible: stepsAhead(first, input.heightCm),
     battles: input.battles.length, finished: 0, belts: 0,
     roundsWon: 0, roundsLost: 0, roundsDrawn: 0, kos: 0, bossWins: 0, comebacks: 0, crochets: 0, supers: 0, damage: 0
   };
@@ -112,6 +119,8 @@ export interface BadgeDef {
   value: (c: Career) => number;
   goal: number;
   unit?: string;
+  /** Badge à la portée de ce joueur ? Sinon il ne lui est pas montré (défaut : toujours). */
+  available?: (c: Career) => boolean;
 }
 
 const count = (key: keyof Career) => (c: Career) => c[key];
@@ -125,6 +134,9 @@ export const BADGES: BadgeDef[] = [
   { key: 'pct-2', name: 'Cap des 2 %', how: 'Ta tendance a baissé de 2 % depuis ta première pesée.', icon: 'zap', group: 'progression', value: count('lostPct'), goal: 2, unit: '%' },
   { key: 'pct-5', name: 'Cap des 5 %', how: 'Ta tendance a baissé de 5 % depuis ta première pesée.', icon: 'zap', group: 'progression', value: count('lostPct'), goal: 5, unit: '%' },
   { key: 'pct-10', name: 'Cap des 10 %', how: 'Ta tendance a baissé de 10 % depuis ta première pesée.', icon: 'trophy', group: 'progression', value: count('lostPct'), goal: 10, unit: '%' },
+  // Paliers d'IMC : montrés seulement à qui en a devant lui. Un joueur parti en forme équilibrée n'a rien à viser plus bas.
+  { key: 'step-1', name: 'Palier franchi', how: 'Ta tendance a franchi un palier d’IMC depuis ta première pesée.', icon: 'zap', group: 'progression', value: count('steps'), goal: 1, available: (c) => c.stepsPossible >= 1 },
+  { key: 'step-2', name: 'Deux paliers', how: 'Ta tendance a franchi 2 paliers d’IMC depuis ta première pesée.', icon: 'trophy', group: 'progression', value: count('steps'), goal: 2, unit: 'paliers', available: (c) => c.stepsPossible >= 2 },
   { key: 'first-crochet', name: 'Premier crochet', how: 'Place un crochet : ta tendance passe sous ton plus bas du round.', icon: 'glove', group: 'combat', value: count('crochets'), goal: 1 },
   { key: 'first-super', name: 'Super !', how: 'Déclenche ton super une première fois.', icon: 'zap', group: 'combat', value: count('supers'), goal: 1 },
   { key: 'first-round', name: 'Premier round', how: 'Gagne un round.', icon: 'ring', group: 'combat', value: count('roundsWon'), goal: 1 },
@@ -138,7 +150,7 @@ export const BADGES: BadgeDef[] = [
 export interface BadgeState { def: BadgeDef; earned: boolean; value: number }
 
 export function badgeStates(c: Career): BadgeState[] {
-  return BADGES.map((def) => {
+  return BADGES.filter((def) => def.available?.(c) ?? true).map((def) => {
     const value = def.value(c);
     return { def, earned: value >= def.goal, value };
   });

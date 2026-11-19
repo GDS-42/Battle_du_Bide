@@ -75,6 +75,49 @@ describe('chartModel', () => {
   });
 });
 
+describe('trait du prochain palier', () => {
+  const series = days('2026-11-01', [88, 87.8, 87.5, 87.3, 87, 86.7]);
+
+  it('étend l’axe jusqu’à un palier proche, sans sortir de la zone de dessin', () => {
+    const m = chartModel(series, 30, null, { weight: 85.7, label: 'IMC 27' });
+    expect(m.target).toMatchObject({ weight: 85.7, label: 'IMC 27', side: 'left' });
+    expect(m.ticks[2].value).toBeLessThanOrEqual(85.7);
+    expect(m.target!.y).toBeLessThanOrEqual(CHART.H - CHART.bottom);
+    // le palier est sous toutes les pesées
+    for (const p of m.points) expect(p.y).toBeLessThan(m.target!.y);
+  });
+
+  it('ne trace pas un palier lointain et laisse alors l’axe tel quel', () => {
+    const plain = chartModel(series, 30);
+    const far = chartModel(series, 30, null, { weight: 79.3, label: 'IMC 25' });
+    expect(plain.target).toBeNull();
+    expect(far.target).toBeNull();
+    expect(far.ticks).toEqual(plain.ticks);
+    expect(far.points).toEqual(plain.points);
+  });
+
+  it('trace sans toucher à l’axe un palier déjà dans les valeurs affichées (poids remonté)', () => {
+    const up = days('2026-11-01', [85, 85.4, 85.9, 86.3, 86.6]);
+    const plain = chartModel(up, 30);
+    const m = chartModel(up, 30, null, { weight: 85.7, label: 'IMC 27' });
+    expect(m.ticks).toEqual(plain.ticks);
+    expect(m.target!.y).toBeGreaterThan(m.points[4].y);
+    expect(m.target!.y).toBeLessThan(m.points[0].y);
+  });
+
+  it('avec une courbe plate, descend d’un kilo au plus pour montrer le palier', () => {
+    const flat = days('2026-11-01', [86.7, 86.7, 86.7, 86.7]);
+    expect(chartModel(flat, 30, null, { weight: 85.7, label: 'IMC 27' }).target).not.toBeNull();
+    expect(chartModel(flat, 30, null, { weight: 85.5, label: 'IMC 27' }).target).toBeNull();
+  });
+
+  it('pose l’étiquette à droite quand les pesées occupent la gauche du trait', () => {
+    // Poids remonté : les premières pesées sont au niveau du palier, à gauche
+    const up = days('2026-11-01', [85.8, 85.9, 86.4, 86.9, 87.3, 87.6, 87.9, 88.2]);
+    expect(chartModel(up, 30, null, { weight: 85.7, label: 'IMC 27' }).target!.side).toBe('right');
+  });
+});
+
 describe('étiquette de la dernière valeur', () => {
   it('reste au-dessus du point quand la tendance est plate ou remonte', () => {
     expect(chartModel(days('2026-11-01', Array.from({ length: 20 }, () => 90)), 30).last?.labelBelow).toBe(false);

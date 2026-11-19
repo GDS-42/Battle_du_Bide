@@ -9,7 +9,7 @@ import { displayName, endDateOf, fighterFor, fightPending, loadBundle, previewFo
 import { armSuper } from '@/app/actions/battle';
 import { BADGES } from '@/lib/engine/badges';
 import { RULES } from '@/lib/engine/rules';
-import { stageLabel, bmi } from '@/lib/engine/silhouette';
+import { stageLabel, bmi, bmiView, stepOfStage } from '@/lib/engine/silhouette';
 import { rewardsFor } from '@/lib/career';
 import { fighterStyle } from '@/lib/look';
 import { personalSeries } from '@/lib/progress';
@@ -18,6 +18,7 @@ import { localDate, now, prettyDate, zonedInstant } from '@/lib/time';
 import { Countdown } from '@/components/Countdown';
 import { Fighter } from '@/components/Fighter';
 import { WeightChart } from '@/components/WeightChart';
+import { BmiTarget, chartTarget } from '@/components/BmiTarget';
 import { Burst, Gauge, Icon, RingScene, Ribbon, TopBar } from '@/components/ui';
 import { CoupFx } from './CoupFx';
 
@@ -40,6 +41,10 @@ export default async function CoupPage({ searchParams }: { searchParams: Promise
   const transfo = STAGE_K[from] !== undefined && STAGE_K[to] !== undefined ? { from, to } : null;
   const newBadges = (sp.badges ?? '').split(',').map((k) => BADGES.find((x) => x.key === k)).filter((x) => !!x);
   const delta = g.trend !== null && g.prevTrend !== null ? g.trend - g.prevTrend : null;
+  // IMC en clair et prochain palier (le joueur est seul à voir cet écran).
+  const view = bmiView(g.trend, g.firstWeight, user.heightCm);
+  // Transformation vers une silhouette plus fine : le palier d'IMC qui vient d'être franchi.
+  const stepDone = transfo && STAGE_K[to] < STAGE_K[from] ? stepOfStage(to) : null;
 
   const cards = [];
   for (const b of live) {
@@ -102,7 +107,13 @@ export default async function CoupPage({ searchParams }: { searchParams: Promise
         {transfo ? (
           <div className="card flex flex-col gap-1 p-4">
             <div className="font-display text-[22px] text-soleil">Silhouette {from} → {to} !</div>
-            <p className="text-sm text-lilas">{style === 'bd' ? 'Ta silhouette suit ta tendance réelle.' : 'Ton combattant suit ta tendance réelle.'} Tes rivaux viennent d'être prévenus.</p>
+            {stepDone ? (
+              <p className="text-[15px] leading-snug">
+                <b>Palier IMC {stepDone} franchi.</b>{' '}
+                {view?.step ? <>Prochain : IMC {view.step.bmi}, à {fmt(view.step.weight)}&nbsp;kg.</> : view && !view.low ? <>Forme équilibrée : l'objectif est maintenant de tenir.</> : null}
+              </p>
+            ) : null}
+            <p className="text-sm text-lilas">{style === 'bd' ? 'Ta silhouette suit ta tendance réelle.' : 'Ton combattant suit ta tendance réelle.'}{stepDone && live.length ? ' Tes rivaux viennent d\'être prévenus.' : ''}</p>
           </div>
         ) : null}
 
@@ -155,9 +166,10 @@ export default async function CoupPage({ searchParams }: { searchParams: Promise
           <span className="label">Ta tendance</span>
           <div className="font-sans text-[28px] font-black italic">{g.trend !== null ? `${fmt(g.trend, 2)} kg` : '—'}
             {delta !== null ? <span className="ml-2 text-[15px] not-italic text-lilas">{delta <= 0 ? '−' : '+'}{fmt(Math.abs(delta), 2)} kg</span> : null}</div>
-          <WeightChart days={g.days} range={30} />
-          <p className="text-[13px] text-lilas">La balance fait du yo-yo ; ta tendance lisse les écarts. {stageLabel(bmi(g.trend, user.heightCm))}.</p>
+          <WeightChart days={g.days} range={30} target={chartTarget(view)} />
+          <p className="text-[13px] text-lilas">La balance fait du yo-yo ; ta tendance lisse les écarts.{view ? '' : ` ${stageLabel(bmi(g.trend, user.heightCm))}.`}</p>
           <Link href="/profil#courbe" className="text-[13px] font-bold text-soleil underline">Voir toute ma courbe</Link>
+          {view ? <div className="mt-2 border-t-2 border-prune pt-3"><BmiTarget view={view} start={g.firstWeight} /></div> : null}
         </div>
         {!live.length ? <Link href="/battles/nouvelle" className="btn btn-soleil w-full text-[22px]">LANCER UNE BATTLE</Link> : null}
       </section>

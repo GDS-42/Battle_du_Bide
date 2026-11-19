@@ -55,6 +55,7 @@ Chaque famille de la partie 3 suit le même plan : **le mécanisme** (ce que dit
 |---|---|---|---|---|---|
 | Pesée du matin, une fois par jour | Auto-surveillance | Psychologie de la santé | Harkin et al., 2016 ; Steinberg et al., 2013 | 🟢 Établi | [3.1](#31-se-voir-agir) |
 | Courbe et tendance lissée | Rétroaction lisible | Psychologie de la santé | Steinberg et al., 2013 ; Edholm et al., 1974 | 🟡 Plausible | [3.1](#31-se-voir-agir) |
+| IMC en clair, prochain palier en kilos, jauge depuis le poids de départ | Objectif précis et proche, progression entamée | Psychologie de la motivation, comportement du consommateur | Locke & Latham, 2002 ; Kivetz et al., 2006 ; Nunes & Drèze, 2006 | 🟡 Plausible | [3.8](#38-compétence-et-équité) |
 | Écran « Coup chargé », combat le soir même | Récompense immédiate contre la préférence pour le présent | Économie comportementale | Ainslie, 1975 ; O'Donoghue & Rabin, 1999 | 🟡 Plausible | [3.2](#32-le-présent-contre-le-futur) |
 | Résultats secrets jusqu'à l'heure du combat, compte à rebours | Curiosité, anticipation | Psychologie cognitive, neurosciences | Loewenstein, 1994 ; Knutson et al., 2001 | 🟠 Pari | [3.2](#32-le-présent-contre-le-futur) |
 | Rounds de 7 jours, vie remise à 100 PV | Effet « nouveau départ » | Économie comportementale | Dai, Milkman & Riis, 2014 | 🟡 Plausible | [3.2](#32-le-présent-contre-le-futur) |
@@ -92,6 +93,7 @@ Chaque famille de la partie 3 suit le même plan : **le mécanisme** (ce que dit
 
 - **La pesée du matin est l'action centrale** : dix secondes, une fois par jour, et tout le reste en découle.
 - **La courbe** montre les pesées et la tendance dès la première pesée, échauffement compris. Elle est visible par le joueur seul.
+- **L'IMC en clair et le prochain palier** l'accompagnent : le joueur lit où il en est, et ce qu'il lui reste jusqu'au palier suivant ([3.8](#38-compétence-et-équité)).
 - **Le suivi est consigné et en partie public** : tout le ring voit qui s'est pesé, et le combat du soir en donne le résultat. Ce sont les deux conditions qui renforcent l'effet chez Harkin et al.
 - **La tendance lissée** remplace la pesée brute. Le poids varie d'un jour à l'autre sans rapport avec la masse grasse : chez de jeunes hommes, environ un tiers des écarts d'un jour au lendemain atteignent 0,5 kg (Edholm, Adam & Best, 1974), et le poids suit un cycle hebdomadaire, plus haut après le week-end (Orsama et al., 2014). Juger un joueur sur la pesée du jour reviendrait à récompenser le bruit.
 
@@ -267,8 +269,8 @@ S'engager devant les autres met aussi en jeu sa « face » : l'image de soi que 
 
 - **L'équité.** Tout est exprimé en % du poids de départ et calculé sur la tendance lissée. Une pesée faite après l'heure du combat ne frappe pas ce soir-là, et un combat révélé ne change plus. Le Bide, qui complète le tableau quand le nombre de camps est impair, frappe comme la moyenne des autres camps du soir, avec un minimum de 4 PV.
 - **Des écarts serrés.** Chaque round repart à 100 PV et le crochet se mesure par rapport au plus bas du round : un joueur distancé au classement peut gagner le round suivant. Dans un round, celui qui est mis K.O. se relève le lendemain à 100 PV et peut rendre le K.O.
-- **Plusieurs façons d'être bon.** Les 16 badges couvrent la régularité, la progression et le combat. Se peser donne toujours un jab, même quand le poids stagne.
-- **Des objectifs précis et proches** : le prochain palier du combo, la jauge de super, le badge suivant avec son compteur.
+- **Plusieurs façons d'être bon.** Les 18 badges couvrent la régularité, la progression et le combat. Se peser donne toujours un jab, même quand le poids stagne.
+- **Des objectifs précis et proches** : le prochain palier du combo, la jauge de super, le badge suivant avec son compteur, et le **prochain palier d'IMC**, converti en kilos. Sa jauge part du poids de départ : la progression affichée est déjà entamée ([3.4](#34-lhabitude)). Franchir un palier donne un badge, et l'écran « Transformation ! » annonce le suivant.
 - **L'autonomie** : un combattant à soi, un super déclenché le soir que l'on choisit, et pour l'organisateur le format, l'enjeu, le ton et la date de départ.
 - **Les retours** : l'écran « Coup chargé » après chaque pesée et le commentateur du combat.
 
@@ -278,6 +280,7 @@ S'engager devant les autres met aussi en jeu sa « face » : l'image de soi que 
 - La méta-analyse de 1999 reste débattue sur les récompenses matérielles, et des badges n'en sont pas.
 - L'étude de Hanus & Fox est une quasi-expérience sur 71 étudiants. Celle de Brown est discutée par des travaux ultérieurs.
 - Le score en % du poids de départ est la convention des concours de perte de poids, pas un choix validé par la recherche (voir [00-recherche.md](00-recherche.md), §10).
+- **Le palier d'IMC est un repère de jeu, pas un objectif médical.** L'IMC ne distingue pas le muscle de la graisse, les paliers 27 et 23 ne sont pas des seuils de l'OMS, et aucun essai ne montre qu'afficher un palier fasse maigrir davantage. L'accélération près du but et la progression entamée ont été mesurées sur des cartes de fidélité, pas sur des kilos.
 
 ### 3.9 Le rituel et le récit
 
@@ -372,7 +375,8 @@ Les neurosciences ne justifient à elles seules aucune mécanique du jeu. Elles 
 **Il s'interdit :**
 
 - **La moquerie du corps**, dans tous les textes de l'app, quel que soit le ton choisi.
-- **Les kilos exposés par défaut** : le mode pudique est le réglage de départ.
+- **Les kilos exposés par défaut** : le mode pudique est le réglage de départ. L'IMC du joueur et sa catégorie ne sont jamais montrés à ses rivaux.
+- **Une cible sous la forme équilibrée** : à un IMC de 23 ou moins, le jeu ne propose plus de palier et ne montre pas les badges de palier. Sous 18,5, il invite à en parler à un professionnel de santé.
 - **La fausse urgence.** Le compte à rebours indique une vraie échéance, l'heure du combat.
 - **Le hasard qui accroche.** Aucun coup, aucune récompense n'est tiré au sort : le jeu n'emploie pas les récompenses aléatoires des machines à sous.
 - **Les relances en rafale** : chaque rappel programmé part au plus une fois par jour, le coup de coude est limité à un par jour et par personne, et les notifications se coupent dans le profil.
